@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BC Secret Masters: Legends Series</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>B.C. Premodern Masters · magic1.ca</title>
+
 <style>
-  /* --- Base for Print --- */
   body {
     margin: 0;
     padding: 0;
@@ -13,6 +13,17 @@
     color: #000;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     text-align: center;
+  }
+
+  /* floating magic1.ca top-right icon */
+  .menu-icon {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 64px;
+    height: 64px;
+    opacity: 0.95;
+    cursor: pointer;
   }
 
   .poster {
@@ -23,7 +34,6 @@
     padding: 40px;
   }
 
-  /* --- Headings --- */
   h1 {
     font-size: 2.6em;
     letter-spacing: 1.5px;
@@ -36,71 +46,57 @@
   }
 
   h2 {
-    font-size: 1.5em;
+    font-size: 1.55em;
     font-weight: 700;
     margin-top: 0.4em;
     margin-bottom: 0.6em;
     text-transform: uppercase;
   }
 
-  h3, h4 {
-    text-transform: uppercase;
+  h3 {
+    font-size: 1.3em;
+    margin-top: 1.4em;
     font-weight: 700;
+    text-transform: uppercase;
     border-bottom: 2px solid #000;
     display: inline-block;
     padding-bottom: 0.1em;
-    margin-top: 1.4em;
   }
 
-  /* --- Image --- */
-  .booster {
-    margin: 20px auto 25px;
-    max-width: 200px;
-    border: 2px solid #000;
-    display: block;
-  }
-
-  /* --- Paragraphs --- */
   p {
     font-size: 1.05em;
     margin: 0.45em 0;
     line-height: 1.5;
   }
 
-  strong {
-    color: #000;
-    font-weight: 700;
-  }
-
-  .highlight {
-    font-weight: 700;
-    color: #000;
-    border-bottom: 2px solid #000;
-  }
+  strong { font-weight: 700; }
 
   .tagline {
     font-style: italic;
-    font-size: 1.15em;
+    font-size: 1.1em;
     font-weight: 600;
-    color: #000;
     margin: 1em 0 1.4em;
   }
 
-  /* --- Divider --- */
   hr {
     border: 0;
     border-top: 1px solid #000;
     width: 90%;
-    margin: 1.5em auto;
+    margin: 1.6em auto;
   }
 
-  /* --- Logos --- */
+  .logo-large {
+    max-width: 220px;
+    margin: 20px auto;
+    display: block;
+  }
+
   .logos {
     display: flex;
     justify-content: center;
-    flex-wrap: wrap;
     gap: 25px;
     margin-top: 35px;
+    flex-wrap: wrap;
   }
 
   .logos img {
@@ -108,65 +104,90 @@
     filter: grayscale(100%) contrast(130%);
   }
 
-  /* --- Footer --- */
-  footer {
-    margin-top: 30px;
-    font-size: 0.9em;
-    color: #000;
-    font-weight: 600;
-    border-top: 1px solid #000;
-    padding-top: 0.6em;
-  }
-
-  /* --- Print Handling --- */
   @media print {
-    body {
-      background: #fff !important;
-      color: #000 !important;
-    }
-    .poster {
-      box-shadow: none;
-      border: 2px solid #000;
-      page-break-inside: avoid;
-    }
-    .logos img {
-      filter: grayscale(100%) contrast(130%);
-    }
+    body { background: #fff !important; }
+    .poster { box-shadow: none; border: 2px solid #000; }
+    .logos img { filter: grayscale(100%) contrast(130%); }
+    .menu-icon { display: none; }
   }
 </style>
 </head>
+
 <body>
-  <div class="poster">
-    <h1>BC Secret Masters:<br>Legends Series</h1>
 
-    <h2>1st Prize: <span class="highlight">1 Unopened Legends Booster</span></h2>
-    <img src="Legends_booster.webp" alt="Legends Booster Pack" class="booster">
+<!-- top-right magic1.ca logo -->
+<img src="./assets/magic1.svg" alt="magic1 menu" class="menu-icon" />
 
-    <p><strong>Format:</strong> Premodern Constructed (Proxies Legal)</p>
-    <p><strong>Structure:</strong> 5 Rounds · Best-of-3 · Cut to Top 8 · Catered Lunch</p>
-    <p><strong>Entry:</strong> $50 (One-Time, Tradable Entry)</p>
-    <p><strong>Playmat and Participation Prizes for All Players.</strong></p>
-    <p>Top 8 and Participation Prizes Awarded On Site.</p>
+<!-- ========================================================= -->
+<!--  B.C. PREMODERN MASTERS — JAN 10 FLYER                   -->
+<!-- ========================================================= -->
+<div class="poster">
 
-    <div class="tagline">“Magic Lives in BC.”</div>
+  <img src="./assets/bcpmm.svg" alt="BC Premodern Masters Logo" class="logo-large" />
 
-    <p><strong>Saturday, January 17th  2026</strong></p>
-    <p>Register at <strong>Magic Stronghold Games</strong></p>
+  <h1>B.C. Premodern Masters</h1>
 
-    <hr>
+  <h2>Saturday, January 10th, 2026</h2>
 
-    <p>Prize points contribute to standings in the upcoming<br>
-      <strong>Sunday Super Series: Pacific Coast Winter League</strong>.
-    </p>
+  <p><strong>Format:</strong> Premodern Constructed (Proxies Legal)</p>
+  <p><strong>Entry:</strong> $40.00</p>
+  <p><strong>Structure:</strong> 5 Rounds &middot; Best-of-3 &middot; Cut to Top 8</p>
 
-    <div class="logos">
-      <img src="logo.png" alt="Magic Stronghold Games">
-      <img src="logo-1.png" alt="The Connection Games & Hobbies">
-      <img src="fcp.png" alt="False Creek Prophets East Van Premodern">
-      <img src="vvip.png" alt="VVIP25 logo">
-    </div>
+  <p><strong>Decks Available for Loan on Request</strong><br>
+     (Top 8 Lobstercon 2025 — first come, first served; delivered morning-of)</p>
 
-    <footer>© 2026 BC Secret Masters. All Rights Reserved.</footer>
+  <div class="tagline">“Magic Lives in B.C.”</div>
+
+  <p>Register at <strong>Magic Stronghold Games</strong></p>
+
+  <hr />
+
+  <div class="logos">
+    <img src="./assets/stronghold.png" alt="Magic Stronghold Games" />
+    <img src="./assets/fcp.png" alt="False Creek Prophets" />
+    <img src="./assets/vvip.png" alt="VVIP" />
   </div>
+
+  <footer style="margin-top: 30px; font-size: 0.9em; font-weight: 600;">
+    © 2026 B.C. Premodern Masters. All Rights Reserved.
+  </footer>
+
+</div>
+
+<!-- ========================================================= -->
+<!--  BC WINTER LEAGUE FLYER                                  -->
+<!-- ========================================================= -->
+<div class="poster">
+
+  <h1>BC Winter League</h1>
+  <h2>January – March 2026</h2>
+
+  <p><strong>32 players</strong> · 4 pods of 8 · monthly reshuffles</p>
+  <p><strong>Premodern Constructed</strong> (Proxies Legal)</p>
+  <p><strong>3 points per win</strong> · 0 per loss · Ratings active</p>
+
+  <hr />
+
+  <h3>How It Works</h3>
+
+  <p>• Play 4+ matches per month at participating stores or remote.</p>
+  <p>• Pods reshuffle at month end based on standings.</p>
+  <p>• Choose your <strong>Remote Play</strong> and <strong>Casual/Competitive</strong> preferences.</p>
+  <p>• Results tracked in the <strong>BCWL archive</strong>.</p>
+
+  <hr />
+
+  <div class="logos">
+    <img src="./assets/stronghold.png" alt="Magic Stronghold Games" />
+    <img src="./assets/fcp.png" alt="False Creek Prophets" />
+    <img src="./assets/vvip.png" alt="VVIP"/>
+  </div>
+
+  <footer style="margin-top: 30px; font-size: 0.9em; font-weight: 600;">
+    © 2026 BC Winter League. All Rights Reserved.
+  </footer>
+
+</div>
+
 </body>
 </html>
