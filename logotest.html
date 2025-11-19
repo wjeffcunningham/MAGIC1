@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BC Premodern Masters</title>
+<style>
+  :root {
+    --bc-blue: #1b3a6f;    /* Pacific deep blue */
+    --bc-green: #2e5939;   /* Forest green */
+    --bc-cream: #f8f9f7;   /* Mist grey-white background */
+  }
+
+  body {
+    margin: 0;
+    background: var(--bc-cream);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo {
+    text-align: center;
+    line-height: 1.1;
+  }
+
+  .logo h1 {
+    font-size: 4rem;
+    color: var(--bc-blue);
+    letter-spacing: 2px;
+    margin: 0 0 0.4em 0;
+    font-weight: 700;
+  }
+
+  .banner {
+    background: var(--bc-green);
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: inline-block;
+    padding: 0.3em 1.5em;
+    border-radius: 8px;
+    margin-bottom: 0.6em;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+
+  .logo h2 {
+    font-size: 3rem;
+    color: var(--bc-blue);
+    margin: 0;
+    letter-spacing: 1.5px;
+  }
+
+  /* optional subtle effect */
+  .logo::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: var(--bc-green);
+    margin: 20px auto 0;
+    border-radius: 2px;
+    opacity: 0.8;
+  }
+</style>
+</head>
+<body>
+  <div class="logo">
+    <h1>BC</h1>
+    <div class="banner">PREMODERN</div>
+    <h2>MASTERS</h2>
+  </div>
+</body>
+</html>
