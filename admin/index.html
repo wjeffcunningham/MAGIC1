@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard · BCWL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+  <script type="module" src="/js/global-menu-loader.js"></script>
+
+  <!-- ADMIN ACCESS CHECK -->
+  <script type="module">
+    import { requireAdmin } from "/js/admin-guard.js";
+    await requireAdmin();
+  </script>
+  <!-- END ADMIN ACCESS CHECK -->
+
+  <div class="max-w-4xl mx-auto px-4 py-10 space-y-6">
+    <h1 class="text-3xl font-bold mb-2">BCWL Admin Dashboard</h1>
+    <p class="text-sm text-slate-700 mb-4">
+      Central control panel for league operations.
+    </p>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      <a href="/admin/approve-matches.html"
+         class="block bg-white p-5 rounded-xl shadow hover:shadow-md transition">
+        <h2 class="font-semibold mb-1">Approve Matches</h2>
+        <p class="text-sm text-slate-600">
+          Review pending reports, apply Elo, lock results.
+        </p>
+      </a>
+
+      <a href="/admin/generate-tokens.html"
+         class="block bg-white p-5 rounded-xl shadow hover:shadow-md transition">
+        <h2 class="font-semibold mb-1">Generate Login Tokens</h2>
+        <p class="text-sm text-slate-600">
+          Issue magic URLs so players can log in.
+        </p>
+      </a>
+
+      <a href="/admin/pods.html"
+         class="block bg-white p-5 rounded-xl shadow hover:shadow-md transition">
+        <h2 class="font-semibold mb-1">Pod Assignment</h2>
+        <p class="text-sm text-slate-600">
+          Drag players between pods for each month.
+        </p>
+      </a>
+
+      <a href="/players.html"
+         class="block bg-white p-5 rounded-xl shadow hover:shadow-md transition">
+        <h2 class="font-semibold mb-1">Player Directory</h2>
+        <p class="text-sm text-slate-600">
+          Search players, view profiles (rating, prefs, etc.).
+        </p>
+      </a>
+
+      <a href="/decklists.html"
+         class="block bg-white p-5 rounded-xl shadow hover:shadow-md transition">
+        <h2 class="font-semibold mb-1">Decklists</h2>
+        <p class="text-sm text-slate-600">
+          Players submit & view decklists for events.
+        </p>
+      </a>
+
+      <a href="/events.html"
+         class="block bg-white p-5 rounded-xl shadow hover:shadow-md transition">
+        <h2 class="font-semibold mb-1">Events</h2>
+        <p class="text-sm text-slate-600">
+          See upcoming events and event details pages.
+        </p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Matches · BCWL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+
+  <!-- Global menu -->
+  <script type="module" src="/js/global-menu-loader.js"></script>
+
+  <!-- Require login -->
+  <script type="module">
+    import { requireSession } from "/js/session.js";
+    requireSession();
+  </script>
+
+  <div class="max-w-4xl mx-auto px-4 py-10 space-y-6">
+
+    <h1 class="text-2xl font-bold">My Matches</h1>
+
+    <section class="bg-white p-5 rounded-xl shadow">
+      <h2 class="text-xl font-semibold mb-2">Player Info</h2>
+      <p><strong>Name:</strong> <span id="mm-name"></span></p>
+      <p><strong>Username:</strong> <span id="mm-username"></span></p>
+      <p><strong>Rating:</strong> <span id="mm-rating"></span></p>
+    </section>
+
+    <section class="bg-white p-5 rounded-xl shadow">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold">Match History</h2>
+        <button id="export-csv"
+                class="bg-slate-800 text-white px-3 py-1 rounded text-xs">
+          Download CSV
+        </button>
+      </div>
+
+      <p id="matches-loading" class="text-sm text-slate-600">Loading matches…</p>
+
+      <table id="matches-table"
+             class="w-full text-sm hidden border-collapse">
+        <thead>
+          <tr class="border-b font-semibold">
+            <th class="py-2 text-left">Date</th>
+            <th class="py-2 text-left">Opponent</th>
+            <th class="py-2 text-left">Result</th>
+            <th class="py-2 text-left">Month</th>
+            <th class="py-2 text-left">Δ Rating</th>
+            <th class="py-2 text-left">Notes</th>
+            <th class="py-2 text-left">Approved</th>
+          </tr>
+        </thead>
+        <tbody id="matches-body"></tbody>
+      </table>
+    </section>
+
+  </div>
+
+  <script type="module" src="/js/my-matches.js"></script>
+</body>
+</html>

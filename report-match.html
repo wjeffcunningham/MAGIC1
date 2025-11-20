@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Report Match · BC Winter League</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-900">
+
+  <!-- GLOBAL MENU LOADER GOES HERE -->
+  <script type="module" src="/js/global-menu-loader.js"></script>
+  <!-- END MENU LOADER -->
+  
+  <div class="max-w-xl mx-auto px-4 py-10 space-y-6">
+    <h1 class="text-2xl font-bold">Report Match</h1>
+
+    <div id="current-user" class="bg-white p-4 rounded-lg shadow text-sm text-slate-700">
+      Logged in as <span id="current-name" class="font-semibold"></span>
+      (<span id="current-username"></span>)
+    </div>
+
+    <div id="report-panel" class="bg-white p-6 rounded-xl shadow">
+      <form id="report-form" class="space-y-4">
+        <!-- Month -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Month</label>
+          <select id="month-select" name="month_id"
+                  class="w-full border px-3 py-2 rounded text-sm" required>
+            <option value="">Select month…</option>
+          </select>
+          <p id="pod-warning" class="text-xs text-amber-700 mt-1 hidden">
+            You are not assigned to a pod for this month yet; you can’t report matches for it.
+          </p>
+        </div>
+
+        <!-- Opponent -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Opponent</label>
+          <select id="opponent-select" name="opponent_id"
+                  class="w-full border px-3 py-2 rounded text-sm" required>
+            <option value="">Select opponent…</option>
+          </select>
+        </div>
+
+        <!-- Winner -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Winner</label>
+          <div class="flex gap-4 text-sm">
+            <label class="inline-flex items-center gap-1">
+              <input type="radio" name="winner" value="me" required />
+              I won
+            </label>
+            <label class="inline-flex items-center gap-1">
+              <input type="radio" name="winner" value="opponent" />
+              Opponent won
+            </label>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-sm font-medium mb-1">
+            Notes <span class="text-xs text-slate-400">(optional)</span>
+          </label>
+          <textarea name="notes"
+                    class="w-full border px-3 py-2 rounded text-sm min-h-[60px]"
+                    placeholder="e.g. 2–1, close games, etc."></textarea>
+        </div>
+
+        <button class="bg-sky-600 text-white px-4 py-2 rounded text-sm">
+          Submit Match
+        </button>
+
+        <p id="report-error" class="text-sm text-red-600 mt-2 hidden"></p>
+        <p id="report-success" class="text-sm text-emerald-700 mt-2 hidden"></p>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="/js/report-match.js"></script>
+</body>
+</html>

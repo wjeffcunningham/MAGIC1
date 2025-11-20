@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pod Assignment · BCWL Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+  <script type="module" src="/js/global-menu-loader.js"></script>
+
+  <!-- ADMIN ACCESS CHECK -->
+  <script type="module">
+    import { requireAdmin } from "/js/admin-guard.js";
+    await requireAdmin();
+  </script>
+  <!-- END ADMIN ACCESS CHECK -->
+
+  <div class="max-w-5xl mx-auto px-4 py-10 space-y-6">
+    <h1 class="text-2xl font-bold mb-2">Pod Assignment</h1>
+    <p class="text-sm text-slate-700">
+      Drag players between pods for a selected month.
+    </p>
+
+    <div id="pods-error" class="text-sm text-red-600 hidden"></div>
+
+    <div class="flex items-center gap-3">
+      <label class="text-sm font-medium">Month:</label>
+      <select id="month-select"
+              class="border px-3 py-2 rounded text-sm"></select>
+    </div>
+
+    <div id="pods-container" class="grid gap-4 md:grid-cols-5 mt-4">
+      <!-- Columns injected by JS -->
+    </div>
+
+    <p class="text-xs text-slate-500">
+      Changes are saved as you drop players into pods.
+    </p>
+  </div>
+
+  <script type="module" src="/js/admin-pods.js"></script>
+</body>
+</html>
