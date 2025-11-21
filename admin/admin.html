@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard · B.C. Premodern Masters</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin: 40px;
+    color: #000;
+    background: #fff;
+  }
+  h1 { margin-bottom: 5px; }
+  h2 { margin-top: 40px; }
+  pre {
+    white-space: pre-wrap;
+    background: #f4f4f4;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  .item {
+    border-bottom: 1px solid #ddd;
+    padding: 6px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>Admin Dashboard</h1>
+<p>Minimal functional version</p>
+
+<div id="auth-status">Checking auth…</div>
+
+<h2>Events</h2>
+<div id="events"></div>
+
+<h2>Players</h2>
+<div id="players"></div>
+
+<script>
+// --- Supabase init ---
+const supabase = supabase.createClient(
+  "https://YOUR-PROJECT-ID.supabase.co",
+  "YOUR-PUBLIC-ANON-KEY"
+);
+
+// --- 1. Check auth state ---
+async function checkAuth() {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const statusEl = document.getElementById("auth-status");
+  if (!user) {
+    statusEl.innerHTML = `
+      <strong>Not logged in.</strong><br>
+      <a href="/login.html">Go to login</a>
+    `;
+    return;
+  }
+
+  statusEl.innerHTML = `<strong>Logged in as:</strong> ${user.email}`;
+}
+
+checkAuth();
+
+// --- 2. Load Events ---
+async function loadEvents() {
+  const container = document.getElementById("events");
+  const { data, error } = await supabase.from("events").select("*").order("id", { ascending: true });
+
+  if (error) {
+    container.innerHTML = "<em>Error loading events.</em>";
+    return;
+  }
+
+  if (!data.length) {
+    container.innerHTML = "<em>No events created yet.</em>";
+    return;
+  }
+
+  container.innerHTML = data.map(ev => `
+    <div class="item">
+      <strong>${ev.name}</strong>  
+      <br>Date: ${ev.date}
+      <br>ID: ${ev.id}
+    </div>
+  `).join("");
+}
+
+loadEvents();
+
+// --- 3. Load Players ---
+async function loadPlayers() {
+  const container = document.getElementById("players");
+  const { data, error } = await supabase.from("players").select("*").order("id", { ascending: true });
+
+  if (error) {
+    container.innerHTML = "<em>Error loading players.</em>";
+    return;
+  }
+
+  container.innerHTML = data.map(p => `
+    <div class="item">
+      ${p.name}  
+      <br>Rating: ${p.rating}
+      <br>ID: ${p.id}
+    </div>
+  `).join("");
+}
+
+loadPlayers();
+</script>
+
+</body>
+</html>

@@ -44,7 +44,6 @@ async function buildMenu() {
   if (isAdmin) {
     html += `
       <a class="menu-link" href="/admin/approve-matches.html">Approve Matches</a>
-      <a class="menu-link" href="/admin/generate-tokens.html">Generate Tokens</a>
       <a class="menu-link" href="/admin/index.html">Admin Dashboard</a>
       <hr style="margin: 10px 0;">
     `;
