@@ -85,6 +85,12 @@
     margin: 0 6px;
   }
 
+/* Double-size any mini-card tagged .first */
+.prize-row img.first {
+  height: 96px !important;   /* 48px × 2 */
+  transform: scale(1.0);     /* ensures crisp render, no browser scaling weirdness */
+}
+
   /* Hide mini-cards after the first 3 */
   .prize-row img:nth-of-type(n+4) {
     display: none !important;
@@ -148,7 +154,7 @@
 
   <div class="prize-row">
           <img src="./assets/card_reb.jpg" alt="Red Elemental Blast" />
-      <img src="./assets/Legends_booster.webp" alt="Legends Booster" />
+      <img src="./assets/Legends_booster.webp" alt="Legends Booster" class="first"/>
       <img src="./assets/card_surv.jpg" alt="Survival of the Fittest" />
       <img src="./assets/card_etdr.webp" alt="Eternal Dragon" />
   </div>
