@@ -185,14 +185,299 @@
   <p>1st Place — <strong>1 Sealed Legends Booster Pack</strong></p>
   <p>Participation and Top 8 prizes TBA</p>
 
-  <!-- Prize images with 3-dot background -->
-  <div class="prize-row">
-      <div class="prize-dots">...</div>
+<div id="prize-carousel" class="relative inline-block">
+  <img id="prize-image"
+       src="./assets/Legends_booster.webp"
+       alt="Prize"
+       style="height: 80px; border: 2px solid #000; cursor: pointer;" />
 
-      <img src="./assets/Legends_booster.webp" alt="Legends Booster" />
-      <img src="./assets/card_reb.png" alt="Red Elemental Blast" />
-      <img src="./assets/card_etdr.webp" alt="Eternal Dragon" />
+  <!-- arrow overlay -->
+  <div id="prize-arrow"
+       style="
+         position: absolute;
+         right: -20px;
+         top: 50%;
+         transform: translateY(-50%);
+         font-size: 32px;
+         opacity: 0.25;
+         cursor: pointer;
+         user-select: none;
+       ">
+    ➤
   </div>
+</div>
+
+  <p><em>Prize points contribute to standings in the upcoming Sunday Super Series: B.C. Winter League</em></p>
+
+  <p>Register at 
+    <strong>
+      <a href="https://www.magicstronghold.com/store/category/Magic%20The%20Gathering%20Events/item/426799/BC_Secret_Masters:_Legends_Series_(January_10th_@_11:00am)"
+         target="_blank">
+         Magic Stronghold Games
+      </a>
+    </strong>
+  </p>
+
+  <hr />
+
+  <div class="logos">
+    <img src="./assets/stronghold.png" alt="Magic Stronghold" class="shg-logo" />
+    <img src="./assets/fcp.png" alt="FCP" />
+    <img src="./assets/BCPMM.svg" class="shg-logo" alt="bcpmm" />
+  </div>
+
+  <footer style="margin-top: 30px; font-size: 0.9em; font-weight: 600;">
+    © 2026 B.C. Premodern Masters. All Rights Reserved.
+  </footer>
+
+</div>
+
+<!-- ====================================== -->
+<!--        BC WINTER LEAGUE FLYER          -->
+<!-- ====================================== -->
+<div class="poster">
+
+  <img src="./assets/winter.jpg" alt="Mishra's Factory" style="max-width: 300px; margin: 10px auto; display:block; border: 2px solid #000;" />
+
+  <h1>B.C. Winter League</h1>
+  <h2>January – March 2026</h2>
+
+  <p><strong>32 players</strong> · 4 pods of 8 · Monthly reshuffles</p>
+  <p><strong>Premodern Constructed</strong> (Proxies Legal)</p>
+  <p><strong>3 points per win</strong> · 0 per loss · Ratings active</p>
+  <p><strong>$20.00/month</p>
+
+  <hr />
+
+  <h3>How It Works</h3>
+
+  <p>• Play 4+ matches per month (stores or remote).</p>
+  <p>• Pods reshuffle monthly based on standings.</p>
+  <p>• Choose <strong>Remote</strong> and <strong>Casual/Competitive</strong> preferences.</p>
+  <p>• Results tracked in the <strong>BCWL</strong> archive.</p>
+
+  <hr />
+
+  <div class="logos">
+    <img src="./assets/stronghold.png" class="shg-logo" alt="Magic Stronghold" />
+    <img src="./assets/fcp.png" alt="FCP" />
+    <img src="./assets/BCPMM.svg" class="shg-logo" alt="bcpmm" />
+  </div>
+
+  <footer style="margin-top: 30px; font-size: 0.9em; font-weight: 600;">
+    © 2026 BC Winter League. All Rights Reserved.
+  </footer>
+
+</div>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>B.C. Premodern Masters · magic1.ca</title>
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="./assets/magic1.svg" />
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    color: #000;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    text-align: center;
+  }
+
+  .menu-icon {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 64px;
+    height: 64px;
+    opacity: 0.95;
+    cursor: pointer;
+    z-index: 20;
+  }
+
+  .poster {
+    max-width: 800px;
+    margin: 40px auto;
+    border: 3px solid #000;
+    background: #fff;
+    padding: 40px;
+    position: relative;
+  }
+
+  .poster img {
+    user-select: none;
+  }
+
+  h1 {
+    font-size: 2.6em;
+    letter-spacing: 1.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin: 0 0 0.3em;
+    border-bottom: 4px double #000;
+    display: inline-block;
+    padding-bottom: 0.15em;
+  }
+
+  h2 {
+    font-size: 1.55em;
+    font-weight: 700;
+    margin-top: 0.4em;
+    margin-bottom: 0.6em;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    font-size: 1.3em;
+    margin-top: 1.4em;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-bottom: 2px solid #000;
+    display: inline-block;
+    padding-bottom: 0.1em;
+  }
+
+  p {
+    font-size: 1.05em;
+    margin: 0.45em 0;
+    line-height: 1.5;
+  }
+
+  .tagline {
+    font-style: italic;
+    font-size: 1.1em;
+    font-weight: 600;
+    margin: 1em 0 1.4em;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid #000;
+    width: 90%;
+    margin: 1.6em auto;
+  }
+
+  .logo-large {
+    max-width: 220px;
+    margin: 20px auto;
+    display: block;
+  }
+
+  /* Prize section */
+  .prize-row {
+    display: flex;
+    justify-content: center;
+    gap: 35px;
+    margin: 35px 0;
+    position: relative;
+  }
+
+.prize-row img {
+    height: 48px;   /* mini-mini size */
+    width: auto;    /* preserve proportions */
+    border: 2px solid #000;
+}
+
+
+  /* 3 dots background */
+  .prize-dots {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: 110px;
+    transform: translate(-50%, -50%);
+    opacity: 0.10;
+    pointer-events: none;
+  }
+
+  /* Sponsor logo strip */
+  .logos {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 35px;
+    flex-wrap: wrap;
+  }
+
+  .logos img {
+    height: 60px;
+    filter: grayscale(100%) contrast(130%);
+  }
+
+  /* Stronghold in colour */
+  .shg-logo {
+    filter: none !important;
+  }
+
+  @media print {
+    .menu-icon { display: none; }
+    .poster { border: 2px solid #000; }
+  }
+</style>
+</head>
+
+<body>
+
+    <!-- GLOBAL MENU LOADER GOES HERE -->
+  <script type="module" src="/js/global-menu-loader.js"></script>
+  <!-- END MENU LOADER -->
+  
+<!-- ====================================== -->
+<!--     B.C. PREMODERN MASTERS FLYER       -->
+<!-- ====================================== -->
+<div class="poster">
+
+  <img src="./assets/BCPMM.svg" alt="BCPMM Logo" class="logo-large" />
+
+  <h1>B.C. Premodern Masters</h1>
+  <h2>Saturday, January 10th, 2026</h2>
+
+  <p><strong>Format:</strong> Premodern Constructed  
+     (<a href="https://premodernmagic.com" target="_blank">premodernmagic.com</a>)</p>
+
+  <p><strong>Entry:</strong> $40.00</p>
+
+  <p><strong>Structure:</strong> 5 Rounds · Best-of-3 · Cut to Top 8</p>
+  <p><strong>Tournament Start:</strong> 11:00am</p>
+
+  <p><strong>Decks Available for Loan On Request</strong><br>
+     (<a href="https://mtgtop8.com/event?e=68297&f=PREM" target="_blank">Top 8 Lobstercon 2025</a> — first come, first served)</p>
+
+  <div class="tagline">“Magic Lives in B.C.”</div>
+
+  <!-- Prize section -->
+  <h3>Prizing</h3>
+
+  <p>1st Place — <strong>1 Sealed Legends Booster Pack</strong></p>
+  <p>Participation and Top 8 prizes TBA</p>
+
+<div id="prize-carousel" class="relative inline-block">
+  <img id="prize-image"
+       src="./assets/Legends_booster.webp"
+       alt="Prize"
+       style="height: 80px; border: 2px solid #000; cursor: pointer;" />
+
+  <!-- arrow overlay -->
+  <div id="prize-arrow"
+       style="
+         position: absolute;
+         right: -20px;
+         top: 50%;
+         transform: translateY(-50%);
+         font-size: 32px;
+         opacity: 0.25;
+         cursor: pointer;
+         user-select: none;
+       ">
+    ➤
+  </div>
+</div>
 
   <p><em>Prize points contribute to standings in the upcoming Sunday Super Series: B.C. Winter League</em></p>
 
@@ -258,4 +543,10 @@
 </div>
 
 </body>
+
+</html>
+
+
+</body>
+
 </html>
