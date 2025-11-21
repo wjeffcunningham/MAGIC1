@@ -6,6 +6,8 @@ const html = `
 `;
 
 document.body.insertAdjacentHTML("beforeend", html);
+
+
 // Inject CSS for icon + menu panel globally
 const style = document.createElement("style");
 style.textContent = `
