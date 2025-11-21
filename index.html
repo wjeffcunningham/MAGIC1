@@ -96,6 +96,26 @@
     display: none !important;
   }
 
+  /* Lightbox overlay */
+#card-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* The enlarged card */
+#card-lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  border: none;
+  user-select: none;
+}
+
   .logos {
     display: flex;
     justify-content: center;
@@ -116,6 +136,7 @@
   @media print {
     .poster { border: 2px solid #000; }
   }
+
 </style>
 </head>
 
@@ -223,6 +244,40 @@
   </footer>
 
 </div>
+
+<div id="card-lightbox">
+  <img src="" alt="card" />
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const lightbox = document.getElementById("card-lightbox");
+  const lightboxImg = lightbox.querySelector("img");
+
+  // Attach click handlers to all minicards
+  document.querySelectorAll(".prize-row img").forEach(img => {
+    img.style.cursor = "pointer";
+
+    img.addEventListener("click", () => {
+      lightboxImg.src = img.src;
+      lightbox.style.display = "flex";
+    });
+  });
+
+  // Close lightbox on click or Escape
+  lightbox.addEventListener("click", () => {
+    lightbox.style.display = "none";
+    lightboxImg.src = "";
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      lightbox.style.display = "none";
+      lightboxImg.src = "";
+    }
+  });
+});
+</script>
 
 </body>
 </html>
