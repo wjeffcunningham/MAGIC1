@@ -1,84 +1,60 @@
-// =============================================================
-// menu.js — global dropdown menu loader
-// Shows menu links based on login state + admin privilege
-// =============================================================
-
-import {
-  getLocalSession,
-  clearLocalSession
-} from "./session.js";
-
+import { getLocalSession, clearLocalSession } from "./session.js";
 import { supabase } from "./supabase.js";
 
-const icon  = document.getElementById("menu-icon");
+const icon = document.getElementById("menu-icon");
 const panel = document.getElementById("menu-panel");
 
-
-// -----------------------------------------------------------
-// Build Menu
-// -----------------------------------------------------------
 async function buildMenu() {
   const session = getLocalSession();
 
-  // ======================
-  // Not logged in → icon opens login page
-  // ======================
+  // Not logged in → clicking icon goes to login
   if (!session) {
-    icon.addEventListener("click", () => {
-      window.location.href = "/login.html";
-    });
+    icon.onclick = () => (window.location.href = "/login.html");
     return;
   }
 
-  // ======================
-  // Fetch admin status
-  // ======================
-  const { data: row } = await supabase
+  // Logged-in → check admin
+  const { data } = await supabase
     .from("players")
     .select("is_admin")
     .eq("id", session.playerId)
     .single();
 
-  const isAdmin = !!row?.is_admin;
+  const isAdmin = data?.is_admin === true;
 
-  // ======================
-  // Build menu contents
-  // ======================
+  // Build menu
   let html = `
-    <a class="menu-link" href="/my-matches.html">My Matches</a>
-    <a class="menu-link" href="/report-match.html">Report Match</a>
-    <a class="menu-link" href="/standings.html">Standings</a>
-    <a class="menu-link" href="/login.html">Profile / Login</a>
-    <hr style="margin: 10px 0">
+    <a class="menu-link" href="/my-matches.html">My Matches</a><br>
+    <a class="menu-link" href="/report-match.html">Report Match</a><br>
+    <a class="menu-link" href="/standings.html">Standings</a><br>
+    <a class="menu-link" href="/profile.html">Profile</a><br>
+    <hr>
   `;
 
   if (isAdmin) {
     html += `
-      <a class="menu-link" href="/admin/approve-matches.html">Approve Matches</a>
-      <a class="menu-link" href="/admin/generate-tokens.html">Generate Tokens</a>
-      <a class="menu-link" href="/admin/index.html">Admin Dashboard</a>
-      <hr style="margin: 10px 0">
+      <a class="menu-link" href="/admin/approve-matches.html">Approve Matches</a><br>
+      <a class="menu-link" href="/admin/pending-players.html">Pending Players</a><br>
+      <a class="menu-link" href="/admin/generate-tokens.html">Generate Tokens</a><br>
+      <hr>
     `;
   }
 
-  html += `
-    <a class="menu-link" id="logout-link" href="#">Logout</a>
-  `;
+  html += `<a id="logout-link" class="menu-link" href="#">Logout</a>`;
 
   panel.innerHTML = html;
 
-  // Panel toggle
-  icon.addEventListener("click", () => {
+  // Toggle menu display
+  icon.onclick = () => {
     panel.style.display = panel.style.display === "none" ? "block" : "none";
-  });
+  };
 
   // Logout
-  const logoutEl = document.getElementById("logout-link");
-  logoutEl.addEventListener("click", async () => {
+  document.getElementById("logout-link").onclick = () => {
     clearLocalSession();
-    await supabase.auth.signOut();
+    supabase.auth.signOut();
     window.location.href = "/";
-  });
+  };
 }
 
 buildMenu();
