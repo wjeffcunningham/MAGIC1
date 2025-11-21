@@ -4,15 +4,15 @@
 //   • Magic link login
 //   • Email/password login
 //   • Upgrading magic-link accounts to email/password
+//   • Status-aware redirects (pending / active / blocked)
 // =============================================================
 
 import { supabase } from "./supabase.js";
 import {
   getLocalSession,
   saveLocalSession,
-  clearLocalSession
+  clearLocalSession,
 } from "./session.js";
-
 
 // -----------------------------------------------------------
 // Helpers
@@ -30,34 +30,32 @@ async function sha256(raw) {
   const bytes = new TextEncoder().encode(raw);
   const hash = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(hash)]
-    .map(b => b.toString(16).padStart(2, "0"))
+    .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
-
 
 // -----------------------------------------------------------
 // UI Elements
 // -----------------------------------------------------------
-const loggedInPanel     = document.getElementById("logged-in-panel");
-const sessionNameEl     = document.getElementById("session-name");
-const sessionUserEl     = document.getElementById("session-username");
-const sessionNextLink   = document.getElementById("session-next-link");
+const loggedInPanel = document.getElementById("logged-in-panel");
+const sessionNameEl = document.getElementById("session-name");
+const sessionUserEl = document.getElementById("session-username");
+const sessionNextLink = document.getElementById("session-next-link");
 
-const tokenPanel        = document.getElementById("token-panel");
-const tokenForm         = document.getElementById("token-form");
-const tokenInput        = document.getElementById("token-input");
-const tokenError        = document.getElementById("token-error");
+const tokenPanel = document.getElementById("token-panel");
+const tokenForm = document.getElementById("token-form");
+const tokenInput = document.getElementById("token-input");
+const tokenError = document.getElementById("token-error");
 
-const emailLoginForm    = document.getElementById("email-login-form");
-const emailLoginError   = document.getElementById("email-login-error");
+const emailLoginForm = document.getElementById("email-login-form");
+const emailLoginError = document.getElementById("email-login-error");
 
-const upgradePanel      = document.getElementById("upgrade-panel");
-const upgradeForm       = document.getElementById("upgrade-form");
-const upgradeSuccess    = document.getElementById("upgrade-success");
-const upgradeError      = document.getElementById("upgrade-error");
+const upgradePanel = document.getElementById("upgrade-panel");
+const upgradeForm = document.getElementById("upgrade-form");
+const upgradeSuccess = document.getElementById("upgrade-success");
+const upgradeError = document.getElementById("upgrade-error");
 
-const logoutBtn         = document.getElementById("logout-btn");
-
+const logoutBtn = document.getElementById("logout-btn");
 
 // -----------------------------------------------------------
 // MAGIC LOGIN FLOW
@@ -97,6 +95,14 @@ async function loginWithMagic(rawToken) {
     return;
   }
 
+  // Status handling
+  if (player.status === "blocked") {
+    tokenError.textContent =
+      "Your account has been blocked. Please contact the organizer.";
+    tokenError.classList.remove("hidden");
+    return;
+  }
+
   saveLocalSession({
     playerId: player.id,
     fullName: player.full_name,
@@ -104,9 +110,13 @@ async function loginWithMagic(rawToken) {
     authUserId: player.auth_user_id || null,
   });
 
+  if (player.status === "pending") {
+    window.location.href = "/awaiting-approval.html";
+    return;
+  }
+
   window.location.href = nextHref();
 }
-
 
 // -----------------------------------------------------------
 // EMAIL/PASSWORD LOGIN FLOW
@@ -116,7 +126,7 @@ async function loginWithEmail(email, password) {
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
-    password
+    password,
   });
 
   if (error || !data.user) {
@@ -134,7 +144,15 @@ async function loginWithEmail(email, password) {
     .single();
 
   if (pErr || !player) {
-    emailLoginError.textContent = "No BCWL player is linked to this email.";
+    emailLoginError.textContent =
+      "No BCWL player is linked to this email. Did you sign up?";
+    emailLoginError.classList.remove("hidden");
+    return;
+  }
+
+  if (player.status === "blocked") {
+    emailLoginError.textContent =
+      "Your account has been blocked. Please contact the organizer.";
     emailLoginError.classList.remove("hidden");
     return;
   }
@@ -146,9 +164,13 @@ async function loginWithEmail(email, password) {
     authUserId,
   });
 
+  if (player.status === "pending") {
+    window.location.href = "/awaiting-approval.html";
+    return;
+  }
+
   window.location.href = nextHref();
 }
-
 
 // -----------------------------------------------------------
 // UPGRADE: magic → email/password
@@ -160,7 +182,8 @@ async function upgradeAccount(session, email, password) {
   const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error || !data.user) {
-    upgradeError.textContent = error?.message || "Could not create account.";
+    upgradeError.textContent =
+      error?.message || "Could not create account.";
     upgradeError.classList.remove("hidden");
     return;
   }
@@ -189,7 +212,6 @@ async function upgradeAccount(session, email, password) {
   upgradeSuccess.classList.remove("hidden");
 }
 
-
 // -----------------------------------------------------------
 // INITIALIZER
 // -----------------------------------------------------------
@@ -199,6 +221,30 @@ async function init() {
   sessionNextLink.href = nextHref();
 
   if (session) {
+    // check latest status
+    const { data: player, error } = await supabase
+      .from("players")
+      .select("status")
+      .eq("id", session.playerId)
+      .maybeSingle();
+
+    if (!error && player) {
+      if (player.status === "pending") {
+        window.location.href = "/awaiting-approval.html";
+        return;
+      }
+      if (player.status === "blocked") {
+        clearLocalSession();
+        emailLoginError?.classList.remove("hidden");
+        if (emailLoginError) {
+          emailLoginError.textContent =
+            "Your account has been blocked. Please contact the organizer.";
+        }
+        return;
+      }
+    }
+
+    // show "already logged in"
     loggedInPanel.classList.remove("hidden");
     sessionNameEl.textContent = session.fullName;
     sessionUserEl.textContent = session.username;
