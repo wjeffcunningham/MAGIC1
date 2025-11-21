@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>League Rankings · B.C. Premodern Masters</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin: 40px;
+    background: #fff;
+    color: #000;
+  }
+  h1 { margin-bottom: 0.3rem; }
+  .small { font-size: 0.85rem; color:#555; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 1rem;
+  }
+  th, td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+  th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<h1>League Ratings</h1>
+<div class="small">Global league rating leaderboard (all seasons).</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Player</th>
+      <th>League Rating</th>
+      <th>Matches Played</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="ranking-body">
+    <tr><td colspan="5" class="small">Loading…</td></tr>
+  </tbody>
+</table>
+
+<script type="module">
+  const supabase = window.supabase.createClient(
+    "https://dkzdfhzlewlvfmunywal.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI"
+  );
+
+  const bodyEl = document.getElementById("ranking-body");
+
+  async function loadRankings() {
+    bodyEl.innerHTML = `<tr><td colspan="5" class="small">Loading…</td></tr>`;
+
+    const { data: players, error: playersErr } = await supabase
+      .from("players")
+      .select("id, full_name, league_rating, status")
+      .order("league_rating", { ascending: false });
+
+    if (playersErr) {
+      console.error(playersErr);
+      bodyEl.innerHTML = `<tr><td colspan="5" class="small">Error loading players.</td></tr>`;
+      return;
+    }
+
+    const { data: matches, error: matchesErr } = await supabase
+      .from("league_matches")
+      .select("player_a, player_b, approved");
+
+    if (matchesErr) {
+      console.error(matchesErr);
+      bodyEl.innerHTML = `<tr><td colspan="5" class="small">Error loading matches.</td></tr>`;
+      return;
+    }
+
+    const matchCount = {};
+    (matches || []).forEach(m => {
+      if (!m.approved) return; // only count approved matches
+      matchCount[m.player_a] = (matchCount[m.player_a] || 0) + 1;
+      matchCount[m.player_b] = (matchCount[m.player_b] || 0) + 1;
+    });
+
+    const sorted = (players || [])
+      .filter(p => p.status !== "pending") // hide pending accounts by default
+      .map(p => ({
+        ...p,
+        league_rating: p.league_rating || 1600,
+        games: matchCount[p.id] || 0
+      }))
+      .sort((a, b) => b.league_rating - a.league_rating);
+
+    if (!sorted.length) {
+      bodyEl.innerHTML = `<tr><td colspan="5" class="small">No players found.</td></tr>`;
+      return;
+    }
+
+    bodyEl.innerHTML = sorted.map((p, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${p.full_name}</td>
+        <td>${p.league_rating}</td>
+        <td>${p.games}</td>
+        <td>${p.status}</td>
+      </tr>
+    `).join("");
+  }
+
+  loadRankings();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>League Admin · BC Winter League</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 40px;
+      background: #fff;
+      color: #000;
+    }
+    h1 { margin-bottom: 0.5rem; }
+    h2 {
+      margin-top: 2rem;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+    }
+    section { margin-bottom: 2rem; }
+    label { display: inline-block; margin-right: 0.5rem; }
+    select, input, button {
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 4px 6px;
+      margin: 2px 0;
+    }
+    button {
+      cursor: pointer;
+      border: 1px solid #000;
+      background: #f5f5f5;
+    }
+    button:hover { background: #e5e5e5; }
+    .row {
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95rem;
+    }
+    .small { font-size: 0.85rem; color: #555; }
+    .flex { display: flex; flex-wrap: wrap; gap: 1rem; }
+    .card {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      border-radius: 4px;
+      min-width: 220px;
+    }
+    .error { color: #b00020; font-size: 0.9rem; }
+    .info { color: #0070c9; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<h1>League Admin</h1>
+<div id="auth-status">Checking admin access…</div>
+
+<section id="season-controls">
+  <h2>Season & Month</h2>
+  <div>
+    <label for="season-select">Season:</label>
+    <select id="season-select"></select>
+    <button id="refresh-seasons">Refresh</button>
+  </div>
+  <div class="small" id="season-meta"></div>
+
+  <div style="margin-top:1rem;">
+    <label for="month-select">Month:</label>
+    <select id="month-select"></select>
+    <button id="refresh-months">Refresh</button>
+  </div>
+  <div class="small" id="month-meta"></div>
+</section>
+
+<section id="signups">
+  <h2>League Signups (Season)</h2>
+  <div class="flex">
+    <div class="card">
+      <div class="small">Add player to current season</div>
+      <label for="signup-player-select">Player:</label><br>
+      <select id="signup-player-select"></select><br>
+      <label for="signup-status">Status:</label>
+      <select id="signup-status">
+        <option value="active">active</option>
+        <option value="waiting_list">waiting_list</option>
+        <option value="dropped">dropped</option>
+      </select><br>
+      <button id="add-signup">Add Signup</button>
+      <div class="small" id="signup-message"></div>
+    </div>
+
+    <div class="card" style="flex:1; min-width:280px;">
+      <div class="small">Existing signups for season</div>
+      <div id="signup-list"></div>
+    </div>
+  </div>
+</section>
+
+<section id="pods-section">
+  <h2>Pods (Per Month)</h2>
+  <div class="small">
+    Pods are per <strong>month</strong>. Auto-generate will use <strong>active signups</strong> for the selected season and assign them to pods for the selected month.
+  </div>
+  <button id="auto-generate-pods">Auto-generate Pods for Month</button>
+  <div class="small" id="pods-message"></div>
+  <div id="pods-container" class="flex" style="margin-top:1rem;"></div>
+</section>
+
+<section id="matches-section">
+  <h2>Matches (Per Month)</h2>
+  <div class="small">
+    Generates a full round-robin per pod for the selected month. Skips generation if matches already exist for that month.
+  </div>
+  <button id="generate-matches">Generate Matches for Month</button>
+  <div class="small" id="matches-message"></div>
+</section>
+
+<script type="module">
+  const supabaseUrl = "https://dkzdfhzlewlvfmunywal.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI";
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  let currentUser = null;
+  let currentSeasonId = null;
+  let currentMonthId = null;
+  let allPlayers = [];
+  let podsForMonth = [];
+
+  const authStatusEl = document.getElementById("auth-status");
+  const seasonSelect = document.getElementById("season-select");
+  const monthSelect = document.getElementById("month-select");
+  const seasonMeta = document.getElementById("season-meta");
+  const monthMeta = document.getElementById("month-meta");
+
+  const signupPlayerSelect = document.getElementById("signup-player-select");
+  const signupStatusSelect = document.getElementById("signup-status");
+  const signupMessage = document.getElementById("signup-message");
+  const signupList = document.getElementById("signup-list");
+
+  const podsMessage = document.getElementById("pods-message");
+  const podsContainer = document.getElementById("pods-container");
+
+  const matchesMessage = document.getElementById("matches-message");
+
+  // -------------------
+  // Auth & admin check
+  // -------------------
+  async function checkAdmin() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      authStatusEl.innerHTML = `Not logged in. <a href="/login.html">Login</a>`;
+      throw new Error("Not logged in");
+    }
+    currentUser = user;
+
+    const { data: player, error } = await supabase
+      .from("players")
+      .select("*")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
+    if (error || !player) {
+      authStatusEl.textContent = `Logged in as ${user.email}, but no player row found.`;
+      throw new Error("No player row");
+    }
+
+    if (!player.is_admin) {
+      authStatusEl.textContent = `Logged in as ${user.email}, but not an admin.`;
+      throw new Error("Not admin");
+    }
+
+    authStatusEl.textContent = `Logged in as ${user.email} (admin)`;
+  }
+
+  // -------------------
+  // Load players cache
+  // -------------------
+  async function loadPlayers() {
+    const { data, error } = await supabase
+      .from("players")
+      .select("*")
+      .order("full_name", { ascending: true });
+
+    if (error) {
+      console.error("loadPlayers error", error);
+      return;
+    }
+    allPlayers = data || [];
+  }
+
+  // -------------------
+  // Seasons
+  // -------------------
+  async function loadSeasons() {
+    const { data, error } = await supabase
+      .from("league_seasons")
+      .select("*")
+      .order("start_date", { ascending: true });
+
+    if (error) {
+      console.error("loadSeasons error", error);
+      return;
+    }
+
+    seasonSelect.innerHTML = "";
+    if (!data || !data.length) {
+      seasonSelect.innerHTML = `<option value="">No seasons</option>`;
+      seasonMeta.textContent = "No league seasons defined.";
+      currentSeasonId = null;
+      return;
+    }
+
+    data.forEach((s, idx) => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.name} (${s.start_date} → ${s.end_date})`;
+      seasonSelect.appendChild(opt);
+      if (idx === 0 && !currentSeasonId) currentSeasonId = s.id;
+    });
+
+    if (currentSeasonId) {
+      seasonSelect.value = currentSeasonId;
+      const selected = data.find(s => s.id === currentSeasonId);
+      seasonMeta.textContent = `Season ID: ${selected.id}`;
+    }
+
+    await loadMonths();
+    await loadSignups();
+  }
+
+  // -------------------
+  // Months for season
+  // -------------------
+  async function loadMonths() {
+    if (!currentSeasonId) return;
+    const { data, error } = await supabase
+      .from("league_months")
+      .select("*")
+      .eq("season_id", currentSeasonId)
+      .order("month_index", { ascending: true });
+
+    if (error) {
+      console.error("loadMonths error", error);
+      return;
+    }
+
+    monthSelect.innerHTML = "";
+    if (!data || !data.length) {
+      monthSelect.innerHTML = `<option value="">No months</option>`;
+      monthMeta.textContent = "No months defined for this season.";
+      currentMonthId = null;
+      podsContainer.innerHTML = "";
+      return;
+    }
+
+    data.forEach((m, idx) => {
+      const opt = document.createElement("option");
+      opt.value = m.id;
+      opt.textContent = `${m.name}`;
+      monthSelect.appendChild(opt);
+      if (idx === 0 && !currentMonthId) currentMonthId = m.id;
+    });
+
+    if (currentMonthId) {
+      monthSelect.value = currentMonthId;
+      const selected = data.find(m => m.id === currentMonthId);
+      monthMeta.textContent = `Month ${selected.month_index}: ${selected.start_date} → ${selected.end_date}`;
+    }
+
+    await loadPodsForMonth();
+  }
+
+  // -------------------
+  // Signups for season
+  // -------------------
+  async function loadSignups() {
+    if (!currentSeasonId) return;
+
+    const { data, error } = await supabase
+      .from("league_signups")
+      .select("*, players(full_name)")
+      .eq("season_id", currentSeasonId)
+      .order("signup_date", { ascending: true });
+
+    if (error) {
+      console.error("loadSignups error", error);
+      signupList.innerHTML = `<div class="error">Error loading signups.</div>`;
+      return;
+    }
+
+    // Populate the "add signup" player dropdown
+    signupPlayerSelect.innerHTML = "";
+    allPlayers.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = `${p.full_name} (${p.email})`;
+      signupPlayerSelect.appendChild(opt);
+    });
+
+    if (!data || !data.length) {
+      signupList.innerHTML = `<div class="small"><em>No signups yet.</em></div>`;
+      return;
+    }
+
+    signupList.innerHTML = data.map(s => `
+      <div class="row">
+        <strong>${s.players?.full_name || s.player_id}</strong><br>
+        Status: 
+        <select data-signup-id="${s.id}" class="signup-status-inline">
+          <option value="active" ${s.status === "active" ? "selected" : ""}>active</option>
+          <option value="waiting_list" ${s.status === "waiting_list" ? "selected" : ""}>waiting_list</option>
+          <option value="dropped" ${s.status === "dropped" ? "selected" : ""}>dropped</option>
+        </select>
+        <span class="small">since ${new Date(s.signup_date).toLocaleString()}</span>
+      </div>
+    `).join("");
+
+    // Attach change handlers for inline status selects
+    document.querySelectorAll(".signup-status-inline").forEach(sel => {
+      sel.addEventListener("change", async (e) => {
+        const signupId = e.target.getAttribute("data-signup-id");
+        const newStatus = e.target.value;
+        const { error } = await supabase
+          .from("league_signups")
+          .update({ status: newStatus })
+          .eq("id", signupId);
+
+        if (error) {
+          console.error("update signup status error", error);
+          signupMessage.textContent = "Error updating status.";
+        } else {
+          signupMessage.textContent = "Status updated.";
+          setTimeout(() => signupMessage.textContent = "", 2000);
+        }
+      });
+    });
+  }
+
+  async function addSignup() {
+    signupMessage.textContent = "";
+    if (!currentSeasonId) {
+      signupMessage.textContent = "No current season selected.";
+      return;
+    }
+    const playerId = signupPlayerSelect.value;
+    const status = signupStatusSelect.value;
+
+    const { error } = await supabase
+      .from("league_signups")
+      .insert({
+        season_id: currentSeasonId,
+        player_id: playerId,
+        status
+      });
+
+    if (error) {
+      console.error("addSignup error", error);
+      signupMessage.textContent = "Error adding signup (possibly duplicate).";
+      return;
+    }
+    signupMessage.textContent = "Signup added.";
+    await loadSignups();
+  }
+
+  // -------------------
+  // Pods & pod members
+  // -------------------
+  async function loadPodsForMonth() {
+    podsMessage.textContent = "";
+    podsContainer.innerHTML = "";
+    podsForMonth = [];
+
+    if (!currentMonthId) {
+      podsContainer.innerHTML = `<div class="small"><em>No month selected.</em></div>`;
+      return;
+    }
+
+    const { data: pods, error } = await supabase
+      .from("pods")
+      .select("*")
+      .eq("month_id", currentMonthId)
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("loadPods error", error);
+      podsContainer.innerHTML = `<div class="error">Error loading pods.</div>`;
+      return;
+    }
+
+    podsForMonth = pods || [];
+
+    if (!podsForMonth.length) {
+      podsContainer.innerHTML = `<div class="small"><em>No pods yet for this month.</em></div>`;
+      return;
+    }
+
+    // Load pod_members and players, then render
+    const podIds = podsForMonth.map(p => p.id);
+    const { data: podMembers, error: pmErr } = await supabase
+      .from("pod_members")
+      .select("id, pod_id, player_id, joined_at, players(full_name)")
+      .in("pod_id", podIds)
+      .order("joined_at", { ascending: true });
+
+    if (pmErr) {
+      console.error("load pod_members error", pmErr);
+      podsContainer.innerHTML = `<div class="error">Error loading pod members.</div>`;
+      return;
+    }
+
+    const membersByPod = {};
+    (podMembers || []).forEach(pm => {
+      if (!membersByPod[pm.pod_id]) membersByPod[pm.pod_id] = [];
+      membersByPod[pm.pod_id].push(pm);
+    });
+
+    podsContainer.innerHTML = podsForMonth.map(pod => {
+      const members = membersByPod[pod.id] || [];
+      const podOptions = podsForMonth.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+
+      const membersHtml = members.length
+        ? members.map(pm => `
+          <div class="row">
+            ${pm.players?.full_name || pm.player_id}
+            <br><span class="small">Joined: ${new Date(pm.joined_at).toLocaleString()}</span><br>
+            <label class="small">Move to:</label>
+            <select class="move-player-select" data-pm-id="${pm.id}">
+              <option value="">– select pod –</option>
+              ${podOptions}
+            </select>
+          </div>
+        `).join("")
+        : `<div class="small"><em>No members yet.</em></div>`;
+
+      return `
+        <div class="card">
+          <strong>${pod.name}</strong><br>
+          <span class="small">Max players: ${pod.max_players}</span><br>
+          <span class="small">Pod ID: ${pod.id}</span>
+          <div style="margin-top:0.5rem;">${membersHtml}</div>
+        </div>
+      `;
+    }).join("");
+
+    // Attach move handlers
+    document.querySelectorAll(".move-player-select").forEach(sel => {
+      sel.addEventListener("change", async (e) => {
+        const pmId = e.target.getAttribute("data-pm-id");
+        const newPodId = e.target.value;
+        if (!newPodId) return;
+        const { error } = await supabase
+          .from("pod_members")
+          .update({ pod_id: newPodId })
+          .eq("id", pmId);
+        if (error) {
+          console.error("move player error", error);
+          podsMessage.textContent = "Error moving player (possible duplicate in pod).";
+        } else {
+          podsMessage.textContent = "Player moved.";
+          await loadPodsForMonth();
+        }
+      });
+    });
+  }
+
+  async function autoGeneratePods() {
+    podsMessage.textContent = "";
+    if (!currentSeasonId || !currentMonthId) {
+      podsMessage.textContent = "Select a season and month first.";
+      return;
+    }
+
+    // If pods already exist for this month, do nothing (safe default).
+    const { data: existingPods, error: podsErr } = await supabase
+      .from("pods")
+      .select("*")
+      .eq("month_id", currentMonthId);
+
+    if (podsErr) {
+      console.error("autoGeneratePods check error", podsErr);
+      podsMessage.textContent = "Error checking existing pods.";
+      return;
+    }
+    if (existingPods && existingPods.length) {
+      podsMessage.textContent = "Pods already exist for this month. Delete or adjust them manually if you want to regenerate.";
+      return;
+    }
+
+    // Get active signups for this season
+    const { data: signups, error: suErr } = await supabase
+      .from("league_signups")
+      .select("player_id")
+      .eq("season_id", currentSeasonId)
+      .eq("status", "active");
+
+    if (suErr) {
+      console.error("autoGeneratePods signups error", suErr);
+      podsMessage.textContent = "Error loading signups.";
+      return;
+    }
+
+    const playerIds = (signups || []).map(s => s.player_id);
+    if (!playerIds.length) {
+      podsMessage.textContent = "No active signups for this season.";
+      return;
+    }
+
+    // Shuffle players
+    const shuffled = [...playerIds];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const maxPerPod = 8;
+    const numPods = Math.max(1, Math.ceil(shuffled.length / maxPerPod));
+
+    // For even distribution, assign round-robin style
+    const podBuckets = Array.from({ length: numPods }, () => []);
+    shuffled.forEach((pid, idx) => {
+      const bucketIndex = idx % numPods;
+      podBuckets[bucketIndex].push(pid);
+    });
+
+    const podRows = podBuckets.map((bucket, idx) => ({
+      month_id: currentMonthId,
+      name: `Pod ${String.fromCharCode(65 + idx)}`,
+      max_players: maxPerPod
+    }));
+
+    // Insert pods
+    const { data: createdPods, error: createPodsErr } = await supabase
+      .from("pods")
+      .insert(podRows)
+      .select();
+
+    if (createPodsErr) {
+      console.error("create pods error", createPodsErr);
+      podsMessage.textContent = "Error creating pods.";
+      return;
+    }
+
+    // Build pod_members
+    const membersRows = [];
+    createdPods.forEach((pod, idx) => {
+      const bucket = podBuckets[idx] || [];
+      bucket.forEach(playerId => {
+        membersRows.push({
+          pod_id: pod.id,
+          player_id: playerId
+        });
+      });
+    });
+
+    if (membersRows.length) {
+      const { error: membersErr } = await supabase
+        .from("pod_members")
+        .insert(membersRows);
+
+      if (membersErr) {
+        console.error("insert pod_members error", membersErr);
+        podsMessage.textContent = "Pods created, but error adding members.";
+        await loadPodsForMonth();
+        return;
+      }
+    }
+
+    podsMessage.textContent = "Pods and members generated.";
+    await loadPodsForMonth();
+  }
+
+  // -------------------
+  // Matches generation
+  // -------------------
+  async function generateMatchesForMonth() {
+    matchesMessage.textContent = "";
+    if (!currentMonthId) {
+      matchesMessage.textContent = "Select a month first.";
+      return;
+    }
+
+    // Do not double-generate
+    const { data: existingMatches, error: matchCheckErr } = await supabase
+      .from("league_matches")
+      .select("id")
+      .eq("month_id", currentMonthId)
+      .limit(1);
+
+    if (matchCheckErr) {
+      console.error("match check error", matchCheckErr);
+      matchesMessage.textContent = "Error checking existing matches.";
+      return;
+    }
+
+    if (existingMatches && existingMatches.length) {
+      matchesMessage.textContent = "Matches already exist for this month.";
+      return;
+    }
+
+    // Need pods & members
+    const { data: pods, error: podsErr } = await supabase
+      .from("pods")
+      .select("*")
+      .eq("month_id", currentMonthId)
+      .order("name", { ascending: true });
+
+    if (podsErr) {
+      console.error("generateMatches pods error", podsErr);
+      matchesMessage.textContent = "Error loading pods.";
+      return;
+    }
+    if (!pods || !pods.length) {
+      matchesMessage.textContent = "No pods for this month.";
+      return;
+    }
+
+    const podIds = pods.map(p => p.id);
+    const { data: podMembers, error: pmErr } = await supabase
+      .from("pod_members")
+      .select("pod_id, player_id")
+      .in("pod_id", podIds);
+
+    if (pmErr) {
+      console.error("generateMatches pod_members error", pmErr);
+      matchesMessage.textContent = "Error loading pod members.";
+      return;
+    }
+
+    const membersByPod = {};
+    (podMembers || []).forEach(pm => {
+      if (!membersByPod[pm.pod_id]) membersByPod[pm.pod_id] = [];
+      membersByPod[pm.pod_id].push(pm.player_id);
+    });
+
+    const matchesToInsert = [];
+    const defaultK = 24; // league K-factor; you can change this
+
+    pods.forEach(pod => {
+      const players = membersByPod[pod.id] || [];
+      // round-robin: all pairs i<j
+      for (let i = 0; i < players.length; i++) {
+        for (let j = i + 1; j < players.length; j++) {
+          matchesToInsert.push({
+            pod_id: pod.id,
+            month_id: currentMonthId,
+            player_a: players[i],
+            player_b: players[j],
+            winner: null,
+            k_factor: defaultK,
+            approved: false
+          });
+        }
+      }
+    });
+
+    if (!matchesToInsert.length) {
+      matchesMessage.textContent = "No matches to create (pods empty?).";
+      return;
+    }
+
+    const { error: insertErr } = await supabase
+      .from("league_matches")
+      .insert(matchesToInsert);
+
+    if (insertErr) {
+      console.error("insert league_matches error", insertErr);
+      matchesMessage.textContent = "Error creating matches.";
+      return;
+    }
+
+    matchesMessage.textContent = `Created ${matchesToInsert.length} matches for this month.`;
+  }
+
+  // -------------------
+  // Event listeners
+  // -------------------
+  document.getElementById("refresh-seasons").addEventListener("click", loadSeasons);
+  document.getElementById("refresh-months").addEventListener("click", loadMonths);
+  document.getElementById("add-signup").addEventListener("click", addSignup);
+  document.getElementById("auto-generate-pods").addEventListener("click", autoGeneratePods);
+  document.getElementById("generate-matches").addEventListener("click", generateMatchesForMonth);
+
+  seasonSelect.addEventListener("change", async (e) => {
+    currentSeasonId = e.target.value || null;
+    await loadMonths();
+    await loadSignups();
+  });
+
+  monthSelect.addEventListener("change", async (e) => {
+    currentMonthId = e.target.value || null;
+    await loadPodsForMonth();
+  });
+
+  // -------------------
+  // Init
+  // -------------------
+  (async function init() {
+    try {
+      await checkAdmin();
+      await loadPlayers();
+      await loadSeasons();
+    } catch (err) {
+      console.error("init error", err);
+    }
+  })();
+</script>
+
+</body>
+</html>

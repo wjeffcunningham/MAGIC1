@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>League Schedule · BC Winter League</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin: 40px;
+    background: #fff;
+    color: #000;
+  }
+  h1 { margin-bottom: 0.3rem; }
+  h2 {
+    margin-top: 2rem;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+  }
+  label { font-size: 0.9rem; margin-right: 0.5rem; }
+  select {
+    padding: 4px 6px;
+    font-size: 0.95rem;
+    margin-right: 0.5rem;
+  }
+  .small { font-size: 0.85rem; color: #555; }
+  .pods-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 10px;
+    min-width: 260px;
+  }
+  .card h3 {
+    margin: 0 0 0.3rem 0;
+    font-size: 1rem;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  th, td {
+    padding: 4px 6px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  th {
+    background: #f5f5f5;
+  }
+</style>
+</head>
+<body>
+
+<h1>BC Winter League · Schedule</h1>
+<div class="small">View league matches by season, month, and pod.</div>
+
+<div style="margin-top:1rem;">
+  <label for="season-select">Season:</label>
+  <select id="season-select"></select>
+
+  <label for="month-select">Month:</label>
+  <select id="month-select"></select>
+</div>
+
+<div id="meta" class="small" style="margin-top:0.5rem;"></div>
+
+<h2>Pods & Matches</h2>
+<div id="pods-container" class="pods-container">
+  <div class="small">Loading…</div>
+</div>
+
+<script type="module">
+  const supabase = window.supabase.createClient(
+    "https://dkzdfhzlewlvfmunywal.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI"
+  );
+
+  const seasonSelect = document.getElementById("season-select");
+  const monthSelect  = document.getElementById("month-select");
+  const podsContainer = document.getElementById("pods-container");
+  const metaEl = document.getElementById("meta");
+
+  let allPlayers = [];
+  let currentSeasonId = null;
+  let currentMonthId  = null;
+
+  async function loadPlayers() {
+    const { data, error } = await supabase
+      .from("players")
+      .select("id, full_name");
+
+    if (error) {
+      console.error("loadPlayers", error);
+      return;
+    }
+    allPlayers = data || [];
+  }
+
+  function playerName(id) {
+    const p = allPlayers.find(p => p.id === id);
+    return p ? p.full_name : id;
+  }
+
+  async function loadSeasons() {
+    const { data, error } = await supabase
+      .from("league_seasons")
+      .select("*")
+      .order("start_date", { ascending: true });
+
+    if (error || !data) {
+      podsContainer.innerHTML = `<div class="small">Error loading seasons.</div>`;
+      return;
+    }
+
+    seasonSelect.innerHTML = "";
+    data.forEach((s, idx) => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.name} (${s.start_date} → ${s.end_date})`;
+      seasonSelect.appendChild(opt);
+      if (idx === 0) currentSeasonId = s.id;
+    });
+
+    if (currentSeasonId) {
+      seasonSelect.value = currentSeasonId;
+      await loadMonths();
+    }
+  }
+
+  async function loadMonths() {
+    if (!currentSeasonId) return;
+
+    const { data, error } = await supabase
+      .from("league_months")
+      .select("*")
+      .eq("season_id", currentSeasonId)
+      .order("month_index", { ascending: true });
+
+    if (error) {
+      console.error("loadMonths", error);
+      return;
+    }
+
+    monthSelect.innerHTML = "";
+    if (!data || !data.length) {
+      monthSelect.innerHTML = `<option value="">No months</option>`;
+      podsContainer.innerHTML = `<div class="small">No months defined for this season.</div>`;
+      currentMonthId = null;
+      return;
+    }
+
+    data.forEach((m, idx) => {
+      const opt = document.createElement("option");
+      opt.value = m.id;
+      opt.textContent = m.name;
+      monthSelect.appendChild(opt);
+      if (idx === 0) {
+        currentMonthId = m.id;
+        metaEl.textContent = `Month ${m.month_index}: ${m.start_date} → ${m.end_date}`;
+      }
+    });
+
+    if (currentMonthId) {
+      monthSelect.value = currentMonthId;
+      await loadSchedule();
+    }
+  }
+
+  async function loadSchedule() {
+    podsContainer.innerHTML = `<div class="small">Loading pods and matches…</div>`;
+    if (!currentMonthId) return;
+
+    // Pods for month
+    const { data: pods, error: podsErr } = await supabase
+      .from("pods")
+      .select("*")
+      .eq("month_id", currentMonthId)
+      .order("name", { ascending: true });
+
+    if (podsErr) {
+      console.error("loadSchedule pods", podsErr);
+      podsContainer.innerHTML = `<div class="small">Error loading pods.</div>`;
+      return;
+    }
+
+    if (!pods || !pods.length) {
+      podsContainer.innerHTML = `<div class="small">No pods created for this month yet.</div>`;
+      return;
+    }
+
+    const podIds = pods.map(p => p.id);
+
+    // Matches for month (league_matches)
+    const { data: matches, error: matchErr } = await supabase
+      .from("league_matches")
+      .select("*")
+      .eq("month_id", currentMonthId);
+
+    if (matchErr) {
+      console.error("loadSchedule matches", matchErr);
+      podsContainer.innerHTML = `<div class="small">Error loading matches.</div>`;
+      return;
+    }
+
+    const matchesByPod = {};
+    (matches || []).forEach(m => {
+      if (!matchesByPod[m.pod_id]) matchesByPod[m.pod_id] = [];
+      matchesByPod[m.pod_id].push(m);
+    });
+
+    podsContainer.innerHTML = pods.map(pod => {
+      const podMatches = matchesByPod[pod.id] || [];
+      if (!podMatches.length) {
+        return `
+          <div class="card">
+            <h3>${pod.name}</h3>
+            <div class="small">No matches generated for this pod yet.</div>
+          </div>
+        `;
+      }
+
+      const rows = podMatches
+        .sort((a, b) => new Date(a.played_at || 0) - new Date(b.played_at || 0))
+        .map(m => {
+          const aName = playerName(m.player_a);
+          const bName = playerName(m.player_b);
+          let status = "Unplayed";
+          if (m.winner) {
+            const wName = playerName(m.winner);
+            status = m.approved
+              ? `Completed (Winner: ${wName})`
+              : `Reported (Winner: ${wName}, not yet approved)`;
+          }
+          const when = m.played_at
+            ? new Date(m.played_at).toLocaleString()
+            : "—";
+          return `
+            <tr>
+              <td>${aName}</td>
+              <td>${bName}</td>
+              <td>${status}</td>
+              <td>${when}</td>
+            </tr>
+          `;
+        }).join("");
+
+      return `
+        <div class="card">
+          <h3>${pod.name}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Player A</th>
+                <th>Player B</th>
+                <th>Status</th>
+                <th>When</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }).join("");
+  }
+
+  seasonSelect.addEventListener("change", async e => {
+    currentSeasonId = e.target.value || null;
+    await loadMonths();
+  });
+
+  monthSelect.addEventListener("change", async e => {
+    currentMonthId = e.target.value || null;
+    await loadSchedule();
+  });
+
+  (async function init() {
+    await loadPlayers();
+    await loadSeasons();
+  })();
+</script>
+
+</body>
+</html>

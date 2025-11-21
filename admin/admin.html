@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Admin Dashboard · B.C. Premodern Masters</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -14,104 +13,190 @@
     background: #fff;
   }
   h1 { margin-bottom: 5px; }
-  h2 { margin-top: 40px; }
-  pre {
-    white-space: pre-wrap;
-    background: #f4f4f4;
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-  }
-  .item {
-    border-bottom: 1px solid #ddd;
-    padding: 6px 0;
-  }
+  h2 { margin-top: 40px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+  .item { padding: 6px 0; border-bottom: 1px solid #eee; }
+  pre { background: #f7f7f7; padding: 10px; border-radius: 4px; }
+  .sub { margin-left: 20px; font-size: 0.9em; }
 </style>
 </head>
 <body>
 
 <h1>Admin Dashboard</h1>
-<p>Minimal functional version</p>
-
-<div id="auth-status">Checking auth…</div>
-
-<h2>Events</h2>
-<div id="events"></div>
+<div id="auth-status">Checking login…</div>
 
 <h2>Players</h2>
 <div id="players"></div>
 
+<h2>Events</h2>
+<div id="events"></div>
+
+<h2>League Seasons</h2>
+<div id="league-seasons"></div>
+
+<h2>League Months</h2>
+<div id="league-months"></div>
+
+<h2>Pods</h2>
+<div id="pods"></div>
+
+<h2>Pod Members</h2>
+<div id="pod-members"></div>
+
+<h2>League Signups</h2>
+<div id="league-signups"></div>
+
 <script>
-// --- Supabase init ---
+// -----------------------------
+// Initialize Supabase Client
+// -----------------------------
 const supabase = supabase.createClient(
-  "https://YOUR-PROJECT-ID.supabase.co",
-  "YOUR-PUBLIC-ANON-KEY"
+  "https://YOUR-PROJECT.supabase.co",
+  "YOUR-ANON-KEY"
 );
 
-// --- 1. Check auth state ---
+// -----------------------------
+// 1. Auth Check
+// -----------------------------
 async function checkAuth() {
   const { data: { user } } = await supabase.auth.getUser();
+  const el = document.getElementById("auth-status");
 
-  const statusEl = document.getElementById("auth-status");
   if (!user) {
-    statusEl.innerHTML = `
-      <strong>Not logged in.</strong><br>
-      <a href="/login.html">Go to login</a>
-    `;
-    return;
+    el.innerHTML = `<strong>Not logged in.</strong> <a href="/login.html">Login</a>`;
+  } else {
+    el.textContent = `Logged in as: ${user.email}`;
   }
-
-  statusEl.innerHTML = `<strong>Logged in as:</strong> ${user.email}`;
 }
-
 checkAuth();
 
-// --- 2. Load Events ---
-async function loadEvents() {
-  const container = document.getElementById("events");
-  const { data, error } = await supabase.from("events").select("*").order("id", { ascending: true });
-
-  if (error) {
-    container.innerHTML = "<em>Error loading events.</em>";
-    return;
-  }
-
-  if (!data.length) {
-    container.innerHTML = "<em>No events created yet.</em>";
-    return;
-  }
-
-  container.innerHTML = data.map(ev => `
-    <div class="item">
-      <strong>${ev.name}</strong>  
-      <br>Date: ${ev.date}
-      <br>ID: ${ev.id}
-    </div>
-  `).join("");
+// Utility to dump arrays
+function dumpArray(arr, formatter) {
+  if (!arr.length) return "<em>None</em>";
+  return arr.map(formatter).join("");
 }
 
+// -----------------------------
+// 2. Load Players
+// -----------------------------
+async function loadPlayers() {
+  const { data, error } = await supabase.from("players").select("*");
+  document.getElementById("players").innerHTML =
+    dumpArray(data || [], p => `
+      <div class="item">
+        <strong>${p.full_name}</strong><br>
+        Rating: ${p.rating} | Email: ${p.email}
+      </div>
+    `);
+}
+loadPlayers();
+
+// -----------------------------
+// 3. Load Events
+// -----------------------------
+async function loadEvents() {
+  const { data } = await supabase.from("events").select("*").order("event_date");
+  document.getElementById("events").innerHTML =
+    dumpArray(data || [], e => `
+      <div class="item">
+        <strong>${e.name}</strong><br>
+        Date: ${e.event_date}<br>ID: ${e.id}
+      </div>
+    `);
+}
 loadEvents();
 
-// --- 3. Load Players ---
-async function loadPlayers() {
-  const container = document.getElementById("players");
-  const { data, error } = await supabase.from("players").select("*").order("id", { ascending: true });
-
-  if (error) {
-    container.innerHTML = "<em>Error loading players.</em>";
-    return;
-  }
-
-  container.innerHTML = data.map(p => `
-    <div class="item">
-      ${p.name}  
-      <br>Rating: ${p.rating}
-      <br>ID: ${p.id}
-    </div>
-  `).join("");
+// -----------------------------
+// 4. League Seasons
+// -----------------------------
+async function loadSeasons() {
+  const { data } = await supabase.from("league_seasons").select("*").order("start_date");
+  document.getElementById("league-seasons").innerHTML =
+    dumpArray(data || [], s => `
+      <div class="item">
+        <strong>${s.name}</strong><br>
+        ${s.start_date} → ${s.end_date}<br>
+        ID: ${s.id}
+      </div>
+    `);
 }
+loadSeasons();
 
-loadPlayers();
+// -----------------------------
+// 5. League Months
+// -----------------------------
+async function loadMonths() {
+  const { data } = await supabase.from("league_months").select("*").order("month_index");
+  document.getElementById("league-months").innerHTML =
+    dumpArray(data || [], m => `
+      <div class="item">
+        <strong>${m.name}</strong><br>
+        Month ${m.month_index}<br>
+        ${m.start_date} → ${m.end_date}<br>
+        Season: ${m.season_id}<br>
+        ID: ${m.id}
+      </div>
+    `);
+}
+loadMonths();
+
+// -----------------------------
+// 6. Pods
+// -----------------------------
+async function loadPods() {
+  const { data } = await supabase.from("pods").select("*");
+  document.getElementById("pods").innerHTML =
+    dumpArray(data || [], p => `
+      <div class="item">
+        <strong>${p.name}</strong><br>
+        Month: ${p.month_id}<br>
+        Max Players: ${p.max_players}<br>
+        ID: ${p.id}
+      </div>
+    `);
+}
+loadPods();
+
+// -----------------------------
+// 7. Pod Members
+// -----------------------------
+async function loadPodMembers() {
+  const { data } = await supabase
+    .from("pod_members")
+    .select("*, players(full_name)")
+    .order("joined_at");
+
+  document.getElementById("pod-members").innerHTML =
+    dumpArray(data || [], pm => `
+      <div class="item">
+        Player: ${pm.players.full_name}<br>
+        Pod: ${pm.pod_id}<br>
+        Joined: ${pm.joined_at}
+      </div>
+    `);
+}
+loadPodMembers();
+
+// -----------------------------
+// 8. League Signups
+// -----------------------------
+async function loadSignups() {
+  const { data } = await supabase
+    .from("league_signups")
+    .select("*, players(full_name)")
+    .order("signup_date");
+
+  document.getElementById("league-signups").innerHTML =
+    dumpArray(data || [], ls => `
+      <div class="item">
+        <strong>${ls.players.full_name}</strong><br>
+        Season: ${ls.season_id}<br>
+        Status: ${ls.status}<br>
+        Signed up: ${ls.signup_date}
+      </div>
+    `);
+}
+loadSignups();
+
 </script>
 
 </body>

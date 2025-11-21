@@ -1,95 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Admin Dashboard · magic1.ca</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>Admin · B.C. Premodern Masters</title>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 40px;
+      background: #fff;
+      color: #000;
+    }
+    h1 { margin-bottom: 0.5rem; }
+    p { margin-top: 0; margin-bottom: 1.5rem; }
+    ul { list-style: none; padding-left: 0; }
+    li { margin-bottom: 0.5rem; }
+    a {
+      text-decoration: none;
+      color: #0070c9;
+    }
+    a:hover { text-decoration: underline; }
+    #auth-status {
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+      color: #333;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-slate-100 text-slate-900">
+<body>
 
-  <!-- GLOBAL MENU -->
-  <script type="module" src="/js/global-menu-loader.js"></script>
+<h1>Admin Dashboard</h1>
+<p>Internal tools for B.C. Premodern Masters & Winter League.</p>
+<div id="auth-status">Checking login…</div>
 
-  <!-- ADMIN GUARD -->
-  <script type="module">
-    import { requireAdmin } from "/js/admin-guard.js";
-    await requireAdmin();
-  </script>
+<h2>Sections</h2>
+<ul>
+  <li><a href="/admin/players.html">Players Admin</a></li>
+  <li><a href="/admin/events.html">Events Admin (stub / future)</a></li>
+  <li><a href="/admin/league.html">League Admin (BC Winter League)</a></li>
+  <li><a href="/admin/matches.html">Matches Admin (stub / future)</a></li>
+</ul>
 
-  <div class="max-w-5xl mx-auto px-4 py-10 space-y-8">
-    <header>
-      <h1 class="text-3xl font-bold mb-1">Admin Dashboard</h1>
-      <p class="text-sm text-slate-700">
-        Overview of players, matches, and events for B.C. Winter League and Premodern Masters.
-      </p>
-    </header>
+<script type="module">
+  const supabaseUrl = "https://dkzdfhzlewlvfmunywal.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI";
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    <!-- Top-level stats -->
-    <section>
-      <h2 class="text-xl font-semibold mb-3">Overview</h2>
-      <div id="admin-stats" class="grid gap-4 md:grid-cols-4">
-        <!-- JS fills cards -->
-      </div>
-    </section>
+  async function checkAuth() {
+    const { data: { user } } = await supabase.auth.getUser();
+    const statusEl = document.getElementById("auth-status");
 
-    <!-- Work queues -->
-    <section>
-      <h2 class="text-xl font-semibold mb-3">Work Queues</h2>
-      <div class="grid gap-4 md:grid-cols-2">
-        <a href="/admin/pending-players.html"
-           class="block bg-white border rounded-xl p-4 shadow hover:shadow-md transition">
-          <div class="text-sm font-semibold mb-1">Pending Players</div>
-          <div id="pending-players-count" class="text-2xl font-bold">–</div>
-          <p class="text-xs text-slate-600 mt-1">
-            Approve players who have registered and paid.
-          </p>
-        </a>
+    if (!user) {
+      statusEl.innerHTML = `Not logged in. <a href="/login.html">Go to login</a>`;
+      return;
+    }
 
-        <a href="/admin/approve-matches.html"
-           class="block bg-white border rounded-xl p-4 shadow hover:shadow-md transition">
-          <div class="text-sm font-semibold mb-1">Pending Matches</div>
-          <div id="pending-matches-count" class="text-2xl font-bold">–</div>
-          <p class="text-xs text-slate-600 mt-1">
-            Approve results to update ratings and standings.
-          </p>
-        </a>
-      </div>
-    </section>
+    // Check admin flag via players table
+    const { data: player, error } = await supabase
+      .from("players")
+      .select("*")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
 
-    <!-- Navigation shortcuts -->
-    <section>
-      <h2 class="text-xl font-semibold mb-3">Shortcuts</h2>
-      <div class="grid gap-3 md:grid-cols-3 text-sm">
-        <a href="/standings.html"
-           class="block bg-white border rounded-xl p-4 shadow hover:shadow-md transition">
-          <div class="font-semibold mb-1">Standings</div>
-          <p class="text-xs text-slate-600">
-            View all-time ratings, seasonal standings, and player profiles.
-          </p>
-        </a>
+    if (error || !player) {
+      statusEl.textContent = `Logged in as ${user.email} (no player record)`;
+      return;
+    }
 
-        <a href="/my-matches.html"
-           class="block bg-white border rounded-xl p-4 shadow hover:shadow-md transition">
-          <div class="font-semibold mb-1">My Matches</div>
-          <p class="text-xs text-slate-600">
-            Check your own match history and results.
-          </p>
-        </a>
+    if (!player.is_admin) {
+      statusEl.textContent = `Logged in as ${user.email} (not marked admin)`;
+      return;
+    }
 
-        <a href="/admin/generate-tokens.html"
-           class="block bg-white border rounded-xl p-4 shadow hover:shadow-md transition">
-          <div class="font-semibold mb-1">Generate Login Tokens</div>
-          <p class="text-xs text-slate-600">
-            (If you decide to revive magic-link flow later.)
-          </p>
-        </a>
-      </div>
-    </section>
+    statusEl.textContent = `Logged in as ${user.email} (admin)`;
+  }
 
-    <p id="admin-error" class="hidden text-sm text-red-600 mt-4"></p>
-  </div>
+  checkAuth();
+</script>
 
-  <script type="module" src="/js/admin-dashboard.js"></script>
 </body>
 </html>

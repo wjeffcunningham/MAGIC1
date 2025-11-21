@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Players Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 40px;
+      background:#fff;
+    }
+    h1 { margin-bottom: 0.5rem; }
+    .row {
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95rem;
+    }
+    .small { font-size: 0.85rem; color:#555; }
+  </style>
+</head>
+<body>
+<h1>Players Admin</h1>
+<div id="auth-status">Checking admin access…</div>
+<div id="players"></div>
+
+<script type="module">
+  const supabaseUrl = "https://dkzdfhzlewlvfmunywal.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI";
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  async function checkAdmin() {
+    const { data: { user } } = await supabase.auth.getUser();
+    const authStatus = document.getElementById("auth-status");
+    if (!user) {
+      authStatus.innerHTML = `Not logged in. <a href="/login.html">Login</a>`;
+      throw new Error("Not logged in");
+    }
+    const { data: player, error } = await supabase
+      .from("players")
+      .select("*")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    if (error || !player) {
+      authStatus.textContent = `Logged in as ${user.email}, no player row.`;
+      throw new Error("No player row");
+    }
+    if (!player.is_admin) {
+      authStatus.textContent = `Logged in as ${user.email}, not admin.`;
+      throw new Error("Not admin");
+    }
+    authStatus.textContent = `Logged in as ${user.email} (admin)`;
+  }
+
+  async function loadPlayers() {
+    const { data, error } = await supabase
+      .from("players")
+      .select("*")
+      .order("full_name", { ascending: true });
+
+    const container = document.getElementById("players");
+    if (error) {
+      console.error(error);
+      container.innerHTML = `<div class="small">Error loading players.</div>`;
+      return;
+    }
+    container.innerHTML = (data || []).map(p => `
+      <div class="row">
+        <strong>${p.full_name}</strong><br>
+        <span class="small">
+          Email: ${p.email} · Rating: ${p.rating} · League: ${p.league_rating}<br>
+          Status: ${p.status} · Admin: ${p.is_admin ? "yes" : "no"}
+        </span>
+      </div>
+    `).join("");
+  }
+
+  (async function init() {
+    try {
+      await checkAdmin();
+      await loadPlayers();
+    } catch (e) {
+      console.error(e);
+    }
+  })();
+</script>
+</body>
+</html>
