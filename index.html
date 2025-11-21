@@ -81,8 +81,13 @@
   .prize-row img {
     height: 48px;
     width: auto;
-    border: 2px solid #000;
+    border: none !important;    /* ← removed border */
     margin: 0 6px;
+  }
+
+  /* Hide mini-cards after the first 3 */
+  .prize-row img:nth-of-type(n+4) {
+    display: none !important;
   }
 
   .logos {
@@ -142,8 +147,8 @@
   <p>Participation and Top 8 prizes TBA</p>
 
   <div class="prize-row">
+          <img src="./assets/card_reb.jpg" alt="Red Elemental Blast" />
       <img src="./assets/Legends_booster.webp" alt="Legends Booster" />
-      <img src="./assets/card_reb.png" alt="Red Elemental Blast" />
       <img src="./assets/card_surv.jpg" alt="Survival of the Fittest" />
       <img src="./assets/card_etdr.webp" alt="Eternal Dragon" />
   </div>
@@ -178,7 +183,7 @@
 
 <div class="poster">
 
-  <img src="./assets/winter.jpg" alt="Mishra's Factory" style="max-width: 300px; margin: 10px auto; display:block; border: 2px solid #000;" />
+<img src="./assets/winter.jpg" alt="Mishra's Factory" style="max-width: 300px; margin: 10px auto; display:block;" />
 
   <h1>B.C. Winter League</h1>
   <h2>January – March 2026</h2>
