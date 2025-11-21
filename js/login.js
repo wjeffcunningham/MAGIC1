@@ -1,62 +1,82 @@
+// =============================================================
+// login.js — unified login handler
+// Supports:
+//   • Magic link login
+//   • Email/password login
+//   • Upgrading magic-link accounts to email/password
+// =============================================================
+
 import { supabase } from "./supabase.js";
-import { getSession, setSession, clearSession } from "./session.js";
+import {
+  getLocalSession,
+  saveLocalSession,
+  clearLocalSession
+} from "./session.js";
 
-// --- helpers ---
 
+// -----------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------
 function getQueryParam(name) {
-  const params = new URLSearchParams(window.location.search);
-  return params.get(name);
+  return new URLSearchParams(window.location.search).get(name);
 }
 
-function generateNextHref() {
+function nextHref() {
   const next = getQueryParam("next");
   return next ? decodeURIComponent(next) : "/";
 }
 
-async function hashToken(rawToken) {
-  const enc = new TextEncoder();
-  const data = enc.encode(rawToken);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+async function sha256(raw) {
+  const bytes = new TextEncoder().encode(raw);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(hash)]
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
-// --- UI elements ---
-const loggedInPanel = document.getElementById("logged-in-panel");
-const sessionNameEl = document.getElementById("session-name");
-const sessionUserEl = document.getElementById("session-username");
-const sessionNextLink = document.getElementById("session-next-link");
-const logoutBtn = document.getElementById("logout-btn");
 
-const tokenPanel = document.getElementById("token-panel");
-const tokenForm = document.getElementById("token-form");
-const tokenInput = document.getElementById("token-input");
-const tokenError = document.getElementById("token-error");
+// -----------------------------------------------------------
+// UI Elements
+// -----------------------------------------------------------
+const loggedInPanel     = document.getElementById("logged-in-panel");
+const sessionNameEl     = document.getElementById("session-name");
+const sessionUserEl     = document.getElementById("session-username");
+const sessionNextLink   = document.getElementById("session-next-link");
 
-const emailLoginForm = document.getElementById("email-login-form");
-const emailLoginError = document.getElementById("email-login-error");
+const tokenPanel        = document.getElementById("token-panel");
+const tokenForm         = document.getElementById("token-form");
+const tokenInput        = document.getElementById("token-input");
+const tokenError        = document.getElementById("token-error");
 
-const upgradePanel = document.getElementById("upgrade-panel");
-const upgradeForm = document.getElementById("upgrade-form");
-const upgradeError = document.getElementById("upgrade-error");
-const upgradeSuccess = document.getElementById("upgrade-success");
+const emailLoginForm    = document.getElementById("email-login-form");
+const emailLoginError   = document.getElementById("email-login-error");
 
-// --- core flows ---
+const upgradePanel      = document.getElementById("upgrade-panel");
+const upgradeForm       = document.getElementById("upgrade-form");
+const upgradeSuccess    = document.getElementById("upgrade-success");
+const upgradeError      = document.getElementById("upgrade-error");
 
-async function loginWithToken(rawToken) {
+const logoutBtn         = document.getElementById("logout-btn");
+
+
+// -----------------------------------------------------------
+// MAGIC LOGIN FLOW
+// -----------------------------------------------------------
+async function loginWithMagic(rawToken) {
   tokenError.classList.add("hidden");
-  if (!rawToken || rawToken.trim().length < 10) {
+
+  if (!rawToken || rawToken.trim().length < 12) {
     tokenError.textContent = "Invalid token.";
     tokenError.classList.remove("hidden");
     return;
   }
 
-  const tokenHash = await hashToken(rawToken.trim());
+  const hashed = await sha256(rawToken.trim());
 
   const { data: tokenRow, error } = await supabase
     .from("player_tokens")
     .select("player_id")
-    .eq("token_hash", tokenHash)
+    .eq("token_hash", hashed)
     .single();
 
   if (error || !tokenRow) {
@@ -65,168 +85,159 @@ async function loginWithToken(rawToken) {
     return;
   }
 
-  const { data: player, error: playerErr } = await supabase
+  const { data: player, error: pErr } = await supabase
     .from("players")
-    .select("id, full_name, username, auth_user_id")
+    .select("*")
     .eq("id", tokenRow.player_id)
     .single();
 
-  if (playerErr || !player) {
-    tokenError.textContent = "Player not found for this token.";
+  if (pErr || !player) {
+    tokenError.textContent = "Player not found.";
     tokenError.classList.remove("hidden");
     return;
   }
 
-  setSession({
+  saveLocalSession({
     playerId: player.id,
-    username: player.username || "(no username yet)",
     fullName: player.full_name,
+    username: player.username || "(no username yet)",
     authUserId: player.auth_user_id || null,
   });
 
-  window.location.href = generateNextHref();
+  window.location.href = nextHref();
 }
 
-async function loginWithEmailPassword(email, password) {
+
+// -----------------------------------------------------------
+// EMAIL/PASSWORD LOGIN FLOW
+// -----------------------------------------------------------
+async function loginWithEmail(email, password) {
   emailLoginError.classList.add("hidden");
 
-  const { data: authData, error: authErr } = await supabase.auth
-    .signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
 
-  if (authErr || !authData.user) {
-    emailLoginError.textContent = "Invalid email or password.";
+  if (error || !data.user) {
+    emailLoginError.textContent = "Invalid email/password.";
     emailLoginError.classList.remove("hidden");
     return;
   }
 
-  const authUserId = authData.user.id;
+  const authUserId = data.user.id;
 
-  const { data: player, error: playerErr } = await supabase
+  const { data: player, error: pErr } = await supabase
     .from("players")
-    .select("id, full_name, username, auth_user_id")
+    .select("*")
     .eq("auth_user_id", authUserId)
     .single();
 
-  if (playerErr || !player) {
-    emailLoginError.textContent = "No BCWL player is linked to this account yet.";
+  if (pErr || !player) {
+    emailLoginError.textContent = "No BCWL player is linked to this email.";
     emailLoginError.classList.remove("hidden");
     return;
   }
 
-  setSession({
+  saveLocalSession({
     playerId: player.id,
-    username: player.username || "(no username yet)",
     fullName: player.full_name,
-    authUserId: player.auth_user_id || null,
+    username: player.username || "(no username yet)",
+    authUserId,
   });
 
-  window.location.href = generateNextHref();
+  window.location.href = nextHref();
 }
 
+
+// -----------------------------------------------------------
+// UPGRADE: magic → email/password
+// -----------------------------------------------------------
 async function upgradeAccount(session, email, password) {
   upgradeError.classList.add("hidden");
   upgradeSuccess.classList.add("hidden");
 
-  // Sign up in Supabase Auth
-  const { data, error: signUpErr } = await supabase.auth.signUp({
-    email,
-    password,
-  });
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
-  if (signUpErr || !data.user) {
-    upgradeError.textContent = "Error creating auth user: " +
-      (signUpErr?.message || "unknown error");
+  if (error || !data.user) {
+    upgradeError.textContent = error?.message || "Could not create account.";
     upgradeError.classList.remove("hidden");
     return;
   }
 
   const authUserId = data.user.id;
 
-  // Link auth_user_id to the existing player
-  const { error: updateErr } = await supabase
+  const { error: linkErr } = await supabase
     .from("players")
     .update({ auth_user_id: authUserId })
     .eq("id", session.playerId);
 
-  if (updateErr) {
-    upgradeError.textContent = "Error linking account to player.";
+  if (linkErr) {
+    upgradeError.textContent = "Could not link account to player.";
     upgradeError.classList.remove("hidden");
     return;
   }
 
-  // Refresh local session
-  setSession({
+  saveLocalSession({
     playerId: session.playerId,
-    username: session.username,
     fullName: session.fullName,
+    username: session.username,
     authUserId,
   });
 
-  upgradeSuccess.textContent = "Email login created and linked successfully.";
+  upgradeSuccess.textContent = "Email login created successfully.";
   upgradeSuccess.classList.remove("hidden");
 }
 
-// --- initialisation ---
 
+// -----------------------------------------------------------
+// INITIALIZER
+// -----------------------------------------------------------
 async function init() {
-  const session = getSession();
-  const nextHref = generateNextHref();
-  sessionNextLink.href = nextHref;
+  const session = getLocalSession();
+
+  sessionNextLink.href = nextHref();
 
   if (session) {
-    // Show "already logged in"
     loggedInPanel.classList.remove("hidden");
     sessionNameEl.textContent = session.fullName;
     sessionUserEl.textContent = session.username;
 
-    // Show upgrade panel if not yet linked to auth
     if (!session.authUserId) {
       upgradePanel.classList.remove("hidden");
     }
   }
 
-  // Auto-token from URL if present and not already logged in
   const urlToken = getQueryParam("token");
   if (urlToken && !session) {
     tokenInput.value = urlToken;
-    await loginWithToken(urlToken);
+    await loginWithMagic(urlToken);
   }
 
-  // Form handlers
-  tokenForm.addEventListener("submit", async (e) => {
+  tokenForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    await loginWithToken(tokenInput.value);
+    await loginWithMagic(tokenInput.value);
   });
 
-  emailLoginForm.addEventListener("submit", async (e) => {
+  emailLoginForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const formData = new FormData(emailLoginForm);
-    const email = formData.get("email");
-    const password = formData.get("password");
-    await loginWithEmailPassword(email, password);
+    const fd = new FormData(emailLoginForm);
+    await loginWithEmail(fd.get("email"), fd.get("password"));
   });
 
-  logoutBtn.addEventListener("click", () => {
-    clearSession();
+  upgradeForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const sess = getLocalSession();
+    if (!sess) return;
+    const fd = new FormData(upgradeForm);
+    await upgradeAccount(sess, fd.get("email"), fd.get("password"));
+  });
+
+  logoutBtn?.addEventListener("click", () => {
+    clearLocalSession();
     supabase.auth.signOut();
     window.location.href = "/login.html";
   });
-
-  if (upgradeForm) {
-    upgradeForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const sessionNow = getSession();
-      if (!sessionNow) {
-        upgradeError.textContent = "You are not logged in.";
-        upgradeError.classList.remove("hidden");
-        return;
-      }
-      const fd = new FormData(upgradeForm);
-      const email = fd.get("email");
-      const password = fd.get("password");
-      await upgradeAccount(sessionNow, email, password);
-    });
-  }
 }
 
 init();
