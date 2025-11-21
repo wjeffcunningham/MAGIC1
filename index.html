@@ -185,23 +185,21 @@
   <p>1st Place — <strong>1 Sealed Legends Booster Pack</strong></p>
   <p>Participation and Top 8 prizes TBA</p>
 
-<div id="prize-carousel" class="relative inline-block">
+<div id="prize-carousel" style="display:inline-block; position:relative; cursor:pointer;">
   <img id="prize-image"
        src="./assets/Legends_booster.webp"
        alt="Prize"
-       style="height: 80px; border: 2px solid #000; cursor: pointer;" />
+       style="height:80px; border:2px solid #000;" />
 
-  <!-- arrow overlay -->
   <div id="prize-arrow"
        style="
-         position: absolute;
-         right: -20px;
-         top: 50%;
-         transform: translateY(-50%);
-         font-size: 32px;
-         opacity: 0.25;
-         cursor: pointer;
-         user-select: none;
+         position:absolute;
+         right:-26px;
+         top:50%;
+         transform:translateY(-50%);
+         font-size:32px;
+         opacity:0.28;
+         user-select:none;
        ">
     ➤
   </div>
@@ -542,10 +540,22 @@
 
 </div>
 
-</body>
+<script>
+  const prizeImages = [
+    "./assets/Legends_booster.webp",
+    "./assets/card_reb.png",
+    "./assets/card_etdr.webp"
+  ];
 
-</html>
+  let prizeIndex = 0;
 
+  function cyclePrize() {
+    prizeIndex = (prizeIndex + 1) % prizeImages.length;
+    document.getElementById("prize-image").src = prizeImages[prizeIndex];
+  }
+
+  document.getElementById("prize-carousel").addEventListener("click", cyclePrize);
+</script>
 
 </body>
 
