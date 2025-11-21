@@ -1,142 +1,159 @@
+// standings.js — computes 3/1/0 standings for a given month
+
 import { supabase } from "./supabase.js";
 
-// Overall standings
-const overallLoading = document.getElementById("overall-loading");
-const overallTable = document.getElementById("overall-table");
-const overallBody = document.getElementById("overall-body");
+const monthSelect = document.getElementById("month-select");
+const standingsEl = document.getElementById("standings-container");
+const errorEl = document.getElementById("standings-error");
 
-// Monthly
-const monthPicker = document.getElementById("month-picker");
-const monthlyLoading = document.getElementById("monthly-loading");
-const monthlyTable = document.getElementById("monthly-table");
-const monthlyBody = document.getElementById("monthly-body");
-
-// Load overall
-async function loadOverall() {
-  const { data: players, error } = await supabase
-    .from("players")
-    .select("id, full_name, username, rating")
-    .order("rating", { ascending: false });
-
-  if (error) {
-    overallLoading.textContent = "Error loading standings.";
-    return;
-  }
-
-  overallLoading.classList.add("hidden");
-  overallTable.classList.remove("hidden");
-
-  let rank = 1;
-  for (const p of players) {
-    const row = document.createElement("tr");
-    row.classList = "border-b";
-    row.innerHTML = `
-      <td class="py-2 pr-2">${rank++}</td>
-      <td class="py-2 pr-2">${p.full_name} (${p.username})</td>
-      <td class="py-2 pr-2">${p.rating}</td>
-    `;
-    overallBody.appendChild(row);
-  }
+function showError(msg) {
+  errorEl.textContent = msg;
+  errorEl.classList.remove("hidden");
 }
 
-// Load available months
+// -----------------------------
+// Load months
+// -----------------------------
 async function loadMonths() {
-  const { data: months, error } = await supabase
+  const { data, error } = await supabase
     .from("league_months")
-    .select("*")
-    .order("month_index");
+    .select("id, name, start_date")
+    .order("start_date");
 
-  if (error) {
-    monthPicker.textContent = "Error loading months.";
-    return;
-  }
+  if (error) return showError("Error loading months.");
 
-  for (const m of months) {
-    const btn = document.createElement("button");
-    btn.className =
-      "inline-block bg-slate-200 text-slate-800 px-3 py-1 rounded mr-2 mb-2 text-sm hover:bg-slate-300";
-    btn.textContent = m.name;
-    btn.addEventListener("click", () => loadMonthStandings(m.id));
-    monthPicker.appendChild(btn);
-  }
+  monthSelect.innerHTML = data
+    .map((m) => `<option value="${m.id}">${m.name}</option>`)
+    .join("");
+
+  loadStandings(data[0]?.id);
+
+  monthSelect.addEventListener("change", (e) => {
+    loadStandings(e.target.value);
+  });
 }
 
-async function loadMonthStandings(monthId) {
-  monthlyLoading.textContent = "Loading…";
-  monthlyLoading.classList.remove("hidden");
-  monthlyTable.classList.add("hidden");
-  monthlyBody.innerHTML = "";
+// -----------------------------
+// Load matches for a given month
+// -----------------------------
+async function loadStandings(monthId) {
+  standingsEl.innerHTML = "<p>Loading standings…</p>";
 
-  // Matches for that month
-  const { data, error } = await supabase
+  const { data: matches, error } = await supabase
     .from("league_matches")
-    .select("*")
+    .select(`
+      id, month_id, result, games_won_a, games_won_b, approved,
+      player_a ( id, full_name, rating ),
+      player_b ( id, full_name, rating )
+    `)
     .eq("month_id", monthId)
     .eq("approved", true);
 
-  if (error) {
-    monthlyLoading.textContent = "Error loading standings.";
-    return;
-  }
+  if (error) return showError("Error loading matches.");
 
-  // Count wins/losses
-  const stats = {};
+  // Compute standings
+  const standings = computeStandings(matches);
 
-  for (const m of data) {
+  standingsEl.innerHTML = renderTable(standings);
+}
+
+// -----------------------------
+// Compute 3/1/0 standings table
+// -----------------------------
+function computeStandings(matches) {
+  const table = {}; // playerId → record
+
+  for (const m of matches) {
     const a = m.player_a;
     const b = m.player_b;
-    const winner = m.winner;
 
-    if (!stats[a]) stats[a] = { wins: 0, losses: 0 };
-    if (!stats[b]) stats[b] = { wins: 0, losses: 0 };
+    if (!table[a.id])
+      table[a.id] = { player: a, points: 0, matches: 0, oppPoints: 0 };
+    if (!table[b.id])
+      table[b.id] = { player: b, points: 0, matches: 0, oppPoints: 0 };
 
-    if (winner === a) {
-      stats[a].wins++;
-      stats[b].losses++;
-    } else if (winner === b) {
-      stats[b].wins++;
-      stats[a].losses++;
+    // Add match played
+    table[a.id].matches++;
+    table[b.id].matches++;
+
+    // League points (3/1/0)
+    if (m.result === "A_WIN") {
+      table[a.id].points += 3;
+    } else if (m.result === "B_WIN") {
+      table[b.id].points += 3;
+    } else if (m.result === "DRAW") {
+      table[a.id].points += 1;
+      table[b.id].points += 1;
     }
   }
 
-  if (Object.keys(stats).length === 0) {
-    monthlyLoading.textContent = "No matches yet.";
-    return;
+  // Compute opponent points for tie-break
+  for (const m of matches) {
+    const a = m.player_a;
+    const b = m.player_b;
+
+    const ptsA = table[a.id].points;
+    const ptsB = table[b.id].points;
+
+    table[a.id].oppPoints += ptsB;
+    table[b.id].oppPoints += ptsA;
   }
 
-  // Load all players
-  const ids = Object.keys(stats);
-  const { data: players, error: pErr } = await supabase
-    .from("players")
-    .select("id, full_name, username")
-    .in("id", ids);
+  // Convert to array
+  const arr = Object.values(table);
 
-  if (pErr) {
-    monthlyLoading.textContent = "Error loading players.";
-    return;
-  }
+  // Sort by:
+  // 1. points desc
+  // 2. oppPoints desc (tie-break)
+  // 3. rating desc (secondary tie-break)
+  arr.sort((x, y) =>
+    y.points - x.points ||
+    y.oppPoints - x.oppPoints ||
+    y.player.rating - x.player.rating
+  );
 
-  const pMap = {};
-  for (const p of players) pMap[p.id] = p;
-
-  monthlyLoading.classList.add("hidden");
-  monthlyTable.classList.remove("hidden");
-
-  for (const pid of ids) {
-    const p = pMap[pid];
-    const s = stats[pid];
-
-    const row = document.createElement("tr");
-    row.className = "border-b";
-    row.innerHTML = `
-      <td class="py-2 pr-2">${p.full_name} (${p.username})</td>
-      <td class="py-2 pr-2">${s.wins}</td>
-      <td class="py-2 pr-2">${s.losses}</td>
-    `;
-
-    monthlyBody.appendChild(row);
-  }
+  return arr;
 }
 
-loadOverall();
+// -----------------------------
+// Render standings table
+// -----------------------------
+function renderTable(rows) {
+  if (rows.length === 0) {
+    return "<p class='text-slate-600'>No matches this month.</p>";
+  }
+
+  let html = `
+    <table class="w-full border text-sm">
+      <thead class="bg-slate-200 border-b">
+        <tr>
+          <th class="p-2 text-left">#</th>
+          <th class="p-2 text-left">Player</th>
+          <th class="p-2 text-left">Rating</th>
+          <th class="p-2 text-left">Points</th>
+          <th class="p-2 text-left">Matches</th>
+          <th class="p-2 text-left">Opp Pts</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  rows.forEach((r, i) => {
+    html += `
+      <tr class="border-b">
+        <td class="p-2">${i + 1}</td>
+        <td class="p-2 font-medium">${r.player.full_name}</td>
+        <td class="p-2">${r.player.rating}</td>
+        <td class="p-2 font-semibold">${r.points}</td>
+        <td class="p-2">${r.matches}</td>
+        <td class="p-2">${r.oppPoints}</td>
+      </tr>
+    `;
+  });
+
+  html += "</tbody></table>";
+  return html;
+}
+
+// Begin
 loadMonths();

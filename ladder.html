@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>League Ladder · BCWL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+
+  <!-- Menu loader -->
+  <script type="module" src="/js/global-menu-loader.js"></script>
+
+  <div class="max-w-3xl mx-auto px-4 py-10 space-y-6">
+    <h1 class="text-2xl font-bold text-center">League Ladder</h1>
+    <p class="text-sm text-slate-600 text-center">
+      Ranking by <strong>League ELO</strong> (league matches only).
+    </p>
+
+    <div id="ladder-container" class="space-y-2">
+      <!-- JS fills -->
+    </div>
+
+    <p id="ladder-error" class="text-red-600 hidden text-sm"></p>
+  </div>
+
+  <script type="module" src="/js/ladder.js"></script>
+</body>
+</html>

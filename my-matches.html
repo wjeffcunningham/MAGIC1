@@ -2,17 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>My Matches · magic1.ca</title>
+  <title>My Matches · BCWL</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-slate-100 text-slate-900">
+
+  <!-- GLOBAL MENU (only does anything once logged in) -->
   <script type="module" src="/js/global-menu-loader.js"></script>
 
-  <div class="max-w-xl mx-auto px-4 py-10">
-    <h1 class="text-2xl font-bold">My Matches</h1>
-    <p class="text-slate-600 mt-4">(Coming soon)</p>
+  <div class="max-w-3xl mx-auto px-4 py-10 space-y-6">
+    <header class="space-y-1">
+      <h1 class="text-2xl font-bold">My Matches</h1>
+      <p class="text-sm text-slate-600">
+        View your league and event matches, results, and rating changes.
+      </p>
+    </header>
+
+    <!-- Status + error -->
+    <p id="matches-status" class="text-xs text-slate-600"></p>
+    <p id="matches-error" class="text-sm text-red-600 hidden"></p>
+
+    <!-- Pending -->
+    <section class="bg-white border rounded-xl shadow p-4 space-y-2">
+      <h2 class="text-lg font-semibold">Pending Matches</h2>
+      <p class="text-xs text-slate-500">
+        These have been reported but are not yet approved by an admin.
+      </p>
+      <div id="pending-list" class="space-y-2 text-sm">
+        <!-- JS fills -->
+      </div>
+    </section>
+
+    <!-- Approved -->
+    <section class="bg-white border rounded-xl shadow p-4 space-y-2">
+      <h2 class="text-lg font-semibold">Approved Matches</h2>
+      <p class="text-xs text-slate-500">
+        These results are locked and have already affected your ratings.
+      </p>
+      <div id="approved-list" class="space-y-2 text-sm">
+        <!-- JS fills -->
+      </div>
+    </section>
+
+    <!-- Rejected -->
+    <section class="bg-white border rounded-xl shadow p-4 space-y-2">
+      <h2 class="text-lg font-semibold">Rejected / Cancelled</h2>
+      <p class="text-xs text-slate-500">
+        Matches that were rejected by an admin or cancelled before approval.
+      </p>
+      <div id="rejected-list" class="space-y-2 text-sm">
+        <!-- JS fills -->
+      </div>
+    </section>
   </div>
+
+  <script type="module" src="/js/my-matches.js"></script>
 </body>
 </html>

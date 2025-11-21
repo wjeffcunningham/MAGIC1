@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pod Assignment · BCWL Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-900">
+
+  <!-- GLOBAL MENU -->
+  <script type="module" src="/js/global-menu-loader.js"></script>
+
+  <!-- ADMIN GUARD -->
+  <script type="module">
+    import { requireAdmin } from "/js/admin-guard.js";
+    await requireAdmin();
+  </script>
+
+  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+
+    <header>
+      <h1 class="text-2xl font-bold mb-1">Pod Assignment</h1>
+      <p class="text-sm text-slate-700">
+        View and edit pod assignments for each month. Drag players between pods,
+        auto-seed randomly, or auto-seed by rating.
+      </p>
+    </header>
+
+    <!-- Month selector + controls -->
+    <section class="bg-white border rounded-xl shadow p-4 space-y-3">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <label for="month-select" class="text-sm font-medium">League Month:</label>
+          <select id="month-select"
+                  class="border rounded px-2 py-1 text-sm">
+            <!-- JS fills -->
+          </select>
+        </div>
+
+        <div class="flex flex-wrap gap-2 text-xs">
+          <button id="btn-random-seed"
+                  class="bg-slate-700 text-white px-3 py-1 rounded">
+            Random seed pods
+          </button>
+          <button id="btn-rating-seed"
+                  class="bg-sky-700 text-white px-3 py-1 rounded">
+            Seed pods by rating
+          </button>
+          <button id="btn-save"
+                  class="bg-emerald-700 text-white px-3 py-1 rounded">
+            Save pod assignments
+          </button>
+          <button id="btn-reload"
+                  class="border border-slate-400 text-slate-800 px-3 py-1 rounded">
+            Reload from database
+          </button>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-500">
+        Jan: use <strong>Random seed</strong> for the initial pods. Feb/Mar: use
+        <strong>Seed by rating</strong> to reshuffle based on current league ratings.
+        You can fine-tune manually by dragging players between pods before saving.
+      </p>
+    </section>
+
+    <!-- Pods + unassigned players -->
+    <section class="bg-white border rounded-xl shadow p-4">
+      <div id="pods-status" class="text-xs text-slate-600 mb-3">
+        Loading pods…
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4" id="pods-grid">
+        <!-- JS fills: Unassigned + pods -->
+      </div>
+    </section>
+
+    <p id="pods-error" class="hidden text-sm text-red-600"></p>
+    <p id="pods-success" class="hidden text-sm text-emerald-700"></p>
+  </div>
+
+  <script type="module" src="/js/pods-admin.js"></script>
+</body>
+</html>

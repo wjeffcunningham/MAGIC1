@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Standings · BCWL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+
+  <!-- GLOBAL MENU -->
+  <script type="module" src="/js/global-menu-loader.js"></script>
+
+  <div class="max-w-4xl mx-auto px-4 py-10">
+
+    <h1 class="text-3xl font-bold mb-6">League Standings</h1>
+
+    <!-- Month selector -->
+    <div class="bg-white p-4 border rounded-xl shadow mb-6">
+      <label class="block text-sm font-semibold mb-1">Select Month:</label>
+      <select id="month-select"
+              class="border rounded px-3 py-2 text-sm">
+        <!-- JS fills -->
+      </select>
+    </div>
+
+    <!-- Standings table -->
+    <div id="standings-container">
+      <p class="text-sm">Loading standings…</p>
+    </div>
+
+    <p id="standings-error" class="text-sm text-red-600 mt-3 hidden"></p>
+
+  </div>
+
+  <script type="module" src="/js/standings.js"></script>
+</body>
+</html>

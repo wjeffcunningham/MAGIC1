@@ -2,78 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Report Match · BC Winter League</title>
+  <title>Report Match · BCWL</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-slate-100 text-slate-900">
 
-  <!-- GLOBAL MENU LOADER GOES HERE -->
+  <!-- GLOBAL MENU ICON -->
   <script type="module" src="/js/global-menu-loader.js"></script>
-  <!-- END MENU LOADER -->
-  
-  <div class="max-w-xl mx-auto px-4 py-10 space-y-6">
-    <h1 class="text-2xl font-bold">Report Match</h1>
 
-    <div id="current-user" class="bg-white p-4 rounded-lg shadow text-sm text-slate-700">
-      Logged in as <span id="current-name" class="font-semibold"></span>
-      (<span id="current-username"></span>)
-    </div>
+  <div class="min-h-screen flex items-center justify-center px-4">
+    <div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-lg space-y-5 border">
 
-    <div id="report-panel" class="bg-white p-6 rounded-xl shadow">
+      <header>
+        <h1 class="text-2xl font-bold mb-1">Report Match</h1>
+        <p class="text-xs text-slate-600">
+          Report a league or event match. Results immediately count toward standings;
+          ratings update after admin approval.
+        </p>
+      </header>
+
+      <!-- Status line -->
+      <p id="report-status" class="text-xs text-slate-600">
+        Loading your league context…
+      </p>
+
+      <!-- Error / success messages -->
+      <p id="report-error" class="hidden text-sm text-red-600"></p>
+      <p id="report-success" class="hidden text-sm text-emerald-700"></p>
+
+      <!-- Main form -->
       <form id="report-form" class="space-y-4">
-        <!-- Month -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Month</label>
-          <select id="month-select" name="month_id"
-                  class="w-full border px-3 py-2 rounded text-sm" required>
-            <option value="">Select month…</option>
+
+        <!-- Opponent selection -->
+        <section class="space-y-2">
+          <label class="block text-sm font-semibold">Opponent</label>
+          <select id="opponent-select"
+                  name="opponent"
+                  class="w-full border rounded px-3 py-2 text-sm"
+                  required>
+            <option value="">Loading players…</option>
           </select>
-          <p id="pod-warning" class="text-xs text-amber-700 mt-1 hidden">
-            You are not assigned to a pod for this month yet; you can’t report matches for it.
+
+          <input
+            type="text"
+            id="external-opponent"
+            class="w-full border rounded px-3 py-2 text-sm hidden"
+            placeholder="External opponent full name"
+          />
+          <p class="text-[11px] text-slate-500">
+            Choose an opponent from the list, or pick “External opponent” and
+            enter their name (for store events, etc.).
           </p>
-        </div>
+        </section>
 
-        <!-- Opponent -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Opponent</label>
-          <select id="opponent-select" name="opponent_id"
-                  class="w-full border px-3 py-2 rounded text-sm" required>
-            <option value="">Select opponent…</option>
+        <!-- Match type / event -->
+        <section class="space-y-2">
+          <label class="block text-sm font-semibold">Match type / event</label>
+          <select id="event-select"
+                  name="event"
+                  class="w-full border rounded px-3 py-2 text-sm">
+            <option value="">League match (no specific event)</option>
           </select>
-        </div>
+          <p class="text-[11px] text-slate-500">
+            “League match” uses your league K-factor (casual/competitive).
+            Selecting an event (e.g. B.C. Premodern Masters, store event) uses
+            that event’s K-value.
+          </p>
+        </section>
 
-        <!-- Winner -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Winner</label>
-          <div class="flex gap-4 text-sm">
-            <label class="inline-flex items-center gap-1">
-              <input type="radio" name="winner" value="me" required />
-              I won
+        <!-- Result (best of 3 + draw) -->
+        <section class="space-y-2">
+          <label class="block text-sm font-semibold">Result (Best of 3)</label>
+          <div class="space-y-1 text-sm">
+
+            <label class="flex items-center gap-2">
+              <input type="radio" name="result" value="A_WIN_2_0" required />
+              <span>I <strong>won</strong> 2–0</span>
             </label>
-            <label class="inline-flex items-center gap-1">
-              <input type="radio" name="winner" value="opponent" />
-              Opponent won
+
+            <label class="flex items-center gap-2">
+              <input type="radio" name="result" value="A_WIN_2_1" />
+              <span>I <strong>won</strong> 2–1</span>
+            </label>
+
+            <label class="flex items-center gap-2">
+              <input type="radio" name="result" value="B_WIN_2_1" />
+              <span>I <strong>lost</strong> 1–2</span>
+            </label>
+
+            <label class="flex items-center gap-2">
+              <input type="radio" name="result" value="B_WIN_2_0" />
+              <span>I <strong>lost</strong> 0–2</span>
+            </label>
+
+            <label class="flex items-center gap-2">
+              <input type="radio" name="result" value="DRAW_1_1" />
+              <span><strong>Draw</strong> (1–1 or otherwise)</span>
             </label>
           </div>
-        </div>
+          <p class="text-[11px] text-slate-500">
+            League points: win = 3, draw = 1, loss = 0 (we’ll use this later
+            for standings).
+          </p>
+        </section>
 
         <!-- Notes -->
-        <div>
-          <label class="block text-sm font-medium mb-1">
-            Notes <span class="text-xs text-slate-400">(optional)</span>
+        <section class="space-y-1">
+          <label class="block text-sm font-semibold" for="notes">
+            Notes (optional)
           </label>
-          <textarea name="notes"
-                    class="w-full border px-3 py-2 rounded text-sm min-h-[60px]"
-                    placeholder="e.g. 2–1, close games, etc."></textarea>
-        </div>
+          <textarea
+            id="notes"
+            class="w-full border rounded px-3 py-2 text-sm"
+            rows="2"
+            placeholder="Store event name, table number, or anything useful for TO/admin."
+          ></textarea>
+        </section>
 
-        <button class="bg-sky-600 text-white px-4 py-2 rounded text-sm">
-          Submit Match
+        <button
+          type="submit"
+          id="submit-btn"
+          class="w-full bg-sky-700 hover:bg-sky-800 text-white py-2 rounded text-sm font-semibold">
+          Submit match report
         </button>
-
-        <p id="report-error" class="text-sm text-red-600 mt-2 hidden"></p>
-        <p id="report-success" class="text-sm text-emerald-700 mt-2 hidden"></p>
       </form>
     </div>
   </div>

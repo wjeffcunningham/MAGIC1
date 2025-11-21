@@ -1,17 +1,29 @@
-// Simple Elo helper for head-to-head matches
+// /js/elo.js
+// Universal ELO support with draws
 
-export function computeElo(aRating, bRating, winner, kFactor = 24) {
-  // winner: "A" or "B"
-  const qa = Math.pow(10, aRating / 400);
-  const qb = Math.pow(10, bRating / 400);
-  const ea = qa / (qa + qb);
-  const eb = qb / (qa + qb);
+export function computeElo(rA, rB, scoreA, K) {
+  const expectedA = 1 / (1 + Math.pow(10, (rB - rA) / 400));
+  const expectedB = 1 - expectedA;
 
-  let sa = winner === "A" ? 1 : 0;
-  let sb = winner === "B" ? 1 : 0;
+  const scoreB = 1 - scoreA;
 
-  const newA = Math.round(aRating + kFactor * (sa - ea));
-  const newB = Math.round(bRating + kFactor * (sb - eb));
+  const newA = Math.round(rA + K * (scoreA - expectedA));
+  const newB = Math.round(rB + K * (scoreB - expectedB));
 
-  return { newA, newB, deltaA: newA - aRating, deltaB: newB - bRating };
+  return {
+    newA,
+    newB,
+    deltaA: newA - rA,
+    deltaB: newB - rB,
+  };
+}
+
+export function scoreFromResult(result) {
+  switch (result) {
+    case "A_WIN": return 1;
+    case "B_WIN": return 0;
+    case "DRAW":  return 0.5;
+    default:
+      throw new Error("Invalid match result flag: " + result);
+  }
 }

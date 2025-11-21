@@ -1,176 +1,328 @@
+// report-match.js — player-facing match reporting
+
 import { supabase } from "./supabase.js";
-import { requireSession } from "./session.js";
+import { getLocalSession } from "./session.js";
 
-const session = requireSession();
+const statusEl   = document.getElementById("report-status");
+const errorEl    = document.getElementById("report-error");
+const successEl  = document.getElementById("report-success");
+const form       = document.getElementById("report-form");
+const opponentSelect   = document.getElementById("opponent-select");
+const externalInput    = document.getElementById("external-opponent");
+const eventSelect      = document.getElementById("event-select");
+const notesInput       = document.getElementById("notes");
+const submitBtn        = document.getElementById("submit-btn");
 
-const currentNameEl = document.getElementById("current-name");
-const currentUserEl = document.getElementById("current-username");
-const monthSelect = document.getElementById("month-select");
-const oppSelect = document.getElementById("opponent-select");
-const podWarning = document.getElementById("pod-warning");
-const form = document.getElementById("report-form");
-const errEl = document.getElementById("report-error");
-const okEl = document.getElementById("report-success");
+let session = null;
+let activeMonth = null;
+let playerPodId = null;
 
-let months = [];
-let userPodsByMonth = {}; // month_id -> pod_id or null
-let playersById = {};
+// -----------------------------
+// Helpers
+// -----------------------------
+function showError(msg) {
+  errorEl.textContent = msg;
+  errorEl.classList.remove("hidden");
+  successEl.classList.add("hidden");
+}
 
-// init UI name
-currentNameEl.textContent = session.fullName;
-currentUserEl.textContent = session.username;
+function showSuccess(msg) {
+  successEl.textContent = msg;
+  successEl.classList.remove("hidden");
+  errorEl.classList.add("hidden");
+}
 
-// Load months, pods, players
-async function init() {
-  errEl.classList.add("hidden");
-  okEl.classList.add("hidden");
+function clearMessages() {
+  errorEl.classList.add("hidden");
+  successEl.classList.add("hidden");
+}
 
-  // 1) Months (just take all league_months)
-  const { data: monthRows, error: mErr } = await supabase
+// Find active league month based on today's date
+async function fetchActiveMonth() {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
     .from("league_months")
-    .select("id, name, start_date, month_index")
-    .order("month_index");
+    .select("id, name, start_date, end_date")
+    .lte("start_date", today)
+    .gte("end_date", today)
+    .maybeSingle();
 
-  if (mErr) {
-    errEl.textContent = "Error loading months.";
-    errEl.classList.remove("hidden");
-    return;
-  }
-
-  months = monthRows || [];
-  monthSelect.innerHTML = '<option value="">Select month…</option>';
-  for (const m of months) {
-    const opt = document.createElement("option");
-    opt.value = m.id;
-    opt.textContent = m.name;
-    monthSelect.appendChild(opt);
-  }
-
-  // 2) Determine the user's pod for each month (if any)
-  //    pods -> pod_members
-  const { data: podMembers, error: pmErr } = await supabase
-    .from("pod_members")
-    .select(`
-      pod_id,
-      pods ( id, month_id )
-    `)
-    .eq("player_id", session.playerId);
-
-  if (pmErr) {
-    // not fatal; they just won't be allowed if no pod for that month
-    console.warn("Error loading pod memberships", pmErr);
-  }
-
-  userPodsByMonth = {};
-  if (podMembers) {
-    for (const row of podMembers) {
-      const pod = row.pods;
-      if (pod && pod.month_id) {
-        userPodsByMonth[pod.month_id] = pod.id;
-      }
-    }
-  }
-
-  // 3) Load all players (for now, all players in the table; we can filter to active later)
-  const { data: players, error: pErr } = await supabase
-    .from("players")
-    .select("id, full_name, username")
-    .order("full_name");
-
-  if (pErr) {
-    errEl.textContent = "Error loading players.";
-    errEl.classList.remove("hidden");
-    return;
-  }
-
-  playersById = {};
-  oppSelect.innerHTML = '<option value="">Select opponent…</option>';
-  for (const p of players) {
-    if (p.id === session.playerId) {
-      playersById[p.id] = p;
-      continue;
-    }
-    playersById[p.id] = p;
-    const opt = document.createElement("option");
-    opt.value = p.id;
-    opt.textContent = p.full_name + (p.username ? ` (${p.username})` : "");
-    oppSelect.appendChild(opt);
-  }
-
-  monthSelect.addEventListener("change", onMonthChange);
+  if (error || !data) return null;
+  return data;
 }
 
-function onMonthChange() {
-  const monthId = monthSelect.value;
-  if (!monthId) {
-    podWarning.classList.add("hidden");
-    return;
-  }
-  const podId = userPodsByMonth[monthId] || null;
-  if (!podId) {
-    podWarning.classList.remove("hidden");
+// Find pod for this player in the active month
+async function fetchPlayerPod(monthId, playerId) {
+  // 1. Pods for the given month
+  const { data: pods, error: podsErr } = await supabase
+    .from("pods")
+    .select("id")
+    .eq("season_id", activeMonth.season_id)
+    .eq("month_id", monthId);
+
+  // If your pods table does not have season_id, remove that eq() line.
+  // If this errors, fall back to just month_id.
+  let podIds = [];
+  if (podsErr || !pods?.length) {
+    const { data: pods2 } = await supabase
+      .from("pods")
+      .select("id")
+      .eq("month_id", monthId);
+    podIds = (pods2 || []).map((p) => p.id);
   } else {
-    podWarning.classList.add("hidden");
+    podIds = pods.map((p) => p.id);
+  }
+
+  if (podIds.length === 0) return null;
+
+  // 2. Pod membership for this player in those pods
+  const { data: member, error: memberErr } = await supabase
+    .from("pod_members")
+    .select("pod_id")
+    .in("pod_id", podIds)
+    .eq("player_id", playerId)
+    .maybeSingle();
+
+  if (memberErr || !member) return null;
+  return member.pod_id;
+}
+
+// Load opponent list (all registered players except self)
+async function loadOpponents() {
+  const { data, error } = await supabase
+    .from("players")
+    .select("id, full_name, rating")
+    .order("full_name", { ascending: true });
+
+  if (error) {
+    showError("Error loading players list.");
+    opponentSelect.innerHTML = `<option value="">Error loading players</option>`;
+    return;
+  }
+
+  const others = (data || []).filter((p) => p.id !== session.playerId);
+
+  opponentSelect.innerHTML = `
+    <option value="">Select opponent…</option>
+    ${others
+      .map(
+        (p) => `
+        <option value="${p.id}">
+          ${p.full_name} (Rating ${p.rating ?? 1600})
+        </option>`
+      )
+      .join("")}
+    <option value="__external">External opponent (not listed)</option>
+  `;
+}
+
+// Load events to populate match type/options
+async function loadEvents() {
+  const { data, error } = await supabase
+    .from("events")
+    .select("id, name, k_factor, event_date")
+    .order("event_date", { ascending: true });
+
+  if (error) {
+    // Leave only league option if events fail
+    return;
+  }
+
+  // Append event options
+  for (const ev of data || []) {
+    const opt = document.createElement("option");
+    opt.value = ev.id;
+    const dateStr = ev.event_date || "";
+    opt.textContent = `${ev.name} ${dateStr ? "· " + dateStr : ""} (K=${ev.k_factor})`;
+    eventSelect.appendChild(opt);
   }
 }
 
+// Map radio result → DB fields
+function interpretResult(value) {
+  switch (value) {
+    case "A_WIN_2_0":
+      return { result: "A_WIN", games_a: 2, games_b: 0 };
+    case "A_WIN_2_1":
+      return { result: "A_WIN", games_a: 2, games_b: 1 };
+    case "B_WIN_2_1":
+      return { result: "B_WIN", games_a: 1, games_b: 2 };
+    case "B_WIN_2_0":
+      return { result: "B_WIN", games_a: 0, games_b: 2 };
+    case "DRAW_1_1":
+      return { result: "DRAW", games_a: 1, games_b: 1 };
+    default:
+      return null;
+  }
+}
+
+// Create external opponent row if needed
+async function ensureExternalOpponent(name) {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new Error("External opponent name is required.");
+  }
+
+  const { data, error } = await supabase
+    .from("players")
+    .insert({
+      full_name: trimmed,
+      email: null,
+      home_store: null,
+      remote_preference: "no_remote",
+      play_style: "competitive",
+      rating: 1600,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    throw new Error("Error creating external opponent.");
+  }
+  return data.id;
+}
+
+// -----------------------------
 // Submit handler
-form.addEventListener("submit", async (e) => {
+// -----------------------------
+async function handleSubmit(e) {
   e.preventDefault();
-  errEl.classList.add("hidden");
-  okEl.classList.add("hidden");
+  clearMessages();
 
-  const formData = new FormData(form);
-  const monthId = formData.get("month_id");
-  const opponentId = formData.get("opponent_id");
-  const winnerChoice = formData.get("winner");
-  const notes = formData.get("notes")?.toString().trim() || null;
-
-  if (!monthId) {
-    errEl.textContent = "Please select a month.";
-    errEl.classList.remove("hidden");
-    return;
-  }
-  if (!opponentId) {
-    errEl.textContent = "Please select an opponent.";
-    errEl.classList.remove("hidden");
+  if (!activeMonth || !playerPodId) {
+    showError("No active league month or pod found; contact the organizer.");
     return;
   }
 
-  const podId = userPodsByMonth[monthId] || null;
-  if (!podId) {
-    errEl.textContent =
-      "You are not assigned to a pod for this month; cannot report matches for it.";
-    errEl.classList.remove("hidden");
+  // Opponent
+  const oppValue = opponentSelect.value;
+  if (!oppValue) {
+    showError("Please select an opponent.");
     return;
   }
 
-  const winnerId =
-    winnerChoice === "me" ? session.playerId : opponentId;
+  let opponentId = null;
 
-  const { error: insErr } = await supabase.from("league_matches").insert({
-    pod_id: podId,
-    month_id: monthId,
+  try {
+    if (oppValue === "__external") {
+      opponentId = await ensureExternalOpponent(externalInput.value || "");
+    } else {
+      opponentId = oppValue;
+    }
+  } catch (err) {
+    showError(err.message || "Error handling external opponent.");
+    return;
+  }
+
+  // Result radio
+  const resultRadio = form.querySelector('input[name="result"]:checked');
+  if (!resultRadio) {
+    showError("Please select a result.");
+    return;
+  }
+
+  const interp = interpretResult(resultRadio.value);
+  if (!interp) {
+    showError("Invalid result selection.");
+    return;
+  }
+
+  // Event selection
+  const eventId = eventSelect.value || null;
+
+  // Notes
+  const notes = notesInput.value.trim() || null;
+
+  // Build match row
+  const payload = {
+    pod_id: playerPodId,
+    month_id: activeMonth.id,
     player_a: session.playerId,
     player_b: opponentId,
-    winner: winnerId,
-    k_factor: 24,
+    winner:
+      interp.result === "A_WIN"
+        ? session.playerId
+        : interp.result === "B_WIN"
+        ? opponentId
+        : null,
+    result: interp.result,
+    games_won_a: interp.games_a,
+    games_won_b: interp.games_b,
+    event_id: eventId,
+    approved: false,
+    rejected: false,
     reported_by: session.playerId,
     notes,
-    approved: false,
-  });
+  };
 
-  if (insErr) {
-    console.error(insErr);
-    errEl.textContent = "Error submitting match.";
-    errEl.classList.remove("hidden");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting…";
+
+  const { error } = await supabase
+    .from("league_matches")
+    .insert(payload);
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Submit match report";
+
+  if (error) {
+    console.error(error);
+    showError("Error saving match report.");
     return;
   }
 
-  okEl.textContent = "Match submitted for approval.";
-  okEl.classList.remove("hidden");
+  showSuccess("Match reported successfully. It will count for standings now and update ratings after admin approval.");
   form.reset();
-  podWarning.classList.add("hidden");
-});
+  externalInput.classList.add("hidden");
+}
+
+// -----------------------------
+// Init
+// -----------------------------
+async function init() {
+  // 1. Require a logged-in session
+  session = getLocalSession();
+  if (!session) {
+    window.location.href = "/login.html?next=/report-match.html";
+    return;
+  }
+
+  statusEl.textContent = "Loading league month and pod…";
+
+  // 2. Active league month
+  activeMonth = await fetchActiveMonth();
+  if (!activeMonth) {
+    showError("No active league month found. Contact the organizer.");
+    statusEl.textContent = "No active league month.";
+    return;
+  }
+
+  // 3. Player's pod for this month
+  playerPodId = await fetchPlayerPod(activeMonth.id, session.playerId);
+  if (!playerPodId) {
+    showError("You are not assigned to a pod for this league month.");
+    statusEl.textContent = "No pod assignment.";
+    return;
+  }
+
+  statusEl.textContent = `Reporting matches for ${activeMonth.name}.`;
+
+  // 4. Load opponents + events
+  await Promise.all([loadOpponents(), loadEvents()]);
+
+  // 5. Opponent dropdown behavior
+  opponentSelect.addEventListener("change", () => {
+    if (opponentSelect.value === "__external") {
+      externalInput.classList.remove("hidden");
+    } else {
+      externalInput.classList.add("hidden");
+      externalInput.value = "";
+    }
+  });
+
+  // 6. Form submit
+  form.addEventListener("submit", handleSubmit);
+}
 
 init();

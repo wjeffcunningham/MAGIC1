@@ -6,31 +6,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
 <body class="bg-slate-100 text-slate-900">
 
-    <!-- GLOBAL MENU LOADER GOES HERE -->
+  <!-- GLOBAL MENU -->
   <script type="module" src="/js/global-menu-loader.js"></script>
-  <!-- END MENU LOADER -->
 
-  <!-- ADMIN ACCESS CHECK -->
-<script type="module">
-  import { requireAdmin } from "../js/admin-guard.js";
-  await requireAdmin();
-</script>
-  <!-- END ADMIN ACCESS CHECK -->
+  <!-- ADMIN GUARD -->
+  <script type="module">
+    import { requireAdmin } from "/js/admin-guard.js";
+    await requireAdmin();
+  </script>
 
-  <div class="max-w-4xl mx-auto px-4 py-10">
-    <h1 class="text-2xl font-bold mb-4">Pending Matches</h1>
-    <p class="text-sm text-slate-700 mb-6">
-      Approve matches to update player ratings and lock results.
-    </p>
+  <div class="max-w-5xl mx-auto px-4 py-10">
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold mb-1">Pending Matches</h1>
+      <p class="text-sm text-slate-700">
+        Approve results to update player ratings. Rejected matches stay in the database
+        but do not affect ratings or standings.
+      </p>
+    </header>
 
-    <div id="pending-container" class="space-y-4">
+    <div id="pending-matches" class="space-y-4">
       <!-- JS fills this -->
     </div>
 
-    <p id="admin-error" class="text-sm text-red-600 mt-4 hidden"></p>
+    <p id="admin-error" class="hidden text-sm text-red-600 mt-4"></p>
   </div>
 
   <script type="module" src="/js/approve-matches.js"></script>

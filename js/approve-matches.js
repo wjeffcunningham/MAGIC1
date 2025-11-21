@@ -1,269 +1,320 @@
-import { supabase } from "./supabase.js";
-import { requireSession } from "./session.js";
-import { computeElo } from "./elo.js";
+// /js/approve-matches.js
+// Admin tool: approve/reject matches, update global + league ratings
 
-// NOTE: no role-check yet; we just require login and assume only admin visits this page
-requireSession();
+import { supabase } from "./supabase.js";
+import { requireAdmin } from "./admin-guard.js";
+import { computeElo, scoreFromResult } from "./elo.js";
 
 const container = document.getElementById("pending-container");
-const errEl = document.getElementById("admin-error");
+const errorEl = document.getElementById("admin-error");
 
+await requireAdmin();
+
+function showError(msg) {
+  errorEl.textContent = msg;
+  errorEl.classList.remove("hidden");
+}
+
+function clearError() {
+  errorEl.classList.add("hidden");
+}
+
+// Load all pending, not rejected matches
 async function loadPending() {
-  errEl.classList.add("hidden");
-  container.innerHTML = "<p class='text-sm text-slate-600'>Loading…</p>";
+  container.innerHTML = "<p>Loading pending matches…</p>";
 
-  // 1) Load unapproved matches
-  const { data: matches, error: mErr } = await supabase
+  const { data: matches, error } = await supabase
     .from("league_matches")
-    .select("*")
+    .select(`
+      id,
+      result,
+      games_won_a,
+      games_won_b,
+      event_id,
+      played_at,
+      notes,
+      player_a:player_a (
+        id,
+        full_name,
+        rating,
+        league_rating,
+        play_style
+      ),
+      player_b:player_b (
+        id,
+        full_name,
+        rating,
+        league_rating,
+        play_style
+      ),
+      events:event_id (
+        id,
+        name,
+        k_factor
+      )
+    `)
     .eq("approved", false)
-    .order("played_at", { ascending: false });
+    .eq("rejected", false)
+    .order("played_at", { ascending: true });
 
-  if (mErr) {
-    errEl.textContent = "Error loading matches.";
-    errEl.classList.remove("hidden");
+  if (error) {
+    console.error(error);
+    return showError("Error loading pending matches.");
+  }
+
+  if (!matches.length) {
+    container.innerHTML = `<p class="text-slate-600">No matches pending approval.</p>`;
     return;
   }
 
-  if (!matches || matches.length === 0) {
-    container.innerHTML =
-      "<p class='text-sm text-slate-600'>No pending matches.</p>";
-    return;
-  }
+  container.innerHTML = matches.map(renderMatch).join("");
+}
 
-  // Collect IDs for join data
-  const playerIds = new Set();
-  const monthIds = new Set();
-  const podIds = new Set();
-
-  for (const m of matches) {
-    playerIds.add(m.player_a);
-    playerIds.add(m.player_b);
-    playerIds.add(m.winner);
-    if (m.month_id) monthIds.add(m.month_id);
-    if (m.pod_id) podIds.add(m.pod_id);
-  }
-
-  // 2) Fetch players
-  const { data: players, error: pErr } = await supabase
-    .from("players")
-    .select("id, full_name, username, rating")
-    .in("id", Array.from(playerIds));
-
-  if (pErr) {
-    errEl.textContent = "Error loading players.";
-    errEl.classList.remove("hidden");
-    return;
-  }
-
-  const playersMap = {};
-  for (const p of players) playersMap[p.id] = p;
-
-  // 3) Fetch months
-  let monthsMap = {};
-  if (monthIds.size > 0) {
-    const { data: months, error: moErr } = await supabase
-      .from("league_months")
-      .select("id, name")
-      .in("id", Array.from(monthIds));
-
-    if (!moErr && months) {
-      monthsMap = {};
-      for (const m of months) monthsMap[m.id] = m;
-    }
-  }
-
-  // 4) Fetch pods
-  let podsMap = {};
-  if (podIds.size > 0) {
-    const { data: pods, error: poErr } = await supabase
-      .from("pods")
-      .select("id, name")
-      .in("id", Array.from(podIds));
-
-    if (!poErr && pods) {
-      podsMap = {};
-      for (const p of pods) podsMap[p.id] = p;
-    }
-  }
-
-  // Render
-  container.innerHTML = "";
-  for (const match of matches) {
-    const a = playersMap[match.player_a];
-    const b = playersMap[match.player_b];
-    if (!a || !b) continue;
-
-    const winner =
-      match.winner === match.player_a ? "A" :
-      match.winner === match.player_b ? "B" : "?";
-
-    const monthName =
-      (match.month_id && monthsMap[match.month_id]?.name) || "Unknown month";
-    const podName =
-      (match.pod_id && podsMap[match.pod_id]?.name) || "No pod";
-
-    const row = document.createElement("div");
-    row.className = "bg-white p-4 rounded-lg shadow flex flex-col gap-2";
-
-    row.innerHTML = `
-      <div class="flex justify-between items-center">
-        <div class="text-sm">
-          <div class="font-semibold">${a.full_name} vs ${b.full_name}</div>
-          <div class="text-xs text-slate-600">
-            Month: ${monthName} · Pod: ${podName}
-          </div>
-          <div class="text-xs text-slate-600 mt-1">
-            Winner: ${
-              winner === "A"
-                ? a.full_name
-                : winner === "B"
-                ? b.full_name
-                : "Unknown"
-            }
-          </div>
-          <div class="text-xs text-slate-600">
-            Current ratings: ${a.rating} (${a.username || "no user"}) vs
-            ${b.rating} (${b.username || "no user"})
-          </div>
-          ${
-            match.notes
-              ? `<div class="text-xs text-slate-500 mt-1">Notes: ${match.notes}</div>`
-              : ""
-          }
-        </div>
-        <div class="flex flex-col gap-2 items-end">
-          <button class="approve-btn bg-emerald-600 text-white text-xs px-3 py-1 rounded">
-            Approve
-          </button>
-          <button class="skip-btn bg-slate-200 text-slate-800 text-xs px-3 py-1 rounded">
-            Skip
-          </button>
-        </div>
-      </div>
-    `;
-
-    const approveBtn = row.querySelector(".approve-btn");
-    const skipBtn = row.querySelector(".skip-btn");
-
-    approveBtn.addEventListener("click", async () => {
-      approveBtn.disabled = true;
-      approveBtn.textContent = "Approving…";
-      const ok = await approveMatch(match, playersMap);
-      if (!ok) {
-        approveBtn.disabled = false;
-        approveBtn.textContent = "Approve";
-        return;
-      }
-      row.remove();
-      if (container.children.length === 0) {
-        container.innerHTML =
-          "<p class='text-sm text-slate-600'>No pending matches.</p>";
-      }
-    });
-
-    skipBtn.addEventListener("click", () => {
-      row.remove();
-      if (container.children.length === 0) {
-        container.innerHTML =
-          "<p class='text-sm text-slate-600'>No pending matches.</p>";
-      }
-    });
-
-    container.appendChild(row);
+function formatResult(m) {
+  const score = `(${m.games_won_a ?? "?"}-${m.games_won_b ?? "?"})`;
+  switch (m.result) {
+    case "A_WIN": return `Player A wins ${score}`;
+    case "B_WIN": return `Player B wins ${score}`;
+    case "DRAW":  return `Draw ${score}`;
+    default:      return `Result: ${score}`;
   }
 }
 
-// Approve match: update ratings + rating_history + mark approved
-async function approveMatch(match, playersMap) {
-  errEl.classList.add("hidden");
+function renderMatch(m) {
+  const pA = m.player_a;
+  const pB = m.player_b;
+  const ev = m.events;
 
-  const a = playersMap[match.player_a];
-  const b = playersMap[match.player_b];
-  if (!a || !b) {
-    errEl.textContent = "Player records missing for match.";
-    errEl.classList.remove("hidden");
-    return false;
+  return `
+    <div class="bg-white border rounded-xl shadow p-4 space-y-2" id="match-${m.id}">
+      <div class="text-xs text-slate-500">
+        Match ID: ${m.id} · Played ${new Date(m.played_at).toLocaleString()}
+      </div>
+
+      <div class="text-sm">
+        <strong>${pA.full_name}</strong> (R ${pA.rating}, L ${pA.league_rating})<br/>
+        vs<br/>
+        <strong>${pB.full_name}</strong> (R ${pB.rating}, L ${pB.league_rating})
+      </div>
+
+      <div class="text-xs text-slate-600">
+        ${formatResult(m)}
+      </div>
+
+      <div class="text-xs text-slate-600">
+        ${
+          ev
+            ? `Event: ${ev.name} (K=${ev.k_factor})`
+            : `League match (K depends on play-style)`
+        }
+      </div>
+
+      ${m.notes ? `<div class="text-xs mt-1">Note: ${m.notes}</div>` : ""}
+
+      <div class="flex gap-3 pt-2">
+        <button
+          class="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
+          onclick="approveMatch('${m.id}')"
+        >
+          Approve & Apply Ratings
+        </button>
+
+        <button
+          class="px-3 py-1 bg-red-600 text-white rounded text-sm"
+          onclick="rejectMatch('${m.id}')"
+        >
+          Reject
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// Expose handlers to window
+window.approveMatch = approveMatch;
+window.rejectMatch = rejectMatch;
+
+// Helper: (league) K-factor based on play_style
+function leagueK(playStyle) {
+  return playStyle === "casual" ? 8 : 16;
+}
+
+// Load full match row again (fresh)
+async function fetchMatch(matchId) {
+  const { data, error } = await supabase
+    .from("league_matches")
+    .select(`
+      id,
+      result,
+      games_won_a,
+      games_won_b,
+      event_id,
+      played_at,
+      notes,
+      player_a:player_a (
+        id,
+        full_name,
+        rating,
+        league_rating,
+        play_style
+      ),
+      player_b:player_b (
+        id,
+        full_name,
+        rating,
+        league_rating,
+        play_style
+      ),
+      events:event_id (
+        id,
+        name,
+        k_factor
+      )
+    `)
+    .eq("id", matchId)
+    .single();
+
+  if (error) {
+    console.error(error);
+    showError("Error loading match for approval.");
+    return null;
+  }
+  return data;
+}
+
+async function approveMatch(matchId) {
+  clearError();
+
+  const m = await fetchMatch(matchId);
+  if (!m) return;
+
+  const pA = m.player_a;
+  const pB = m.player_b;
+  const ev = m.events;
+  const scoreA = scoreFromResult(m.result);
+
+  // ---- Global rating K ----
+  let globalK;
+  if (ev && ev.k_factor) {
+    // Event K controls global ELO
+    globalK = ev.k_factor;
+  } else {
+    // League match uses play-style K
+    globalK = leagueK(pA.play_style || "competitive");
   }
 
-  const winner =
-    match.winner === match.player_a ? "A" :
-    match.winner === match.player_b ? "B" : null;
+  // Compute new global ratings
+  const global = computeElo(pA.rating, pB.rating, scoreA, globalK);
 
-  if (!winner) {
-    errEl.textContent = "Match has no valid winner set.";
-    errEl.classList.remove("hidden");
-    return false;
+  // ---- League rating only changes for league matches (no event) ----
+  let leagueA = pA.league_rating;
+  let leagueB = pB.league_rating;
+  let leagueDeltaA = 0;
+  let leagueDeltaB = 0;
+
+  if (!m.event_id) {
+    const leagueKval = leagueK(pA.play_style || "competitive");
+    const leagueRes = computeElo(
+      pA.league_rating,
+      pB.league_rating,
+      scoreA,
+      leagueKval
+    );
+    leagueA = leagueRes.newA;
+    leagueB = leagueRes.newB;
+    leagueDeltaA = leagueRes.deltaA;
+    leagueDeltaB = leagueRes.deltaB;
   }
 
-  const kFactor = match.k_factor || 24;
-  const { newA, newB, deltaA, deltaB } = computeElo(
-    a.rating,
-    b.rating,
-    winner,
-    kFactor
-  );
+  // 1) Update both players
+  const { error: errA } = await supabase
+    .from("players")
+    .update({
+      rating: global.newA,
+      league_rating: leagueA,
+    })
+    .eq("id", pA.id);
 
-  // 1) Insert rating_history for both players
-  const { error: histErr } = await supabase.from("rating_history").insert([
+  if (errA) {
+    console.error(errA);
+    return showError("Error updating Player A rating.");
+  }
+
+  const { error: errB } = await supabase
+    .from("players")
+    .update({
+      rating: global.newB,
+      league_rating: leagueB,
+    })
+    .eq("id", pB.id);
+
+  if (errB) {
+    console.error(errB);
+    return showError("Error updating Player B rating.");
+  }
+
+  // 2) Write rating history rows
+  const { error: errHist } = await supabase.from("rating_history").insert([
     {
-      player_id: a.id,
-      match_id: match.id,
-      old_rating: a.rating,
-      new_rating: newA,
-      delta: deltaA,
+      player_id: pA.id,
+      match_id: m.id,
+      event_id: m.event_id,
+      old_rating: pA.rating,
+      new_rating: global.newA,
+      delta: global.deltaA,
+      old_league_rating: pA.league_rating,
+      new_league_rating: leagueA,
+      league_delta: leagueDeltaA,
     },
     {
-      player_id: b.id,
-      match_id: match.id,
-      old_rating: b.rating,
-      new_rating: newB,
-      delta: deltaB,
+      player_id: pB.id,
+      match_id: m.id,
+      event_id: m.event_id,
+      old_rating: pB.rating,
+      new_rating: global.newB,
+      delta: global.deltaB,
+      old_league_rating: pB.league_rating,
+      new_league_rating: leagueB,
+      league_delta: leagueDeltaB,
     },
   ]);
 
-  if (histErr) {
-    console.error(histErr);
-    errEl.textContent = "Error writing rating history.";
-    errEl.classList.remove("hidden");
-    return false;
-  }
-
-  // 2) Update players table with new ratings
-  const { error: upAErr } = await supabase
-    .from("players")
-    .update({ rating: newA })
-    .eq("id", a.id);
-  const { error: upBErr } = await supabase
-    .from("players")
-    .update({ rating: newB })
-    .eq("id", b.id);
-
-  if (upAErr || upBErr) {
-    console.error(upAErr || upBErr);
-    errEl.textContent = "Error updating player ratings.";
-    errEl.classList.remove("hidden");
-    return false;
+  if (errHist) {
+    console.error(errHist);
+    return showError("Error writing rating history.");
   }
 
   // 3) Mark match approved
-  const { error: appErr } = await supabase
+  const { error: errApp } = await supabase
     .from("league_matches")
     .update({ approved: true })
-    .eq("id", match.id);
+    .eq("id", m.id);
 
-  if (appErr) {
-    console.error(appErr);
-    errEl.textContent = "Error marking match approved.";
-    errEl.classList.remove("hidden");
-    return false;
+  if (errApp) {
+    console.error(errApp);
+    return showError("Error marking match approved.");
   }
 
-  // Update cached ratings in map so approving multiple matches uses updated values
-  a.rating = newA;
-  b.rating = newB;
-
-  return true;
+  const card = document.getElementById(`match-${m.id}`);
+  if (card) card.remove();
 }
 
+async function rejectMatch(matchId) {
+  clearError();
+
+  const { error } = await supabase
+    .from("league_matches")
+    .update({ rejected: true })
+    .eq("id", matchId);
+
+  if (error) {
+    console.error(error);
+    return showError("Error rejecting match.");
+  }
+
+  const card = document.getElementById(`match-${matchId}`);
+  if (card) card.remove();
+}
+
+// Kick off
 loadPending();
