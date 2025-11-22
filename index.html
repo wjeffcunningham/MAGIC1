@@ -80,33 +80,41 @@
 
 .prize-row {
   display: flex;
-  justify-content: center;  /* true centre */
-  align-items: flex-end;     /* baseline align */
-  gap: 40px;                 /* consistent visual spacing */
-  width: 100%;
-  padding: 0;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 32px;
+  margin-top: 20px;
 }
 
-.pack {
-  display: block;
+.prize-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 32px;
+  margin-top: 20px;
+}
+
+/* All mini-cards start from a fixed baseline */
+.mini {
+  width: 80px;        /* TRUE baseline size — adjust as needed */
   height: auto;
+  object-fit: contain;
 }
 
-/* Legends pack ≈ double size */
-.pack.legends {
-  width: 180px;   /* adjust as needed, but this hits "double" visually */
+/* Legends: double baseline */
+.mini.legends {
+  width: calc(80px * 2);   /* 160px */
 }
 
-/* Survival ≈ 2/3 of full card scale */
-.pack.survival {
-  width: 120px;   /* 2/3 */
+/* Survival: two-thirds baseline */
+.mini.survival {
+  width: calc(80px * 0.66);  /* ~53px */
 }
 
-/* REB ≈ 1/3 size */
-.pack.reb {
-  width: 70px;    /* 1/3-ish */
+/* REB stays baseline (1×) */
+.mini.reb {
+  width: 80px;
 }
-
   /* Lightbox overlay */
 #card-lightbox {
   position: fixed;
