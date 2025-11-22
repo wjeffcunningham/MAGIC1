@@ -1,6 +1,6 @@
 // Inject menu icon + panel
 const html = `
-  <img src="/assets/magic1.svg" id="menu-icon" class="menu-icon" />
+  <img src="/assets/magic1.svg" id="menu-icon" class="menu-icon" data-preload="jan2026" />
   <div id="menu-panel" class="menu-panel"></div>
 `;
 
@@ -9,41 +9,52 @@ document.body.insertAdjacentHTML("beforeend", html);
 // Inject CSS globally
 const style = document.createElement("style");
 style.textContent = `
-  /* Icon */
+  /* Icon — now HARD-PINNED + larger bias */
   .menu-icon {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    width: min(14vw, 90px);
+    top: 16px;
+    right: 16px;
+    width: min(15vw, 110px);
     height: auto;
     cursor: pointer;
-    z-index: 1000;
+    z-index: 2000;
+    user-select: none;
+    opacity: 0.97;
   }
 
   @media (max-width: 600px) {
     .menu-icon {
-      width: min(18vw, 100px);
+      width: min(24vw, 125px);
+      top: 12px;
+      right: 12px;
     }
   }
 
-  /* Menu container */
+  /* Menu container — pinned directly under icon, smoother motion */
   #menu-panel {
     position: fixed;
-    top: 110px;
-    right: 20px;
-    width: 220px;
+    top: calc(16px + min(15vw, 110px) + 12px); /* dynamic spacing */
+    right: 16px;
+    width: 240px;
     background: white;
     border: 2px solid black;
     padding: 14px;
     border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     display: none;
-    z-index: 1000;
+    z-index: 1999;
 
-    /* slide-down animation */
     opacity: 0;
-    transform: translateY(-8px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateY(-6px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+
+  @media (max-width: 600px) {
+    #menu-panel {
+      top: calc(12px + min(24vw, 125px) + 8px);
+      right: 10px;
+      width: 75vw;
+    }
   }
 
   #menu-panel.open {
