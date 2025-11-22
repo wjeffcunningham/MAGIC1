@@ -77,7 +77,7 @@
     margin: 20px auto;
     display: block;
   }
-  
+
 .prize-row img {
   height: 54px;       /* proportional to logos@60px */
   width: auto;
@@ -114,6 +114,13 @@
   box-shadow: 0 0 20px rgba(0,0,0,0.6);
   border: none;
   user-select: none;
+}
+
+.featured {
+  transform: scale(1.35);
+  filter: drop-shadow(0 0 12px rgba(0,0,0,0.45))
+          brightness(1.12) contrast(1.08);
+  z-index: 5;
 }
 
   .logos {
@@ -175,7 +182,7 @@
 
   <div class="prize-row">
           <img src="./assets/card_reb.jpg" alt="Red Elemental Blast" class="first"/>
-      <img src="./assets/Legends_booster.webp" alt="Legends Booster" class="first"/>
+      <img src="./assets/Legends_booster.webp" alt="Legends Booster" class="first" class="mini featured"/>
       <img src="./assets/card_surv.jpg" alt="Survival of the Fittest" class="first"/>
       <img src="./assets/card_etdr.webp" alt="Eternal Dragon" />
   </div>
