@@ -17,45 +17,33 @@
     text-align: center;
   }
 
-  /* ================================
-     ANCHORED MENU CIRCLE
-     ================================ */
-  #menu-circle {
-    position: absolute;
-    top: -45px;
-    right: -45px;
-    width: 90px;
-    height: 90px;
-    background: white;
-    border: 3px solid black;
-    border-radius: 50%;
+  /* ============================================
+     HAMBURGER MENU BUTTON (Option A)
+     ============================================ */
+  #hamburger {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    font-size: 2.1rem;
+    font-weight: 700;
     cursor: pointer;
     z-index: 5000;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    user-select: none;
+    opacity: 0.85;
   }
 
-  #menu-circle img {
-    width: 70%;
-    height: 70%;
-    object-fit: contain;
-    pointer-events: none;
-    opacity: 0.95;
+  #hamburger:hover {
+    opacity: 1;
   }
 
-  @media (max-width: 600px) {
-    #menu-circle { width: 75px; height: 75px; top: -37px; right: -37px; }
-  }
+  /* ============================================
+     MENU PANEL
+     ============================================ */
 
-  /* ================================
-        MENU PANEL
-     ================================ */
   #menu-panel {
-    position: absolute;
-    top: 65px;
-    right: 0;
+    position: fixed;
+    top: 70px;
+    right: 18px;
 
     width: 240px;
     padding: 16px;
@@ -70,7 +58,7 @@
     transition: opacity .2s ease, transform .2s ease;
     pointer-events: none;
 
-    z-index: 4990;
+    z-index: 4999;
   }
 
   #menu-panel.open {
@@ -103,21 +91,20 @@
     margin: 10px 0;
   }
 
-  /* ================================
-        POSTER SLIDER
-     ================================ */
+  /* ============================================
+     POSTER SLIDER
+     ============================================ */
   .poster-slider {
     max-width: 800px;
-    margin: 110px auto 40px auto;
+    margin: 100px auto 50px auto;
     position: relative;
   }
 
   .poster {
     max-width: 800px;
-    margin: 0 auto;
-    border: 3px solid #000;
+    margin: 0 auto 50px auto;
     background: #fff;
-    padding: 40px;
+    padding: 40px 30px;
     display: none;
     position: relative;
   }
@@ -151,7 +138,7 @@
 
   h3 {
     font-size: 1.3em;
-    margin-top: 1.0em;   /* lifted up closer to tagline */
+    margin-top: 0.9em; /* better spacing */
     font-weight: 700;
     text-transform: uppercase;
     border-bottom: 2px solid #000;
@@ -159,7 +146,7 @@
     padding-bottom: 0.1em;
   }
 
-  /* Enlarged tagline */
+  /* Enhanced Tagline */
   .tagline {
     font-style: italic;
     font-size: 1.35em;
@@ -169,19 +156,18 @@
     margin: 1.1em 0 1.4em;
   }
 
-  /* ================================
+  /* ============================================
      PRIZE FEATURE — FIXED HEIGHT
-     ================================ */
+     ============================================ */
   #prize-featured {
     margin-top: 10px;
 
-    /* LOCKED HEIGHT (Option A): exact rendered height of Legends booster */
-    height: 260px; /* This is the stable height based on your 150px width */
+    /* exact height after scaling to 150px width */
+    height: 260px;
 
     display: flex;
     align-items: center;
     justify-content: center;
-
     overflow: hidden;
   }
 
@@ -190,9 +176,9 @@
     cursor: pointer;
   }
 
-  /* ================================
-        SPONSOR ICONS
-     ================================ */
+  /* ============================================
+     SPONSOR ICONS
+     ============================================ */
   .logos {
     display: flex;
     justify-content: center;
@@ -208,9 +194,9 @@
 
   .shg-logo { filter: none !important; }
 
-  /* ================================
-        LIGHTBOX (sponsors only)
-     ================================ */
+  /* ============================================
+     LIGHTBOX
+     ============================================ */
   #card-lightbox {
     position: fixed;
     inset: 0;
@@ -226,44 +212,49 @@
     max-height: 90vh;
   }
 
-  /* ================================
-        PAGE ARROW
-     ================================ */
+  /* ============================================
+     PAGE ARROW
+     ============================================ */
   #poster-arrow {
     position: fixed;
     top: 50%;
     right: 8px;
     transform: translateY(-50%);
-    font-size: 2.0em;
+    font-size: 2em;
     opacity: 0.45;
     cursor: pointer;
     user-select: none;
     z-index: 4500;
   }
+
 </style>
 
 </head>
 <body>
 
-<!-- POSTER SLIDER -->
+<!-- ===========================
+     HAMBURGER BUTTON
+     =========================== -->
+<div id="hamburger">☰</div>
+
+<!-- ===========================
+     MENU PANEL
+     =========================== -->
+<div id="menu-panel">
+  <div class="menu-title">Menu</div>
+  <a href="/" class="menu-link">Home</a>
+  <a href="/league/index.html" class="menu-link">League Home</a>
+  <a href="/my-matches.html" class="menu-link">My Matches</a>
+  <a href="/report-match.html" class="menu-link">Report Match</a>
+  <a href="/profile.html" class="menu-link">My Profile</a>
+  <hr>
+  <a href="/admin/index.html" class="menu-link">Admin Area</a>
+</div>
+
+<!-- ===========================
+     POSTER SLIDER
+     =========================== -->
 <div class="poster-slider">
-
-  <!-- MENU CIRCLE -->
-  <div id="menu-circle">
-    <img src="/assets/magic1.svg" alt="Menu" />
-  </div>
-
-  <!-- MENU PANEL -->
-  <div id="menu-panel">
-    <div class="menu-title">Menu</div>
-    <a href="/" class="menu-link">Home</a>
-    <a href="/league/index.html" class="menu-link">League Home</a>
-    <a href="/my-matches.html" class="menu-link">My Matches</a>
-    <a href="/report-match.html" class="menu-link">Report Match</a>
-    <a href="/profile.html" class="menu-link">My Profile</a>
-    <hr>
-    <a href="/admin/index.html" class="menu-link">Admin Area</a>
-  </div>
 
   <!-- POSTER 1 -->
   <div class="poster active" id="poster-1">
@@ -287,13 +278,14 @@
 
     <div class="tagline">“Magic Lives in B.C.”</div>
 
-    <!-- FEATURED PRIZE -->
+    <h3>Prizing</h3>
+
+    <!-- FIXED-HEIGHT FEATURED PRIZE -->
     <div id="prize-featured">
       <img id="prize-img" src="./assets/Legends_booster2.webp" alt="Prize" />
     </div>
 
     <p>1st Place — <strong>1 Sealed Legends Booster Pack</strong></p>
-    <p><i>Top 8 and participation prizes TBD</i></p>
 
     <p><em>Prize points contribute to standings in the upcoming  
       Sunday Super Series: B.C. Winter League</em></p>
@@ -312,7 +304,6 @@
     </div>
 
   </div>
-
 
   <!-- POSTER 2 -->
   <div class="poster" id="poster-2">
@@ -362,11 +353,11 @@
 
 <script>
 /* MENU TOGGLE */
-document.getElementById("menu-circle").addEventListener("click", () =>
-  document.getElementById("menu-panel").classList.toggle("open")
-);
+document.getElementById("hamburger").addEventListener("click", () => {
+  document.getElementById("menu-panel").classList.toggle("open");
+});
 
-/* PRIZE ROTATION (NO ZOOM) */
+/* PRIZE ROTATION */
 const prizeImg = document.getElementById("prize-img");
 const prizes = [
   "./assets/Legends_booster2.webp",
