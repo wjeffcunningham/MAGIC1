@@ -1,0 +1,19 @@
+<svg width="300" height="300" viewBox="0 0 300 300"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <!-- White interior -->
+  <circle cx="150" cy="150" r="140"
+          fill="white"
+          stroke="black"
+          stroke-width="6" />
+
+  <!-- Text -->
+  <text x="50%" y="50%"
+        font-family="Helvetica, Arial, sans-serif"
+        font-size="48"
+        text-anchor="middle"
+        alignment-baseline="middle"
+        fill="black">
+    magic1.ca
+  </text>
+</svg>

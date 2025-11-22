@@ -17,17 +17,117 @@
     text-align: center;
   }
 
-  .poster {
-    max-width: 800px;
-    margin: 40px auto;
-    border: 3px solid #000;
+  /* ================================
+     ANCHORED MENU CIRCLE
+     ================================ */
+  #menu-circle {
+    position: absolute;
+    top: -45px;
+    right: -45px;
+    width: 90px;
+    height: 90px;
+    background: white;
+    border: 3px solid black;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 5000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #menu-circle img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+    pointer-events: none;
+    opacity: 0.95;
+  }
+
+  @media (max-width: 600px) {
+    #menu-circle { width: 75px; height: 75px; top: -37px; right: -37px; }
+  }
+
+  /* ================================
+        MENU PANEL
+     ================================ */
+  #menu-panel {
+    position: absolute;
+    top: 65px;
+    right: 0;
+
+    width: 240px;
+    padding: 16px;
+
     background: #fff;
-    padding: 40px;
+    border: 2px solid black;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.2);
+
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity .2s ease, transform .2s ease;
+    pointer-events: none;
+
+    z-index: 4990;
+  }
+
+  #menu-panel.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .menu-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-align: left;
+  }
+
+  .menu-link {
+    display: block;
+    padding: 6px 0;
+    text-align: left;
+    text-decoration: none;
+    color: #000;
+    font-size: 0.95rem;
+  }
+
+  .menu-link:hover { text-decoration: underline; }
+
+  hr {
+    border: none;
+    border-bottom: 1px solid #ccc;
+    margin: 10px 0;
+  }
+
+  /* ================================
+        POSTER SLIDER
+     ================================ */
+  .poster-slider {
+    max-width: 800px;
+    margin: 110px auto 40px auto;
     position: relative;
   }
 
-  .poster img {
-    user-select: none;
+  .poster {
+    max-width: 800px;
+    margin: 0 auto;
+    border: 3px solid #000;
+    background: #fff;
+    padding: 40px;
+    display: none;
+    position: relative;
+  }
+
+  .poster.active { display: block; }
+
+  .logo-large {
+    max-width: 220px;
+    margin: 20px auto;
+    display: block;
   }
 
   h1 {
@@ -51,7 +151,7 @@
 
   h3 {
     font-size: 1.3em;
-    margin-top: 1.4em;
+    margin-top: 1.0em;   /* lifted up closer to tagline */
     font-weight: 700;
     text-transform: uppercase;
     border-bottom: 2px solid #000;
@@ -59,253 +159,252 @@
     padding-bottom: 0.1em;
   }
 
-  p {
-    font-size: 1.05em;
-    margin: 0.45em 0;
-    line-height: 1.5;
-  }
-
+  /* Enlarged tagline */
   .tagline {
     font-style: italic;
-    font-size: 1.1em;
+    font-size: 1.35em;
     font-weight: 600;
-    margin: 1em 0 1.4em;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+    margin: 1.1em 0 1.4em;
   }
 
-  .logo-large {
-    max-width: 220px;
-    margin: 20px auto;
-    display: block;
+  /* ================================
+     PRIZE FEATURE — FIXED HEIGHT
+     ================================ */
+  #prize-featured {
+    margin-top: 10px;
+
+    /* LOCKED HEIGHT (Option A): exact rendered height of Legends booster */
+    height: 260px; /* This is the stable height based on your 150px width */
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
   }
 
-.prize-row {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 32px;
-  margin-top: 20px;
-}
+  #prize-img {
+    width: 150px;
+    cursor: pointer;
+  }
 
-.prize-row {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 32px;
-  margin-top: 20px;
-}
-
-/* All mini-cards start from a fixed baseline */
-.mini {
-  width: 80px;        /* TRUE baseline size — adjust as needed */
-  height: auto;
-  object-fit: contain;
-}
-
-/* Legends: double baseline */
-.mini.legends {
-  width: calc(80px * 2);   /* 160px */
-}
-
-/* Survival: two-thirds baseline */
-.mini.survival {
-  width: calc(80px * 0.66);  /* ~53px */
-}
-
-/* REB stays baseline (1×) */
-.mini.reb {
-  width: 80px;
-}
-  /* Lightbox overlay */
-#card-lightbox {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-/* The enlarged card */
-#card-lightbox img {
-  max-width: 90vw;
-  max-height: 90vh;
-  box-shadow: 0 0 20px rgba(0,0,0,0.6);
-  border: none;
-  user-select: none;
-}
-
-.featured {
-  transform: scale(1.35);
-  filter: drop-shadow(0 0 12px rgba(0,0,0,0.45))
-          brightness(1.12) contrast(1.08);
-  z-index: 5;
-}
-
+  /* ================================
+        SPONSOR ICONS
+     ================================ */
   .logos {
     display: flex;
     justify-content: center;
     gap: 25px;
-    margin-top: 35px;
-    flex-wrap: wrap;
+    margin-top: 22px;
   }
 
   .logos img {
     height: 60px;
     filter: grayscale(100%) contrast(130%);
+    cursor: pointer;
   }
 
-  .shg-logo {
-    filter: none !important;
+  .shg-logo { filter: none !important; }
+
+  /* ================================
+        LIGHTBOX (sponsors only)
+     ================================ */
+  #card-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
   }
 
-  @media print {
-    .poster { border: 2px solid #000; }
+  #card-lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
   }
 
-  #menu-panel a[target="_blank"]::after {
-  display: none !important;
-}
-
+  /* ================================
+        PAGE ARROW
+     ================================ */
+  #poster-arrow {
+    position: fixed;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    font-size: 2.0em;
+    opacity: 0.45;
+    cursor: pointer;
+    user-select: none;
+    z-index: 4500;
+  }
 </style>
-</head>
 
+</head>
 <body>
 
-<script type="module" src="/js/global-menu-loader.js"></script>
+<!-- POSTER SLIDER -->
+<div class="poster-slider">
 
-<!-- ====================================== -->
-<!--     B.C. PREMODERN MASTERS POSTER      -->
-<!-- ====================================== -->
-
-<div class="poster">
-
-  <img src="./assets/BCPMM.svg" alt="BCPMM Logo" class="logo-large" />
-
-  <h1>B.C. Premodern Masters</h1>
-  <h2>Saturday, January 10th, 2026</h2>
-
-  <p><strong>Format:</strong> Premodern Constructed  
-     (<a href="https://premodernmagic.com" target="_blank">premodernmagic.com</a>)</p>
-
-  <p><strong>Entry:</strong> $40.00</p>
-
-  <p><strong>Structure:</strong> 5 Rounds · Best-of-3 · Cut to Top 8</p>
-  <p><strong>Tournament Start:</strong> 11:00am</p>
-
-  <p><strong>Decks Available for Loan On Request</strong><br>
-     (<a href="https://mtgtop8.com/event?e=68297&f=PREM" target="_blank">Top 8 Lobstercon 2025</a>)</p>
-
-  <div class="tagline">“Magic Lives in B.C.”</div>
-
-  <h3>Prizing</h3>
-
-  <p>1st Place — <strong>1 Sealed Legends Booster Pack</strong></p>
-  <p>Participation and Top 8 prizes TBA</p>
-
-<div class="prize-row">
-<img src="https://magic1.ca/assets/card_reb.jpg" class="mini reb">
-<img src="https://magic1.ca/assets/Legends_booster2.webp" class="mini legends">
-<img src="https://magic1.ca/assets/card_surv.jpg" class="mini survival">
-</div>
-
-  <p><em>Prize points contribute to standings in the upcoming Sunday Super Series: B.C. Winter League</em></p>
-
-  <p>Register at 
-    <strong>
-      <a href="https://www.magicstronghold.com/store/category/Magic%20The%20Gathering%20Events/item/426799/BC_Secret_Masters:_Legends_Series_(January_10th_@_11:00am)"
-         target="_blank">Magic Stronghold Games</a>
-    </strong>
-  </p>
-
-  <hr />
-
-  <div class="logos">
-    <img src="./assets/shg.jpg" alt="Magic Stronghold" class="shg-logo" />
-    <img src="./assets/fcp.png" alt="FCP" />
-        <img src="./assets/vvip.png" class="vvip" alt="vvip" />
+  <!-- MENU CIRCLE -->
+  <div id="menu-circle">
+    <img src="/assets/magic1.svg" alt="Menu" />
   </div>
 
-  <footer style="margin-top: 30px; font-size: 0.9em; font-weight: 600;">
-    © 2026 B.C. Premodern Masters. All Rights Reserved.
-  </footer>
-
-</div>
-
-
-<!-- ====================================== -->
-<!--        BC WINTER LEAGUE FLYER          -->
-<!-- ====================================== -->
-
-<div class="poster">
-
-<img src="./assets/winter.jpg" alt="Mishra's Factory" style="max-width: 300px; margin: 10px auto; display:block;" />
-
-  <h1>B.C. Winter League</h1>
-  <h2>January – March 2026</h2>
-
-  <p><strong>32 players</strong> · 4 pods of 8 · Monthly reshuffles</p>
-  <p><strong>Premodern Constructed</strong> $20.00/month · Proxies Legal</p>
-  <p><strong>3 points per win</strong> · 0 per loss · Ratings active</p>
-  <p><strong><i>"Before they were Legends, they were Friends."</i></strong></p>
-
-  <hr />
-
-  <h3>How It Works</h3>
-
-  <p>• Play 4+ matches per month (stores or remote)</p>
-  <p>• Pods reshuffle monthly</p>
-  <p>• Remote and Casual/Competitive preferences</p>
-  <p>• Results tracked in the <strong>BCWL</strong> archive</p>
-
-  <hr />
-
-  <div class="logos">
-    <img src="./assets/shg.jpg" class="shg-logo" alt="Magic Stronghold" />
-    <img src="./assets/fcp.png" alt="FCP" />
-    <img src="./assets/BCPMM.svg" class="shg-logo" alt="bcpmm" />
-    <!--
-            <img src="./assets/vvip.png" class="vvip" alt="vvip" />
+  <!-- MENU PANEL -->
+  <div id="menu-panel">
+    <div class="menu-title">Menu</div>
+    <a href="/" class="menu-link">Home</a>
+    <a href="/league/index.html" class="menu-link">League Home</a>
+    <a href="/my-matches.html" class="menu-link">My Matches</a>
+    <a href="/report-match.html" class="menu-link">Report Match</a>
+    <a href="/profile.html" class="menu-link">My Profile</a>
+    <hr>
+    <a href="/admin/index.html" class="menu-link">Admin Area</a>
   </div>
-    -->
 
-  <footer style="margin-top: 30px; font-size: 0.9em; font-weight: 600;">
-    © 2026 BC Winter League. All Rights Reserved.
-  </footer>
+  <!-- POSTER 1 -->
+  <div class="poster active" id="poster-1">
+
+    <img src="./assets/BCPMM.svg" class="logo-large" />
+
+    <h1>B.C. Premodern Masters</h1>
+    <h2>Saturday, January 10th, 2026</h2>
+
+    <p><strong>Format:</strong> Premodern Constructed  
+       (<a href="https://premodernmagic.com" target="_blank">premodernmagic.com</a>)</p>
+
+    <p><strong>Entry:</strong> $40.00</p>
+
+    <p><strong>Structure:</strong> 5 Rounds · Best-of-3 · Cut to Top 8</p>
+    <p><strong>Tournament Start:</strong> 11:00am</p>
+
+    <p><strong>Decks Available for Loan On Request</strong><br>
+       (<a href="https://mtgtop8.com/event?e=68297&f=PREM" target="_blank">
+         Top 8 Lobstercon 2025</a>)</p>
+
+    <div class="tagline">“Magic Lives in B.C.”</div>
+
+    <!-- FEATURED PRIZE -->
+    <div id="prize-featured">
+      <img id="prize-img" src="./assets/Legends_booster2.webp" alt="Prize" />
+    </div>
+
+    <p>1st Place — <strong>1 Sealed Legends Booster Pack</strong></p>
+    <p><i>Top 8 and participation prizes TBD</i></p>
+
+    <p><em>Prize points contribute to standings in the upcoming  
+      Sunday Super Series: B.C. Winter League</em></p>
+
+    <p>Register at 
+      <strong>
+        <a href="https://www.magicstronghold.com/store/category/Magic%20The%20Gathering%20Events/item/426799/BC_Secret_Masters:_Legends_Series_(January_10th_@_11:00am)"
+           target="_blank">Magic Stronghold Games</a>
+      </strong>
+    </p>
+
+    <div class="logos">
+      <img src="./assets/shg.jpg" class="shg-logo" />
+      <img src="./assets/fcp.png" />
+      <img src="./assets/vvip.png" />
+    </div>
+
+  </div>
+
+
+  <!-- POSTER 2 -->
+  <div class="poster" id="poster-2">
+
+    <img src="./assets/winter.jpg"
+         style="max-width:300px; margin:10px auto; display:block;" />
+
+    <h1>B.C. Winter League</h1>
+    <h2>January – March 2026</h2>
+
+    <p><strong>32 players</strong> · 4 pods of 8 · Monthly reshuffles</p>
+    <p><strong>Premodern Constructed</strong> $20.00/month · Proxies Legal</p>
+    <p><strong>3 points per win</strong> · 0 per loss · Ratings active</p>
+
+    <p><strong><i>"Before they were Legends, they were Friends."</i></strong></p>
+
+    <p style="margin-top:0.8em;"><em>(Must be 18+ to participate)</em></p>
+
+    <hr />
+
+    <h3>How It Works</h3>
+
+    <p>• Play 4+ matches per month</p>
+    <p>• Pods reshuffle monthly</p>
+    <p>• Remote and Casual/Competitive preferences</p>
+    <p>• Results tracked in the <strong>BCWL</strong> archive</p>
+
+    <hr />
+
+    <div class="logos">
+      <img src="./assets/shg.jpg" class="shg-logo" />
+      <img src="./assets/fcp.png" />
+      <img src="./assets/BCPMM.svg" class="shg-logo" />
+    </div>
+
+  </div>
 
 </div>
 
+<!-- PAGE ARROW -->
+<div id="poster-arrow">&#10132;</div>
+
+<!-- LIGHTBOX -->
 <div id="card-lightbox">
-  <img src="" alt="card" />
+  <img src="" />
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const lightbox = document.getElementById("card-lightbox");
-  const lightboxImg = lightbox.querySelector("img");
+/* MENU TOGGLE */
+document.getElementById("menu-circle").addEventListener("click", () =>
+  document.getElementById("menu-panel").classList.toggle("open")
+);
 
-  // Attach click handlers to all minicards
-  document.querySelectorAll(".prize-row img").forEach(img => {
-    img.style.cursor = "pointer";
+/* PRIZE ROTATION (NO ZOOM) */
+const prizeImg = document.getElementById("prize-img");
+const prizes = [
+  "./assets/Legends_booster2.webp",
+  "./assets/card_reb.jpg",
+  "./assets/card_surv.jpg",
+  "./assets/card_etdr.webp"
+];
 
-    img.addEventListener("click", () => {
-      lightboxImg.src = img.src;
-      lightbox.style.display = "flex";
-    });
+let idx = 0;
+prizeImg.addEventListener("click", () => {
+  idx = (idx + 1) % prizes.length;
+  prizeImg.src = prizes[idx];
+});
+
+/* LIGHTBOX (SPONSORS ONLY) */
+const lightbox = document.getElementById("card-lightbox");
+const lbImg = lightbox.querySelector("img");
+
+document.querySelectorAll(".logos img").forEach(img => {
+  img.addEventListener("click", () => {
+    lbImg.src = img.src;
+    lightbox.style.display = "flex";
   });
+});
 
-  // Close lightbox on click or Escape
-  lightbox.addEventListener("click", () => {
-    lightbox.style.display = "none";
-    lightboxImg.src = "";
-  });
+lightbox.addEventListener("click", () => {
+  lightbox.style.display = "none";
+  lbImg.src = "";
+});
 
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") {
-      lightbox.style.display = "none";
-      lightboxImg.src = "";
-    }
-  });
+/* POSTER FLIP */
+const posters = document.querySelectorAll(".poster");
+const arrow = document.getElementById("poster-arrow");
+let posterIndex = 0;
+
+arrow.addEventListener("click", () => {
+  posterIndex = (posterIndex + 1) % posters.length;
+  posters.forEach((p, i) => p.classList.toggle("active", i === posterIndex));
 });
 </script>
 

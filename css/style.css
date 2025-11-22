@@ -1,0 +1,158 @@
+body {
+  margin: 0;
+  background: #fff;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  text-align: center;
+}
+
+/* ----------------------- */
+/* FIXED MENU ICON         */
+/* ----------------------- */
+
+#menu-icon {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 64px;
+  height: 64px;
+  z-index: 5000;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* MENU PANEL */
+.menu-panel {
+  position: fixed;
+  top: 96px;
+  right: 20px;
+  width: 220px;
+  background: #fff;
+  border: 2px solid #000;
+  border-radius: 12px;
+  padding: 14px;
+  display: none;
+  z-index: 4500;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* ----------------------- */
+/* POSTER STRUCTURE        */
+/* ----------------------- */
+
+.poster {
+  max-width: 800px;
+  margin: 50px auto;
+  border: 3px solid #000;
+  padding: 40px;
+  background: #fff;
+  position: relative;
+}
+
+.logo-large {
+  max-width: 220px;
+  margin: 20px auto;
+}
+
+h1 {
+  font-size: 2.6em;
+  margin: 0 0 0.3em;
+  border-bottom: 4px double #000;
+  display: inline-block;
+}
+
+h2 {
+  margin-top: 0.4em;
+  text-transform: uppercase;
+}
+
+h3 {
+  margin-top: 1.4em;
+  border-bottom: 2px solid #000;
+  display: inline-block;
+  padding-bottom: 0.1em;
+}
+
+.poster-footer {
+  margin-top: 20px;
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+/* ----------------------- */
+/* PRIZE + SPONSOR GRID    */
+/* ----------------------- */
+
+#prize-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 16px;
+}
+
+/* Fixed-height prize-row so no jumpiness */
+.prize-row {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  height: 110px; /* fixed row height */
+}
+
+.prize-slot img.mini {
+  height: 110px;
+  width: auto;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+.prize-arrow {
+  font-size: 2rem;
+  margin: 12px 0;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+/* Sponsor Row */
+.sponsor-row {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin-top: 6px;
+}
+
+.sponsor-row img {
+  height: 55px;
+  object-fit: contain;
+}
+
+/* ----------------------- */
+/* POSTER SLIDER ARROW     */
+/* ----------------------- */
+
+.poster-arrow {
+  position: fixed;
+  top: 50%;
+  right: 12px;
+  font-size: 2.4rem;
+  cursor: pointer;
+  opacity: 0.4;
+  user-select: none;
+}
+
+/* ----------------------- */
+/* LIGHTBOX                */
+/* ----------------------- */
+
+#card-lightbox {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  z-index: 6000;
+}
+
+#card-lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+}
