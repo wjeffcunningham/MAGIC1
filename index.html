@@ -17,6 +17,54 @@
     text-align: center;
   }
 
+  /* ========================================== */
+  /*  FIXED + PINNED MENU ICON (UPDATE #1)      */
+  /* ========================================== */
+  .menu-icon {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    width: min(16vw, 95px);
+    height: auto;
+    cursor: pointer;
+    z-index: 2000;
+    opacity: 0.97;
+    user-select: none;
+  }
+
+  @media (max-width: 600px) {
+    .menu-icon {
+      width: min(22vw, 110px);
+      top: 14px;
+      right: 14px;
+    }
+  }
+
+  /* ========================================== */
+  /*  MENU PANEL BEHAVIOUR IMPROVED (#2)         */
+  /* ========================================== */
+  #menu-panel {
+    position: fixed;
+    top: 120px;
+    right: 20px;
+    background: #fff;
+    border: 2px solid #000;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    z-index: 1999;
+    width: 240px;
+    display: none;
+  }
+
+  @media (max-width: 600px) {
+    #menu-panel {
+      top: 105px;
+      right: 10px;
+      width: 75vw;
+    }
+  }
+
   .poster {
     max-width: 800px;
     margin: 40px auto;
@@ -86,36 +134,24 @@
   margin-top: 20px;
 }
 
-.prize-row {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 32px;
-  margin-top: 20px;
-}
-
-/* All mini-cards start from a fixed baseline */
 .mini {
-  width: 80px;        /* TRUE baseline size — adjust as needed */
+  width: 80px;
   height: auto;
   object-fit: contain;
 }
 
-/* Legends: double baseline */
 .mini.legends {
-  width: calc(80px * 2);   /* 160px */
+  width: calc(80px * 2);
 }
 
-/* Survival: two-thirds baseline */
 .mini.survival {
-  width: calc(80px * 0.66);  /* ~53px */
+  width: calc(80px * 0.66);
 }
 
-/* REB stays baseline (1×) */
 .mini.reb {
   width: 80px;
 }
-  /* Lightbox overlay */
+
 #card-lightbox {
   position: fixed;
   inset: 0;
@@ -126,7 +162,6 @@
   z-index: 9999;
 }
 
-/* The enlarged card */
 #card-lightbox img {
   max-width: 90vw;
   max-height: 90vh;
@@ -168,7 +203,14 @@
 
 <body>
 
-<script type="module" src="/js/global-menu-loader.js"></script>
+<!-- ========================================== -->
+<!--  GLOBAL MENU LOADER WITH PRELOAD (#3)      -->
+<!-- ========================================== -->
+<script type="module">
+  import initMenu from "/js/global-menu-loader.js";
+  initMenu({ preloadEvent: "jan2026" });   /* ← NEW: force January 2026 already active */
+</script>
+
 
 <!-- ====================================== -->
 <!--     B.C. PREMODERN MASTERS POSTER      -->
@@ -200,9 +242,9 @@
   <p>Participation and Top 8 prizes TBA</p>
 
 <div class="prize-row">
-<img src="https://magic1.ca/assets/card_reb.jpg" class="mini reb">
-<img src="https://magic1.ca/assets/Legends_booster2.webp" class="mini legends">
-<img src="https://magic1.ca/assets/card_surv.jpg" class="mini survival">
+  <img src="https://magic1.ca/assets/card_reb.jpg" class="mini reb">
+  <img src="https://magic1.ca/assets/Legends_booster2.webp" class="mini legends">
+  <img src="https://magic1.ca/assets/card_surv.jpg" class="mini survival">
 </div>
 
   <p><em>Prize points contribute to standings in the upcoming Sunday Super Series: B.C. Winter League</em></p>
@@ -219,7 +261,7 @@
   <div class="logos">
     <img src="./assets/shg.jpg" alt="Magic Stronghold" class="shg-logo" />
     <img src="./assets/fcp.png" alt="FCP" />
-        <img src="./assets/vvip.png" class="vvip" alt="vvip" />
+    <img src="./assets/vvip.png" class="vvip" alt="vvip" />
   </div>
 
   <footer style="margin-top: 30px; font-size: 0.9em; font-weight: 600;">
@@ -235,7 +277,7 @@
 
 <div class="poster">
 
-<img src="./assets/winter.jpg" alt="Mishra's Factory" style="max-width: 300px; margin: 10px auto; display:block;" />
+  <img src="./assets/winter.jpg" alt="Mishra's Factory" style="max-width: 300px; margin: 10px auto; display:block;" />
 
   <h1>B.C. Winter League</h1>
   <h2>January – March 2026</h2>
@@ -260,16 +302,14 @@
     <img src="./assets/shg.jpg" class="shg-logo" alt="Magic Stronghold" />
     <img src="./assets/fcp.png" alt="FCP" />
     <img src="./assets/BCPMM.svg" class="shg-logo" alt="bcpmm" />
-    <!--
-            <img src="./assets/vvip.png" class="vvip" alt="vvip" />
   </div>
-    -->
 
   <footer style="margin-top: 30px; font-size: 0.9em; font-weight: 600;">
     © 2026 BC Winter League. All Rights Reserved.
   </footer>
 
 </div>
+
 
 <div id="card-lightbox">
   <img src="" alt="card" />
@@ -280,17 +320,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const lightbox = document.getElementById("card-lightbox");
   const lightboxImg = lightbox.querySelector("img");
 
-  // Attach click handlers to all minicards
   document.querySelectorAll(".prize-row img").forEach(img => {
     img.style.cursor = "pointer";
-
     img.addEventListener("click", () => {
       lightboxImg.src = img.src;
       lightbox.style.display = "flex";
     });
   });
 
-  // Close lightbox on click or Escape
   lightbox.addEventListener("click", () => {
     lightbox.style.display = "none";
     lightboxImg.src = "";
