@@ -78,23 +78,34 @@
     display: block;
   }
 
-.prize-row img {
-  height: 54px;       /* proportional to logos@60px */
-  width: auto;
-  border: none;
-  margin: 0 6px;
+.prize-row {
+  display: flex;
+  justify-content: center;  /* true centre */
+  align-items: flex-end;     /* baseline align */
+  gap: 40px;                 /* consistent visual spacing */
+  width: 100%;
+  padding: 0;
 }
 
-/* Double-size any mini-card tagged .first */
-.prize-row img.first {
-  height: 96px !important;   /* 48px × 2 */
-  transform: scale(1.0);     /* ensures crisp render, no browser scaling weirdness */
+.pack {
+  display: block;
+  height: auto;
 }
 
-  /* Hide mini-cards after the first 3 */
-  .prize-row img:nth-of-type(n+4) {
-    display: none !important;
-  }
+/* Legends pack ≈ double size */
+.pack.legends {
+  width: 180px;   /* adjust as needed, but this hits "double" visually */
+}
+
+/* Survival ≈ 2/3 of full card scale */
+.pack.survival {
+  width: 120px;   /* 2/3 */
+}
+
+/* REB ≈ 1/3 size */
+.pack.reb {
+  width: 70px;    /* 1/3-ish */
+}
 
   /* Lightbox overlay */
 #card-lightbox {
