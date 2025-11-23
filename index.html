@@ -37,10 +37,7 @@
     user-select: none;
     opacity: 0.85;
   }
-
-  #hamburger:hover {
-    opacity: 1;
-  }
+  #hamburger:hover { opacity: 1; }
 
   /* ================================
            MENU PANEL
@@ -87,7 +84,6 @@
     color: #000;
     font-size: 0.95rem;
   }
-
   .menu-link:hover { text-decoration: underline; }
 
   hr {
@@ -113,7 +109,6 @@
     display: none;
     position: relative;
   }
-
   .poster.active { display: block; }
 
   .logo-large {
@@ -165,7 +160,7 @@
      ================================ */
   #prize-featured {
     margin-top: 10px;
-    height: 260px;   /* fixed height — no jump */
+    height: 260px;   /* fixed height so no jumping */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -190,7 +185,7 @@
   .logos img {
     height: 60px;
     filter: grayscale(100%) contrast(130%);
-    cursor: pointer;
+    cursor: default;
   }
 
   .shg-logo { filter: none !important; }
@@ -219,7 +214,7 @@
   #poster-arrow {
     position: fixed;
     top: 50%;
-    right: 18px;   /* aligned with hamburger */
+    right: 18px;
     transform: translateY(-50%);
     font-size: 2.0em;
     opacity: 0.45;
@@ -230,32 +225,16 @@
 </style>
 
 </head>
+
 <body>
 
-<!-- ===========================
-       HAMBURGER BUTTON
-     =========================== -->
+<!-- HAMBURGER -->
 <div id="hamburger">☰</div>
 
-<!-- ===========================
-       MENU PANEL
-     =========================== -->
-<div id="menu-panel">
-  <div class="menu-title">Menu</div>
-  <a href="/" class="menu-link">Home</a>
-  <a href="/league/index.html" class="menu-link">League Home</a>
-  <a href="/my-matches.html" class="menu-link">My Matches</a>
-  <a href="/report-match.html" class="menu-link">Report Match</a>
-  <a href="/profile.html" class="menu-link">My Profile</a>
-  <hr>
-  <a href="/admin/index.html" class="menu-link">Admin Area</a>
-  <hr>
-  <a href="#" id="logout-link" class="menu-link">Logout</a>
-</div>
+<!-- MENU PANEL -->
+<div id="menu-panel"></div>
 
-<!-- ===========================
-       POSTER SLIDER
-     =========================== -->
+<!-- POSTER SLIDER -->
 <div class="poster-slider">
 
   <!-- POSTER 1 -->
@@ -282,15 +261,14 @@
 
     <h3>Prizing</h3>
 
-    <!-- FIXED-HEIGHT FEATURED PRIZE -->
     <div id="prize-featured">
       <img id="prize-img" src="./assets/Legends_booster2.webp" alt="Prize" />
     </div>
 
     <p>1st Place — <strong>1 Sealed Legends Booster Pack</strong></p>
 
-    <p><em>Top 8 Prizes TBA. Prize points contribute to standings in the upcoming  
-      Sunday Super Series: B.C. Winter League</em></p>
+    <p><em>Prize points contribute to standings in the upcoming Sunday Super Series:  
+      B.C. Winter League</em></p>
 
     <p>Register at 
       <strong>
@@ -299,19 +277,12 @@
       </strong>
     </p>
 
-<div class="logos">
+    <div class="logos">
+      <img src="./assets/shg.jpg" class="shg-logo" />
+      <img src="./assets/fcp.png" />
+      <img src="./assets/BCPMM.svg" class="shg-logo" />
+    </div>
 
-  <a href="https://www.magicstronghold.com/" target="_blank">
-    <img src="./assets/shg.jpg" class="shg-logo" />
-  </a>
-
-  <img src="./assets/fcp.png" />
-
-  <a href="https://vvipmedia.net/" target="_blank">
-    <img src="./assets/vvip.png" class="shg-logo" />
-  </a>
-
-</div>
   </div>
 
   <!-- POSTER 2 -->
@@ -342,19 +313,11 @@
 
     <hr />
 
-<div class="logos">
-
-  <a href="https://www.magicstronghold.com/" target="_blank">
-    <img src="./assets/shg.jpg" class="shg-logo" />
-  </a>
-
-  <img src="./assets/fcp.png" />
-
-  <a href="https://magic1.ca/" target="_blank">
-    <img src="./assets/BCPMM.svg" class="shg-logo" />
-  </a>
-
-</div>
+    <div class="logos">
+      <img src="./assets/shg.jpg" class="shg-logo" />
+      <img src="./assets/fcp.png" />
+      <img src="./assets/BCPMM.svg" class="shg-logo" />
+    </div>
 
   </div>
 
@@ -369,12 +332,100 @@
 </div>
 
 <script>
-/* MENU TOGGLE */
-document.getElementById("hamburger").addEventListener("click", () => {
-  document.getElementById("menu-panel").classList.toggle("open");
-});
+/* ---------------------------------
+   DYNAMIC USER STATE (important fix)
+-----------------------------------*/
+function getState() {
+  return {
+    loggedIn: localStorage.getItem("loggedIn") === "true",
+    hasAccount: localStorage.getItem("hasAccount") === "true",
+    inLeague: localStorage.getItem("inLeague") === "true",
+    isAdmin: localStorage.getItem("isAdmin") === "true"
+  };
+}
 
-/* CLOSE MENU ON OUTSIDE CLICK */
+/* ---------------------------------
+   RENDER MENU (role-based)
+-----------------------------------*/
+function renderMenu() {
+  const state = getState();
+  const panel = document.getElementById("menu-panel");
+
+  let html = `<div class="menu-title">Menu</div>`;
+
+  /* --------------------------
+     LOGGED OUT — minimal menu
+     --------------------------*/
+  if (!state.loggedIn) {
+    html += `
+      <a href="/login.html" class="menu-link">Log In / Create Account</a>
+    `;
+    panel.innerHTML = html;
+    return;
+  }
+
+  /* ---------------------------------------------------
+     LOGGED IN but NOT YET in League — sign-up funnel
+     ---------------------------------------------------*/
+  if (state.loggedIn && !state.inLeague) {
+    html += `
+      <a href="/" class="menu-link">Home</a>
+      <a href="/league/index.html" class="menu-link">League Home</a>
+      <a href="/league/signup.html" class="menu-link">Join the League</a>
+      <hr>
+      <a href="#" id="logout-link" class="menu-link">Log Out</a>
+    `;
+    panel.innerHTML = html;
+    attachLogout();
+    return;
+  }
+
+  /* --------------------------
+     LOGGED IN + IN LEAGUE
+     --------------------------*/
+  html += `
+    <a href="/" class="menu-link">Home</a>
+    <a href="/league/index.html" class="menu-link">League Home</a>
+    <a href="/my-matches.html" class="menu-link">My Matches</a>
+    <a href="/report-match.html" class="menu-link">Report Match</a>
+    <a href="/profile.html" class="menu-link">My Profile</a>
+  `;
+
+  /* --------------------------
+     ADMIN add-on
+     --------------------------*/
+  if (state.isAdmin) {
+    html += `
+      <hr>
+      <a href="/admin/index.html" class="menu-link">Admin Area</a>
+    `;
+  }
+
+  html += `
+    <hr>
+    <a href="#" id="logout-link" class="menu-link">Log Out</a>
+  `;
+
+  panel.innerHTML = html;
+  attachLogout();
+}
+/* ---------------------------------
+   LOG OUT
+-----------------------------------*/
+function attachLogout() {
+  const logout = document.getElementById("logout-link");
+  if (!logout) return;
+
+  logout.addEventListener("click", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = "/login.html";
+  });
+}
+
+/* ---------------------------------
+   CLOSE MENU IF CLICK OUTSIDE
+-----------------------------------*/
 document.addEventListener("click", (e) => {
   const menu = document.getElementById("menu-panel");
   const hb = document.getElementById("hamburger");
@@ -386,14 +437,16 @@ document.addEventListener("click", (e) => {
   }
 });
 
-/* LOGOUT */
-document.getElementById("logout-link").addEventListener("click", () => {
-  localStorage.clear();
-  sessionStorage.clear();
-  window.location.href = "/login.html";
+/* ---------------------------------
+   HAMBURGER TOGGLE
+-----------------------------------*/
+document.getElementById("hamburger").addEventListener("click", () => {
+  document.getElementById("menu-panel").classList.toggle("open");
 });
 
-/* PRIZE ROTATION */
+/* ---------------------------------
+   PRIZE CAROUSEL
+-----------------------------------*/
 const prizeImg = document.getElementById("prize-img");
 const prizes = [
   "./assets/Legends_booster2.webp",
@@ -408,7 +461,9 @@ prizeImg.addEventListener("click", () => {
   prizeImg.src = prizes[idx];
 });
 
-/* LIGHTBOX (SPONSORS ONLY) */
+/* ---------------------------------
+   LIGHTBOX FOR SPONSOR ICONS
+-----------------------------------*/
 const lightbox = document.getElementById("card-lightbox");
 const lbImg = lightbox.querySelector("img");
 
@@ -424,7 +479,9 @@ lightbox.addEventListener("click", () => {
   lbImg.src = "";
 });
 
-/* POSTER FLIP */
+/* ---------------------------------
+   POSTER FLIP ARROW
+-----------------------------------*/
 const posters = document.querySelectorAll(".poster");
 const arrow = document.getElementById("poster-arrow");
 let posterIndex = 0;
@@ -433,6 +490,16 @@ arrow.addEventListener("click", () => {
   posterIndex = (posterIndex + 1) % posters.length;
   posters.forEach((p, i) => p.classList.toggle("active", i === posterIndex));
 });
+
+/* ---------------------------------
+   SAFARI RESTORE FIX: Re-render menu
+-----------------------------------*/
+window.addEventListener("pageshow", () => {
+  renderMenu();
+});
+
+/* Initial menu render */
+renderMenu();
 </script>
 
 </body>
