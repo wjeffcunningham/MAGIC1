@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>League Admin · BC Winter League</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -114,9 +114,11 @@
 </section>
 
 <script type="module">
-  const supabaseUrl = "https://dkzdfhzlewlvfmunywal.supabase.co";
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI";
-  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  import { supabase } from "/js/supabase.js";
+  import { requireAdmin } from "/js/admin-guard.js";
+
+  // Hard gate: redirect non-admins
+  await requireAdmin();
 
   let currentUser = null;
   let currentSeasonId = null;
@@ -144,20 +146,20 @@
   // Auth & admin check
   // -------------------
   async function checkAdmin() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
       authStatusEl.innerHTML = `Not logged in. <a href="/login.html">Login</a>`;
       throw new Error("Not logged in");
     }
     currentUser = user;
 
-    const { data: player, error } = await supabase
+    const { data: player, error: pErr } = await supabase
       .from("players")
       .select("*")
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    if (error || !player) {
+    if (pErr || !player) {
       authStatusEl.textContent = `Logged in as ${user.email}, but no player row found.`;
       throw new Error("No player row");
     }
@@ -286,7 +288,7 @@
       return;
     }
 
-    // Populate the "add signup" player dropdown
+    // Populate "add signup" player dropdown
     signupPlayerSelect.innerHTML = "";
     allPlayers.forEach(p => {
       const opt = document.createElement("option");
@@ -313,7 +315,6 @@
       </div>
     `).join("");
 
-    // Attach change handlers for inline status selects
     document.querySelectorAll(".signup-status-inline").forEach(sel => {
       sel.addEventListener("change", async (e) => {
         const signupId = e.target.getAttribute("data-signup-id");
@@ -392,7 +393,6 @@
       return;
     }
 
-    // Load pod_members and players, then render
     const podIds = podsForMonth.map(p => p.id);
     const { data: podMembers, error: pmErr } = await supabase
       .from("pod_members")
@@ -440,7 +440,6 @@
       `;
     }).join("");
 
-    // Attach move handlers
     document.querySelectorAll(".move-player-select").forEach(sel => {
       sel.addEventListener("change", async (e) => {
         const pmId = e.target.getAttribute("data-pm-id");
@@ -468,7 +467,6 @@
       return;
     }
 
-    // If pods already exist for this month, do nothing (safe default).
     const { data: existingPods, error: podsErr } = await supabase
       .from("pods")
       .select("*")
@@ -484,7 +482,6 @@
       return;
     }
 
-    // Get active signups for this season
     const { data: signups, error: suErr } = await supabase
       .from("league_signups")
       .select("player_id")
@@ -503,7 +500,6 @@
       return;
     }
 
-    // Shuffle players
     const shuffled = [...playerIds];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -513,7 +509,6 @@
     const maxPerPod = 8;
     const numPods = Math.max(1, Math.ceil(shuffled.length / maxPerPod));
 
-    // For even distribution, assign round-robin style
     const podBuckets = Array.from({ length: numPods }, () => []);
     shuffled.forEach((pid, idx) => {
       const bucketIndex = idx % numPods;
@@ -526,7 +521,6 @@
       max_players: maxPerPod
     }));
 
-    // Insert pods
     const { data: createdPods, error: createPodsErr } = await supabase
       .from("pods")
       .insert(podRows)
@@ -538,7 +532,6 @@
       return;
     }
 
-    // Build pod_members
     const membersRows = [];
     createdPods.forEach((pod, idx) => {
       const bucket = podBuckets[idx] || [];
@@ -577,7 +570,6 @@
       return;
     }
 
-    // Do not double-generate
     const { data: existingMatches, error: matchCheckErr } = await supabase
       .from("league_matches")
       .select("id")
@@ -595,7 +587,6 @@
       return;
     }
 
-    // Need pods & members
     const { data: pods, error: podsErr } = await supabase
       .from("pods")
       .select("*")
@@ -631,11 +622,10 @@
     });
 
     const matchesToInsert = [];
-    const defaultK = 24; // league K-factor; you can change this
+    const defaultK = 24;
 
     pods.forEach(pod => {
       const players = membersByPod[pod.id] || [];
-      // round-robin: all pairs i<j
       for (let i = 0; i < players.length; i++) {
         for (let j = i + 1; j < players.length; j++) {
           matchesToInsert.push({

@@ -331,119 +331,12 @@
   <img src="" />
 </div>
 
+<!-- Supabase + menu (must be type="module") -->
+<script type="module" src="/js/supabase.js"></script>
+<script type="module" src="/js/menu.js"></script>
+
+<!-- UI behavior (prize, lightbox, page flip) -->
 <script>
-/* ---------------------------------
-   DYNAMIC USER STATE (important fix)
------------------------------------*/
-function getState() {
-  return {
-    loggedIn: localStorage.getItem("loggedIn") === "true",
-    hasAccount: localStorage.getItem("hasAccount") === "true",
-    inLeague: localStorage.getItem("inLeague") === "true",
-    isAdmin: localStorage.getItem("isAdmin") === "true"
-  };
-}
-
-/* ---------------------------------
-   RENDER MENU (role-based)
------------------------------------*/
-function renderMenu() {
-  const state = getState();
-  const panel = document.getElementById("menu-panel");
-
-  let html = `<div class="menu-title">Menu</div>`;
-
-  /* --------------------------
-     LOGGED OUT — minimal menu
-     --------------------------*/
-  if (!state.loggedIn) {
-    html += `
-      <a href="/login.html" class="menu-link">Log In / Create Account</a>
-    `;
-    panel.innerHTML = html;
-    return;
-  }
-
-  /* ---------------------------------------------------
-     LOGGED IN but NOT YET in League — sign-up funnel
-     ---------------------------------------------------*/
-  if (state.loggedIn && !state.inLeague) {
-    html += `
-      <a href="/" class="menu-link">Home</a>
-      <a href="/league/index.html" class="menu-link">League Home</a>
-      <a href="/league/signup.html" class="menu-link">Join the League</a>
-      <hr>
-      <a href="#" id="logout-link" class="menu-link">Log Out</a>
-    `;
-    panel.innerHTML = html;
-    attachLogout();
-    return;
-  }
-
-  /* --------------------------
-     LOGGED IN + IN LEAGUE
-     --------------------------*/
-  html += `
-    <a href="/" class="menu-link">Home</a>
-    <a href="/league/index.html" class="menu-link">League Home</a>
-    <a href="/my-matches.html" class="menu-link">My Matches</a>
-    <a href="/report-match.html" class="menu-link">Report Match</a>
-    <a href="/profile.html" class="menu-link">My Profile</a>
-  `;
-
-  /* --------------------------
-     ADMIN add-on
-     --------------------------*/
-  if (state.isAdmin) {
-    html += `
-      <hr>
-      <a href="/admin/index.html" class="menu-link">Admin Area</a>
-    `;
-  }
-
-  html += `
-    <hr>
-    <a href="#" id="logout-link" class="menu-link">Log Out</a>
-  `;
-
-  panel.innerHTML = html;
-  attachLogout();
-}
-/* ---------------------------------
-   LOG OUT
------------------------------------*/
-function attachLogout() {
-  const logout = document.getElementById("logout-link");
-  if (!logout) return;
-
-  logout.addEventListener("click", () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = "/login.html";
-  });
-}
-
-/* ---------------------------------
-   CLOSE MENU IF CLICK OUTSIDE
------------------------------------*/
-document.addEventListener("click", (e) => {
-  const menu = document.getElementById("menu-panel");
-  const hb = document.getElementById("hamburger");
-
-  if (menu.classList.contains("open") &&
-      !menu.contains(e.target) &&
-      !hb.contains(e.target)) {
-    menu.classList.remove("open");
-  }
-});
-
-/* ---------------------------------
-   HAMBURGER TOGGLE
------------------------------------*/
-document.getElementById("hamburger").addEventListener("click", () => {
-  document.getElementById("menu-panel").classList.toggle("open");
-});
-
 /* ---------------------------------
    PRIZE CAROUSEL
 -----------------------------------*/
@@ -490,16 +383,6 @@ arrow.addEventListener("click", () => {
   posterIndex = (posterIndex + 1) % posters.length;
   posters.forEach((p, i) => p.classList.toggle("active", i === posterIndex));
 });
-
-/* ---------------------------------
-   SAFARI RESTORE FIX: Re-render menu
------------------------------------*/
-window.addEventListener("pageshow", () => {
-  renderMenu();
-});
-
-/* Initial menu render */
-renderMenu();
 </script>
 
 </body>
