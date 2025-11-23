@@ -8,6 +8,12 @@
 <link rel="icon" type="image/svg+xml" href="./assets/magic1.svg" />
 
 <style>
+  :root {
+    --icon-size: 28px;
+    --icon-color: #000;
+    --icon-thickness: 3px;
+  }
+
   body {
     margin: 0;
     padding: 0;
@@ -17,9 +23,9 @@
     text-align: center;
   }
 
-  /* ============================================
-     HAMBURGER MENU BUTTON (Option A)
-     ============================================ */
+  /* ================================
+       HAMBURGER MENU BUTTON
+     ================================ */
   #hamburger {
     position: fixed;
     top: 18px;
@@ -36,10 +42,9 @@
     opacity: 1;
   }
 
-  /* ============================================
-     MENU PANEL
-     ============================================ */
-
+  /* ================================
+           MENU PANEL
+     ================================ */
   #menu-panel {
     position: fixed;
     top: 70px;
@@ -91,9 +96,9 @@
     margin: 10px 0;
   }
 
-  /* ============================================
-     POSTER SLIDER
-     ============================================ */
+  /* ================================
+           POSTER SLIDER
+     ================================ */
   .poster-slider {
     max-width: 800px;
     margin: 100px auto 50px auto;
@@ -138,7 +143,7 @@
 
   h3 {
     font-size: 1.3em;
-    margin-top: 0.9em; /* better spacing */
+    margin-top: 0.9em;
     font-weight: 700;
     text-transform: uppercase;
     border-bottom: 2px solid #000;
@@ -146,7 +151,6 @@
     padding-bottom: 0.1em;
   }
 
-  /* Enhanced Tagline */
   .tagline {
     font-style: italic;
     font-size: 1.35em;
@@ -156,15 +160,12 @@
     margin: 1.1em 0 1.4em;
   }
 
-  /* ============================================
-     PRIZE FEATURE — FIXED HEIGHT
-     ============================================ */
+  /* ================================
+           PRIZE FEATURE
+     ================================ */
   #prize-featured {
     margin-top: 10px;
-
-    /* exact height after scaling to 150px width */
-    height: 260px;
-
+    height: 260px;   /* fixed height — no jump */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -176,9 +177,9 @@
     cursor: pointer;
   }
 
-  /* ============================================
-     SPONSOR ICONS
-     ============================================ */
+  /* ================================
+           SPONSOR ICONS
+     ================================ */
   .logos {
     display: flex;
     justify-content: center;
@@ -194,9 +195,9 @@
 
   .shg-logo { filter: none !important; }
 
-  /* ============================================
-     LIGHTBOX
-     ============================================ */
+  /* ================================
+           LIGHTBOX
+     ================================ */
   #card-lightbox {
     position: fixed;
     inset: 0;
@@ -212,33 +213,32 @@
     max-height: 90vh;
   }
 
-  /* ============================================
-     PAGE ARROW
-     ============================================ */
+  /* ================================
+           PAGE ARROW
+     ================================ */
   #poster-arrow {
     position: fixed;
     top: 50%;
-    right: 8px;
+    right: 18px;   /* aligned with hamburger */
     transform: translateY(-50%);
-    font-size: 2em;
+    font-size: 2.0em;
     opacity: 0.45;
     cursor: pointer;
     user-select: none;
     z-index: 4500;
   }
-
 </style>
 
 </head>
 <body>
 
 <!-- ===========================
-     HAMBURGER BUTTON
+       HAMBURGER BUTTON
      =========================== -->
 <div id="hamburger">☰</div>
 
 <!-- ===========================
-     MENU PANEL
+       MENU PANEL
      =========================== -->
 <div id="menu-panel">
   <div class="menu-title">Menu</div>
@@ -249,10 +249,12 @@
   <a href="/profile.html" class="menu-link">My Profile</a>
   <hr>
   <a href="/admin/index.html" class="menu-link">Admin Area</a>
+  <hr>
+  <a href="#" id="logout-link" class="menu-link">Logout</a>
 </div>
 
 <!-- ===========================
-     POSTER SLIDER
+       POSTER SLIDER
      =========================== -->
 <div class="poster-slider">
 
@@ -287,7 +289,7 @@
 
     <p>1st Place — <strong>1 Sealed Legends Booster Pack</strong></p>
 
-    <p><em>Top 8 prizes TBA. Prize points contribute to standings in the upcoming  
+    <p><em>Top 8 Prizes TBA. Prize points contribute to standings in the upcoming  
       Sunday Super Series: B.C. Winter League</em></p>
 
     <p>Register at 
@@ -355,6 +357,25 @@
 /* MENU TOGGLE */
 document.getElementById("hamburger").addEventListener("click", () => {
   document.getElementById("menu-panel").classList.toggle("open");
+});
+
+/* CLOSE MENU ON OUTSIDE CLICK */
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("menu-panel");
+  const hb = document.getElementById("hamburger");
+
+  if (menu.classList.contains("open") &&
+      !menu.contains(e.target) &&
+      !hb.contains(e.target)) {
+    menu.classList.remove("open");
+  }
+});
+
+/* LOGOUT */
+document.getElementById("logout-link").addEventListener("click", () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href = "/login.html";
 });
 
 /* PRIZE ROTATION */
