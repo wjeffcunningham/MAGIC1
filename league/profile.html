@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Profile · B.C. Premodern Masters</title>
+
+<style>
+  body {
+    margin: 0;
+    padding: 30px 16px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: #fff;
+    color: #000;
+    text-align: center;
+  }
+
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  h1 {
+    font-size: 2.2em;
+    margin-bottom: 0.2em;
+    text-align: center;
+  }
+
+  .field {
+    margin: 0.4em 0;
+    font-size: 1.05em;
+  }
+
+  .label {
+    font-weight: 600;
+  }
+
+  .muted {
+    color: #666;
+    font-size: 0.95em;
+    margin-top: 1em;
+  }
+
+  .banner {
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin: 1em 0;
+    font-size: 0.98em;
+  }
+
+  .banner.pending {
+    background: #fff9e0;
+    border: 1px solid #e0b000;
+  }
+
+  .banner.active {
+    background: #e8fff0;
+    border: 1px solid #008a30;
+  }
+
+  ul {
+    margin-top: 0.4em;
+    padding-left: 1.2em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>My Profile</h1>
+  <div id="profile-content">Loading…</div>
+</div>
+
+<script type="module">
+import { supabase } from "/js/supabase.js";
+
+const content = document.getElementById("profile-content");
+
+async function requireUser() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) {
+    window.location.href = "/login.html";
+    return null;
+  }
+  return data.user;
+}
+
+async function loadProfile() {
+  const user = await requireUser();
+  if (!user) return;
+
+  const email = (user.email || "").toLowerCase();
+
+  const { data: player, error: pErr } = await supabase
+    .from("players")
+    .select("id, full_name, email, home_store, remote_preference, play_style, rating, is_admin")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (pErr) {
+    console.error(pErr);
+    content.textContent = "Error loading profile.";
+    return;
+  }
+
+  if (!player) {
+    content.innerHTML = `
+      <p>No player profile found for ${email}.</p>
+      <p class="muted">Try joining the league to create a profile.</p>
+    `;
+    return;
+  }
+
+  const { data: signups, error: sErr } = await supabase
+    .from("league_signups")
+    .select("id, status, signup_date, league_seasons(name, start_date, end_date)")
+    .eq("player_id", player.id)
+    .order("signup_date", { ascending: true });
+
+  if (sErr) {
+    console.error(sErr);
+  }
+
+  let bannerHtml = "";
+  let hasActive = false;
+  let hasPending = false;
+
+  if (signups && signups.length > 0) {
+    const latest = signups[signups.length - 1];
+    if (latest.status === "waiting_list") {
+      bannerHtml = `
+        <div class="banner pending">
+          Your most recent league signup is <strong>pending moderator approval</strong>.
+        </div>
+      `;
+      hasPending = true;
+      localStorage.setItem("inLeague", "false");
+    } else if (latest.status === "active") {
+      bannerHtml = `
+        <div class="banner active">
+          You are an <strong>active</strong> league participant.
+        </div>
+      `;
+      hasActive = true;
+      localStorage.setItem("inLeague", "true");
+    }
+  }
+
+  if (!signups || signups.length === 0) {
+    localStorage.setItem("inLeague", "false");
+  }
+
+  let seasonsHtml = "<p>No league signups yet.</p>";
+  if (signups && signups.length > 0) {
+    const li = signups.map(s => {
+      const season = s.league_seasons;
+      const label = season
+        ? `${season.name} (${season.start_date} → ${season.end_date})`
+        : s.id;
+      return `<li>${label} — <strong>${s.status}</strong></li>`;
+    }).join("");
+    seasonsHtml = `<ul>${li}</ul>`;
+  }
+
+  content.innerHTML = `
+    ${bannerHtml}
+    <div class="field"><span class="label">Full Name:</span> ${player.full_name}</div>
+    <div class="field"><span class="label">Email:</span> ${player.email}</div>
+    <div class="field"><span class="label">Home Store:</span> ${player.home_store || "(not set)"}</div>
+    <div class="field"><span class="label">Remote Preference:</span> ${player.remote_preference}</div>
+    <div class="field"><span class="label">Play Style:</span> ${player.play_style}</div>
+    <div class="field"><span class="label">Rating:</span> ${player.rating}</div>
+    <div class="field"><span class="label">Admin:</span> ${player.is_admin ? "Yes" : "No"}</div>
+
+    <h2 style="margin-top:1.4em;">League Seasons</h2>
+    ${seasonsHtml}
+
+    <p class="muted">
+      ${hasPending
+        ? "Once approved, you'll see full league options in your menu."
+        : hasActive
+        ? "If any information is incorrect, contact the organizer."
+        : "Join the league to participate in pods and standings."
+      }
+    </p>
+  `;
+}
+
+loadProfile();
+</script>
+</body>
+</html>

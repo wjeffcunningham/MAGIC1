@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Matches · B.C. Premodern Masters</title>
+
+<style>
+  body {
+    margin: 0;
+    padding: 30px 16px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: #fff;
+    color: #000;
+    text-align: center;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  h1 {
+    font-size: 2.2em;
+    margin-bottom: 0.5em;
+    text-align: center;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+    font-size: 0.95em;
+  }
+
+  th, td {
+    border-bottom: 1px solid #ddd;
+    padding: 8px 6px;
+    text-align: left;
+  }
+
+  th {
+    font-weight: 700;
+  }
+
+  .muted {
+    color: #666;
+    font-size: 0.95em;
+    margin-top: 1em;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>My Matches</h1>
+  <div id="matches-content">Loading…</div>
+</div>
+
+<script type="module">
+import { supabase } from "/js/supabase.js";
+
+const content = document.getElementById("matches-content");
+
+async function requireUser() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) {
+    window.location.href = "/login.html";
+    return null;
+  }
+  return data.user;
+}
+
+async function getPlayerByEmail(email) {
+  const { data, error } = await supabase
+    .from("players")
+    .select("id, full_name")
+    .eq("email", email.toLowerCase())
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function ensureActiveLeague(playerId) {
+  const { data: signups, error } = await supabase
+    .from("league_signups")
+    .select("status, signup_date")
+    .eq("player_id", playerId)
+    .order("signup_date", { ascending: true });
+
+  if (error) throw error;
+
+  if (!signups || signups.length === 0) {
+    content.innerHTML = `
+      <p>You are not signed up for the league yet.</p>
+      <p class="muted">Join the league to start tracking matches.</p>
+    `;
+    return false;
+  }
+
+  const latest = signups[signups.length - 1];
+  if (latest.status !== "active") {
+    content.innerHTML = `
+      <p>Your league signup is not active yet.</p>
+      <p class="muted">If you've recently signed up, you're likely pending moderator approval.</p>
+    `;
+    return false;
+  }
+
+  return true;
+}
+
+async function loadMatches() {
+  const user = await requireUser();
+  if (!user) return;
+
+  let player;
+  try {
+    player = await getPlayerByEmail(user.email || "");
+  } catch (e) {
+    console.error(e);
+    content.textContent = "Error loading player record.";
+    return;
+  }
+
+  if (!player) {
+    content.innerHTML = `
+      <p>No player profile found for ${user.email}.</p>
+      <p class="muted">Join the league to create a profile.</p>
+    `;
+    return;
+  }
+
+  const ok = await ensureActiveLeague(player.id);
+  if (!ok) return;
+
+  const playerId = player.id;
+
+  const { data: matches, error } = await supabase
+    .from("league_matches")
+    .select("id, player_a, player_b, winner, played_at, notes, approved")
+    .or(`player_a.eq.${playerId},player_b.eq.${playerId}`)
+    .order("played_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    content.textContent = "Error loading matches.";
+    return;
+  }
+
+  if (!matches || matches.length === 0) {
+    content.innerHTML = `<p>You don't have any league matches recorded yet.</p>`;
+    return;
+  }
+
+  const ids = new Set();
+  matches.forEach(m => {
+    ids.add(m.player_a);
+    ids.add(m.player_b);
+    if (m.winner) ids.add(m.winner);
+  });
+
+  const { data: players, error: pErr } = await supabase
+    .from("players")
+    .select("id, full_name")
+    .in("id", Array.from(ids));
+
+  if (pErr) {
+    console.error(pErr);
+  }
+
+  const nameMap = new Map();
+  (players || []).forEach(p => nameMap.set(p.id, p.full_name));
+
+  const rows = matches.map(m => {
+    const isA = m.player_a === playerId;
+    const oppId = isA ? m.player_b : m.player_a;
+    const opponentName = nameMap.get(oppId) || "(unknown)";
+    const winnerName = m.winner ? nameMap.get(m.winner) : "(unrecorded)";
+    const resultLabel =
+      !m.winner ? "Pending"
+      : (m.winner === playerId ? "Win" : "Loss");
+    const dateStr = m.played_at ? new Date(m.played_at).toLocaleDateString() : "";
+
+    return `
+      <tr>
+        <td>${dateStr}</td>
+        <td>${opponentName}</td>
+        <td>${resultLabel}</td>
+        <td>${winnerName}</td>
+        <td>${m.notes || ""}</td>
+        <td>${m.approved ? "Yes" : "No"}</td>
+      </tr>
+    `;
+  }).join("");
+
+  content.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Opponent</th>
+          <th>Result</th>
+          <th>Winner</th>
+          <th>Notes</th>
+          <th>Approved</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p class="muted">Contact the organizer if you see any discrepancies.</p>
+  `;
+}
+
+loadMatches();
+</script>
+</body>
+</html>
