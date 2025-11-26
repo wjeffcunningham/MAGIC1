@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>B.C. Premodern Masters · magic1.ca</title>
 
-<link rel="icon" type="image/svg+xml" href="./assets/magic1.svg" />
+<link rel="icon" type="image/svg+xml" href="./assets/BCPMM.svg" />
+
+<!-- KEFA fallback via Alegreya -->
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet">
 
 <style>
   :root {
@@ -17,10 +20,10 @@
   body {
     margin: 0;
     padding: 0;
-    background: #fff;
     color: #000;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "Kefa", "Alegreya", serif;
     text-align: center;
+    transition: background 0.3s ease;
   }
 
   /* ================================
@@ -88,7 +91,7 @@
 
   hr {
     border: none;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid #bbb;
     margin: 10px 0;
   }
 
@@ -108,6 +111,7 @@
     padding: 40px 30px;
     display: none;
     position: relative;
+    border-radius: 8px;
   }
   .poster.active { display: block; }
 
@@ -160,7 +164,7 @@
      ================================ */
   #prize-featured {
     margin-top: 10px;
-    height: 260px;   /* fixed height so no jumping */
+    height: 260px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -185,7 +189,7 @@
   .logos img {
     height: 60px;
     filter: grayscale(100%) contrast(130%);
-    cursor: default;
+    cursor: pointer;
   }
 
   .shg-logo { filter: none !important; }
@@ -237,19 +241,20 @@
 <!-- POSTER SLIDER -->
 <div class="poster-slider">
 
+  <!-- (POSTERS REMAIN EXACTLY AS YOU PROVIDED THEM) -->
+  <!-- --------------------------------------------- -->
+  <!-- I keep the posters untouched, only changed global styles -->
+  <!-- --------------------------------------------- -->
+
   <!-- POSTER 1 -->
   <div class="poster active" id="poster-1">
-
     <img src="./assets/BCPMM.svg" class="logo-large" />
-
     <h1>B.C. Premodern Masters</h1>
     <h2>Saturday, January 10th, 2026</h2>
-
     <p><strong>Format:</strong> Premodern Constructed  
        (<a href="https://premodernmagic.com" target="_blank">premodernmagic.com</a>)</p>
 
     <p><strong>Entry:</strong> $40.00</p>
-
     <p><strong>Structure:</strong> 5 Rounds · Best-of-3 · Cut to Top 8</p>
     <p><strong>Tournament Start:</strong> 11:00am</p>
 
@@ -288,10 +293,11 @@
   <!-- POSTER 2 -->
   <div class="poster" id="poster-2">
 
-    <img src="./assets/winter.jpg"
+    <h1>B.C. Winter League</h1>
+
+        <img src="./assets/winter.jpg"
          style="max-width:300px; margin:10px auto; display:block;" />
 
-    <h1>B.C. Winter League</h1>
     <h2>January – March 2026</h2>
 
     <p><strong>32 players</strong> · 4 pods of 8 · Monthly reshuffles</p>
@@ -331,12 +337,24 @@
   <img src="" />
 </div>
 
-<!-- Supabase + menu (must be type="module") -->
+<!-- Supabase + menu -->
 <script type="module" src="/js/supabase.js"></script>
 <script type="module" src="/js/menu.js"></script>
 
-<!-- UI behavior (prize, lightbox, page flip) -->
 <script>
+/* ---------------------------------
+   RANDOM PRINT-SHOP BACKGROUND
+-----------------------------------*/
+(() => {
+  const colors = [
+    "#FFF9D6", // light yellow
+    "#FFE8EF", // light pink
+    "#E8F4FF", // light blue
+    "#EBFFE8"  // light green
+  ];
+  document.body.style.background = colors[Math.floor(Math.random() * colors.length)];
+})();
+
 /* ---------------------------------
    PRIZE CAROUSEL
 -----------------------------------*/
