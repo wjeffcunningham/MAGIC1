@@ -21,13 +21,98 @@
   <div class="max-w-xl mx-auto px-4 py-10">
     <h1 class="text-2xl font-bold mb-6">My Profile</h1>
 
-    <p id="profile-name" class="text-lg font-semibold mb-2"></p>
-    <p id="profile-email" class="text-slate-700 mb-4"></p>
+    <p id="profile-name" class="text-lg font-semibold mb-1"></p>
+    <p id="profile-email" class="text-slate-700 mb-6 text-sm"></p>
 
-    <hr class="my-6" />
+    <form id="profile-form" class="space-y-5 bg-white border rounded-xl shadow p-4">
 
-    <h2 class="text-xl font-semibold mb-2">Preferences</h2>
-    <p class="text-sm text-slate-600 mb-4">(coming soon)</p>
+      <!-- HOME STORE -->
+      <div>
+        <label class="block text-sm font-medium mb-1">Home Store</label>
+        <select id="home_store" name="home_store"
+                class="w-full border rounded px-3 py-2 text-sm">
+          <option value="">Select one…</option>
+          <option value="Stronghold Games (Boundary & Kingsway)">
+            Stronghold Games (Boundary & Kingsway)
+          </option>
+          <option value="The Connection Games (Renfrew)">
+            The Connection Games (Renfrew)
+          </option>
+          <option value="Freelancer">Freelancer</option>
+          <option value="Remote Only">Remote Only</option>
+        </select>
+      </div>
+
+      <!-- REMOTE LOCATION -->
+      <div id="remote-location-wrapper" class="hidden">
+        <label class="block text-sm font-medium mb-1">
+          Your location (optional)
+        </label>
+        <input
+          type="text"
+          id="remote_location"
+          name="remote_location"
+          class="w-full border rounded px-3 py-2 text-sm"
+          placeholder="City / region / time zone"
+        />
+      </div>
+
+      <!-- REMOTE PREFERENCE -->
+      <div>
+        <label class="block text-sm font-medium mb-1">Remote play</label>
+        <select id="remote_preference" name="remote_preference"
+                class="w-full border rounded px-3 py-2 text-sm">
+          <option value="">Select one…</option>
+          <option value="yes">Yes — I frequently play remote</option>
+          <option value="sometimes">Sometimes — I can play remote if needed</option>
+          <option value="no">No — Local games only</option>
+        </select>
+        <p class="text-[11px] text-slate-500 mt-1">
+          Players marked “Remote Only” are treated as remote-first in pods & pairings.
+        </p>
+      </div>
+
+      <!-- REMOTE METHODS -->
+      <div id="remote-methods-wrapper" class="hidden">
+        <label class="block text-sm font-medium mb-1">
+          Remote methods
+        </label>
+        <div class="flex flex-col gap-1 text-sm">
+          <label class="inline-flex items-center gap-2">
+            <input type="checkbox" id="remote_mtgo" value="MTGO" />
+            <span>Remote — MTGO</span>
+          </label>
+          <label class="inline-flex items-center gap-2">
+            <input type="checkbox" id="remote_webcam" value="Webcam" />
+            <span>Remote — Webcam</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- SOCIAL LINK -->
+      <div>
+        <label class="block text-sm font-medium mb-1">
+          Social link (optional)
+        </label>
+        <input
+          type="url"
+          id="social_link"
+          name="social_link"
+          class="w-full border rounded px-3 py-2 text-sm"
+          placeholder="https://twitter.com/you or similar"
+        />
+      </div>
+
+      <p id="profile-status" class="text-xs text-slate-600"></p>
+      <p id="profile-error" class="hidden text-sm text-red-600"></p>
+      <p id="profile-success" class="hidden text-sm text-emerald-700"></p>
+
+      <button
+        type="submit"
+        class="w-full bg-sky-700 hover:bg-sky-800 text-white py-2 rounded text-sm font-semibold">
+        Save changes
+      </button>
+    </form>
   </div>
 
   <script type="module">
@@ -38,16 +123,146 @@
     const nameEl = document.getElementById("profile-name");
     const emailEl = document.getElementById("profile-email");
 
+    const form = document.getElementById("profile-form");
+    const homeStoreEl = document.getElementById("home_store");
+    const remotePrefEl = document.getElementById("remote_preference");
+    const remoteLocationWrapper = document.getElementById("remote-location-wrapper");
+    const remoteLocationEl = document.getElementById("remote_location");
+    const remoteMethodsWrapper = document.getElementById("remote-methods-wrapper");
+    const remoteMtgoEl = document.getElementById("remote_mtgo");
+    const remoteWebcamEl = document.getElementById("remote_webcam");
+    const socialLinkEl = document.getElementById("social_link");
+
+    const statusEl = document.getElementById("profile-status");
+    const errorEl = document.getElementById("profile-error");
+    const successEl = document.getElementById("profile-success");
+
+    function computeRemotePrefUI(remote_preference, home_store) {
+      // DB → UI mapping
+      if (home_store === "Remote Only" || remote_preference === "remote_only") {
+        return "yes"; // forced remote
+      }
+      if (remote_preference === "no_remote") return "no";
+      if (remote_preference === "remote_ok") return "yes"; // default to yes in UI
+      return "";
+    }
+
+    function computeRemotePrefDB() {
+      const home = homeStoreEl.value;
+      const uiPref = remotePrefEl.value; // "yes" | "sometimes" | "no" | ""
+
+      if (home === "Remote Only") {
+        return "remote_only";
+      }
+      if (uiPref === "no") {
+        return "no_remote";
+      }
+      // yes / sometimes → remote_ok
+      if (uiPref === "yes" || uiPref === "sometimes") {
+        return "remote_ok";
+      }
+      return "remote_ok"; // fallback
+    }
+
+    function updateVisibility() {
+      const home = homeStoreEl.value;
+      const uiPref = remotePrefEl.value;
+
+      // Remote location only for Remote Only
+      if (home === "Remote Only") {
+        remoteLocationWrapper.classList.remove("hidden");
+      } else {
+        remoteLocationWrapper.classList.add("hidden");
+      }
+
+      // Remote methods if:
+      //   - home = Remote Only, or
+      //   - UI pref is not 'no'
+      const showMethods = home === "Remote Only" || (uiPref && uiPref !== "no");
+      if (showMethods) {
+        remoteMethodsWrapper.classList.remove("hidden");
+      } else {
+        remoteMethodsWrapper.classList.add("hidden");
+      }
+    }
+
+    homeStoreEl.addEventListener("change", updateVisibility);
+    remotePrefEl.addEventListener("change", updateVisibility);
+
     async function loadProfile() {
-      const { data } = await supabase
+      statusEl.textContent = "Loading profile...";
+      const { data, error } = await supabase
         .from("players")
-        .select("full_name, email")
+        .select("full_name, email, home_store, remote_preference, remote_location, remote_methods, social_link")
         .eq("id", s.playerId)
         .single();
 
+      if (error) {
+        statusEl.textContent = "";
+        errorEl.textContent = "Error loading profile.";
+        errorEl.classList.remove("hidden");
+        return;
+      }
+
       nameEl.textContent = data.full_name;
       emailEl.textContent = data.email;
+
+      if (data.home_store) homeStoreEl.value = data.home_store;
+
+      // DB remote_preference → UI dropdown
+      const uiPref = computeRemotePrefUI(data.remote_preference, data.home_store);
+      if (uiPref) remotePrefEl.value = uiPref;
+
+      if (data.remote_location) remoteLocationEl.value = data.remote_location;
+      if (data.social_link) socialLinkEl.value = data.social_link;
+
+      // remote_methods (array)
+      const methods = data.remote_methods || [];
+      remoteMtgoEl.checked = methods.includes("MTGO");
+      remoteWebcamEl.checked = methods.includes("Webcam");
+
+      updateVisibility();
+      statusEl.textContent = "";
     }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorEl.classList.add("hidden");
+      successEl.classList.add("hidden");
+      statusEl.textContent = "Saving profile...";
+
+      const home = homeStoreEl.value;
+      const dbPref = computeRemotePrefDB();
+
+      const methods = [];
+      if (remoteMtgoEl.checked) methods.push("MTGO");
+      if (remoteWebcamEl.checked) methods.push("Webcam");
+
+      const updates = {
+        home_store: home || null,
+        remote_preference: dbPref,
+        remote_location: home === "Remote Only"
+          ? (remoteLocationEl.value || null)
+          : null,
+        remote_methods: methods.length ? methods : null,
+        social_link: socialLinkEl.value || null
+      };
+
+      const { error } = await supabase
+        .from("players")
+        .update(updates)
+        .eq("id", s.playerId);
+
+      if (error) {
+        statusEl.textContent = "";
+        errorEl.textContent = "Error saving profile.";
+        errorEl.classList.remove("hidden");
+      } else {
+        statusEl.textContent = "";
+        successEl.textContent = "Profile saved.";
+        successEl.classList.remove("hidden");
+      }
+    });
 
     loadProfile();
   </script>

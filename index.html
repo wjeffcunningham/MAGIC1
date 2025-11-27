@@ -390,17 +390,6 @@ lightbox.addEventListener("click", () => {
   lbImg.src = "";
 });
 
-/* ---------------------------------
-   POSTER FLIP ARROW
------------------------------------*/
-const posters = document.querySelectorAll(".poster");
-const arrow = document.getElementById("poster-arrow");
-let posterIndex = 0;
-
-arrow.addEventListener("click", () => {
-  posterIndex = (posterIndex + 1) % posters.length;
-  posters.forEach((p, i) => p.classList.toggle("active", i === posterIndex));
-});
 </script>
 
 </body>

@@ -2,23 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Approve Matches · BCWL · magic1.ca</title>
+  <title>Generate Pairings · magic1.ca</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-slate-100 text-slate-900">
 
-  <!-- GLOBAL MENU -->
   <script type="module" src="/js/global-menu-loader.js"></script>
 
   <div class="max-w-5xl mx-auto px-4 py-8 space-y-6">
 
     <header class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 class="text-2xl font-bold">Approve Matches</h1>
+        <h1 class="text-2xl font-bold">Generate Pairings</h1>
         <p class="text-sm text-slate-600">
-          Review pending match reports and apply rating updates (K = 16, league only).
+          Creates 4 assigned matches per player for the current month,
+          based on existing pods.
         </p>
       </div>
       <div class="text-xs text-slate-500">
@@ -26,37 +26,33 @@
       </div>
     </header>
 
-    <!-- STATUS -->
     <section class="bg-white border rounded-xl shadow p-4 space-y-2">
-      <p id="approve-info" class="text-sm text-slate-700"></p>
-      <p id="approve-warning" class="text-xs text-amber-700">
-        Rating changes are applied immediately when you approve a match.
-        BYEs give 3 league points but no rating change.
-      </p>
+      <p id="pairings-info" class="text-sm text-slate-700"></p>
+      <p id="pairings-warning" class="text-xs text-amber-700"></p>
 
       <div class="flex flex-wrap gap-2 pt-2">
-        <button id="refresh-btn"
+        <button id="generate-pairings-btn"
                 class="bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 py-2 rounded">
-          Refresh Pending Matches
+          Generate Pairings (Preview)
         </button>
-        <button id="approve-all-btn"
+        <button id="save-pairings-btn"
                 class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded disabled:opacity-50"
                 disabled>
-          Approve All Visible
+          Confirm & Save Pairings
         </button>
       </div>
 
-      <p id="approve-status" class="text-xs text-slate-500 mt-2"></p>
-      <p id="approve-error" class="hidden text-sm text-red-600 mt-2"></p>
+      <p id="pairings-status" class="text-xs text-slate-500 mt-2"></p>
+      <p id="pairings-error" class="hidden text-sm text-red-600 mt-2"></p>
     </section>
 
-    <!-- MATCHES TABLE -->
-    <section id="matches-container" class="space-y-3">
-      <!-- JS injects match cards or empty state -->
+    <!-- PREVIEW -->
+    <section id="pairings-preview" class="space-y-4">
+      <!-- JS injects pod panels here -->
     </section>
 
   </div>
 
-  <script type="module" src="/js/admin-approve-matches.js"></script>
+  <script type="module" src="/js/admin-pairings-generate.js"></script>
 </body>
 </html>

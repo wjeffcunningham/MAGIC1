@@ -1,13 +1,16 @@
+// global-menu-loader.js
+// Injects menu icon + container + CSS, then loads menu.js (which builds menu links)
+
 document.addEventListener("DOMContentLoaded", () => {
 
-  // Inject menu icon + panel
+  // Inject menu icon + panel container
   const html = `
     <img src="/assets/magic1.svg" id="menu-icon" class="menu-icon" />
     <div id="menu-panel" class="menu-panel"></div>
   `;
   document.body.insertAdjacentHTML("beforeend", html);
 
-  // CSS
+  // Inject CSS styles for menu
   const style = document.createElement("style");
   style.textContent = `
     .menu-icon {
@@ -23,9 +26,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     @media(max-width:600px){
-      .menu-icon{
-        width:64px;
-        height:64px;
+      .menu-icon {
+        width: 64px;
+        height: 64px;
       }
     }
 
@@ -79,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
   `;
   document.head.appendChild(style);
 
-  // Load behavior after layout is stable
+  // Load menu.js AFTER the DOM + CSS + panel exist
   requestAnimationFrame(() => {
     setTimeout(() => import("/js/menu.js"), 0);
   });

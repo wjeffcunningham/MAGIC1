@@ -1,380 +1,235 @@
 // /js/my-matches.js
-// Player-facing match history with pending / approved / rejected,
-// and the ability to cancel your own pending submissions.
+//
+// Player-facing display of:
+// - Scheduled matches (not reported)
+// - Pending (reported, awaiting approval)
+// - Completed (approved)
+// - History (previous months)
+//
+// Works with league_matches schema.
+//
+// A "scheduled" match is a match in the current month where:
+// - player_a = me OR player_b = me
+// - approved = false
+// - winner = null
+// - player_b != null (skip BYEs — they already auto-win)
 
-import { supabase } from "./supabase.js";
-import { getLocalSession } from "./session.js";
+import { supabase } from "/js/supabase.js";
+import { getLocalSession } from "/js/session.js";
+import { isDrawMatch } from "/js/standings-utils.js";  // reuse draw logic
 
-const statusEl   = document.getElementById("matches-status");
-const errorEl    = document.getElementById("matches-error");
-const pendingEl  = document.getElementById("pending-list");
-const approvedEl = document.getElementById("approved-list");
-const rejectedEl = document.getElementById("rejected-list");
+const playerLabelEl = document.getElementById("player-label");
+const monthLabelEl = document.getElementById("month-label");
+const loadErrorEl = document.getElementById("load-error");
 
-let currentPlayerId = null;
+const scheduledList = document.getElementById("scheduled-list");
+const pendingList = document.getElementById("pending-list");
+const completedList = document.getElementById("completed-list");
+const historyList = document.getElementById("history-list");
 
-function showError(msg) {
-  errorEl.textContent = msg;
-  errorEl.classList.remove("hidden");
-}
+let currentPlayer = null;
+let currentMonth = null;
+let podsById = {};
+let opponentsById = {};
 
-function clearError() {
-  errorEl.classList.add("hidden");
-}
-
-// Redirect to login if not logged in
-function requireSessionOrRedirect() {
-  const session = getLocalSession();
-  if (!session) {
-    const next = encodeURIComponent("/my-matches.html");
-    window.location.href = `/login.html?next=${next}`;
+async function ensureLoggedIn() {
+  const sess = getLocalSession();
+  if (!sess || !sess.playerId) {
+    window.location.href = "/login.html";
     return null;
   }
-  return session;
+
+  const { data, error } = await supabase
+    .from("players")
+    .select("id, full_name")
+    .eq("id", sess.playerId)
+    .single();
+
+  if (error || !data) throw error;
+
+  currentPlayer = data;
+  playerLabelEl.textContent = `Logged in as ${data.full_name}`;
 }
 
-function formatWhen(ts) {
-  try {
-    return new Date(ts).toLocaleString();
-  } catch {
-    return ts;
-  }
+async function findCurrentMonth() {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("league_months")
+    .select("id, name, season_id, start_date, end_date")
+    .lte("start_date", today)
+    .gte("end_date", today)
+    .limit(1);
+
+  if (error) throw error;
+  if (!data?.length) throw new Error("No active league month.");
+
+  return data[0];
 }
 
-function formatScore(m, perspective) {
-  // perspective: "A" or "B"
-  const a = m.games_won_a ?? "?";
-  const b = m.games_won_b ?? "?";
-  const score = `${a}-${b}`;
+async function loadPodsForMonth(monthId) {
+  const { data, error } = await supabase
+    .from("pods")
+    .select("id, name")
+    .eq("month_id", monthId);
 
-  switch (m.result) {
-    case "A_WIN":
-      return perspective === "A" ? `Win ${score}` : `Loss ${b}-${a}`;
-    case "B_WIN":
-      return perspective === "B" ? `Win ${score}` : `Loss ${b}-${a}`;
-    case "DRAW":
-      return `Draw ${score}`;
-    default:
-      return `Result ${score}`;
-  }
+  if (error) throw error;
+
+  const map = {};
+  for (const p of data || []) map[p.id] = p;
+  return map;
 }
 
-function matchTypeLabel(m) {
-  if (m.events) {
-    return `Event · ${m.events.name ?? "Untitled Event"}`;
-  }
-  return "League match";
-}
-
-function effectiveK(m) {
-  if (m.events && m.events.k_factor) return m.events.k_factor;
-  if (m.k_factor) return m.k_factor;
-  return "–";
-}
-
-// -------- fetch + render --------
-
-async function loadMatches() {
-  clearError();
-  statusEl.textContent = "Loading your matches…";
-
-  // 1) Load matches where this player is A or B
-  const { data: matches, error } = await supabase
+async function loadAllLeagueMatches(playerId) {
+  const { data, error } = await supabase
     .from("league_matches")
-    .select(`
-      id,
-      result,
-      games_won_a,
-      games_won_b,
-      event_id,
-      k_factor,
-      played_at,
-      approved,
-      rejected,
-      notes,
-      reported_by,
-      player_a:player_a (
-        id,
-        full_name
-      ),
-      player_b:player_b (
-        id,
-        full_name
-      ),
-      events:event_id (
-        id,
-        name,
-        k_factor
-      )
-    `)
-    .or(`player_a.eq.${currentPlayerId},player_b.eq.${currentPlayerId}`)
-    .order("played_at", { ascending: false });
+    .select("*");
 
-  if (error) {
-    console.error(error);
-    showError("Error loading matches.");
-    statusEl.textContent = "Error.";
-    return;
+  if (error) throw error;
+
+  return data.filter(
+    (m) => m.player_a === playerId || m.player_b === playerId
+  );
+}
+
+async function loadOpponents(matchList) {
+  const ids = new Set();
+  for (const m of matchList) {
+    if (m.player_a && m.player_a !== currentPlayer.id) ids.add(m.player_a);
+    if (m.player_b && m.player_b !== currentPlayer.id) ids.add(m.player_b);
   }
+  if (!ids.size) return {};
 
-  if (!matches || matches.length === 0) {
-    statusEl.textContent = "You have no matches recorded yet.";
-    pendingEl.innerHTML = `<p class="text-slate-500 text-sm">No pending matches.</p>`;
-    approvedEl.innerHTML = `<p class="text-slate-500 text-sm">No approved matches.</p>`;
-    rejectedEl.innerHTML = `<p class="text-slate-500 text-sm">No rejected matches.</p>`;
-    return;
-  }
+  const { data, error } = await supabase
+    .from("players")
+    .select("id, full_name")
+    .in("id", [...ids]);
 
-  // 2) Get rating history for this player for all these matches
-  const matchIds = matches.map(m => m.id);
-  const { data: hist, error: histErr } = await supabase
-    .from("rating_history")
-    .select(
-      "match_id, old_rating, new_rating, delta, old_league_rating, new_league_rating, league_delta"
-    )
-    .eq("player_id", currentPlayerId)
-    .in("match_id", matchIds);
+  if (error) throw error;
 
-  const histByMatchId = {};
-  if (!histErr && hist) {
-    for (const row of hist) {
-      histByMatchId[row.match_id] = row;
-    }
-  }
+  const map = {};
+  for (const p of data || []) map[p.id] = p;
+  return map;
+}
 
-  // 3) Partition matches
-  const pending = [];
-  const approved = [];
-  const rejected = [];
+function opponentOf(match) {
+  if (match.player_a === currentPlayer.id) return match.player_b;
+  return match.player_a;
+}
 
-  for (const m of matches) {
-    if (m.rejected) {
-      rejected.push(m);
-    } else if (m.approved) {
-      approved.push(m);
+function renderMatchCard(match, sectionEl, type) {
+  const oppId = opponentOf(match);
+  const oppName = opponentsById[oppId]?.full_name || "(unknown opponent)";
+  const podName = podsById[match.pod_id]?.name || "Unknown Pod";
+
+  const card = document.createElement("div");
+  card.className = "border rounded-lg p-3 bg-slate-50 shadow-sm text-sm";
+
+  const heading = document.createElement("div");
+  heading.className = "flex justify-between items-center";
+
+  const title = document.createElement("span");
+  title.innerHTML = `<strong>${oppName}</strong> — <span class="text-xs">${podName}</span>`;
+  heading.appendChild(title);
+
+  // status pill
+  const status = document.createElement("span");
+  status.className =
+    "text-xs px-2 py-0.5 rounded-full border border-slate-300 bg-white";
+  if (type === "scheduled") status.textContent = "Not Reported";
+  if (type === "pending") status.textContent = "Pending";
+  if (type === "completed") status.textContent = "Final";
+  if (type === "history") status.textContent = match.month_id ? "" : "";
+  heading.appendChild(status);
+
+  card.appendChild(heading);
+
+  // result line (pending/completed/history only)
+  if (type !== "scheduled") {
+    const line = document.createElement("p");
+    line.className = "text-xs text-slate-600 mt-1";
+
+    if (isDrawMatch(match)) {
+      line.textContent = "Result: Draw";
+    } else if (match.winner === currentPlayer.id) {
+      line.textContent = "Result: Win";
+    } else if (match.winner && match.winner !== currentPlayer.id) {
+      line.textContent = "Result: Loss";
     } else {
-      pending.push(m);
+      line.textContent = "Result: Unknown";
+    }
+
+    card.appendChild(line);
+  }
+
+  // notes
+  if (match.notes) {
+    const n = document.createElement("p");
+    n.className = "text-[11px] text-slate-500 mt-1";
+    n.textContent = `Notes: ${match.notes}`;
+    card.appendChild(n);
+  }
+
+  // link to report
+  if (type === "scheduled") {
+    const btn = document.createElement("a");
+    btn.href = "/report-match.html";
+    btn.className =
+      "inline-block mt-2 bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 py-1 rounded";
+    btn.textContent = "Report Match";
+    card.appendChild(btn);
+  }
+
+  sectionEl.appendChild(card);
+}
+
+function renderLists(allMatches) {
+  scheduledList.innerHTML = "";
+  pendingList.innerHTML = "";
+  completedList.innerHTML = "";
+  historyList.innerHTML = "";
+
+  for (const m of allMatches) {
+    const isCurrent = m.month_id === currentMonth.id;
+
+    // classify:
+    if (isCurrent) {
+      if (!m.approved) {
+        if (!m.winner && m.player_b !== null) {
+          renderMatchCard(m, scheduledList, "scheduled");
+        } else {
+          renderMatchCard(m, pendingList, "pending");
+        }
+      } else {
+        renderMatchCard(m, completedList, "completed");
+      }
+    } else {
+      if (m.approved) {
+        renderMatchCard(m, historyList, "history");
+      }
     }
   }
-
-  renderPending(pending);
-  renderApproved(approved, histByMatchId);
-  renderRejected(rejected);
-
-  statusEl.textContent = `Loaded ${matches.length} matches: ${approved.length} approved, ${pending.length} pending, ${rejected.length} rejected.`;
 }
-
-function isPlayerA(m) {
-  return m.player_a && m.player_a.id === currentPlayerId;
-}
-
-function opponentName(m) {
-  if (isPlayerA(m)) return m.player_b?.full_name ?? "(opponent)";
-  return m.player_a?.full_name ?? "(opponent)";
-}
-
-// ------- render sections -------
-
-function renderPending(list) {
-  if (!list.length) {
-    pendingEl.innerHTML = `<p class="text-slate-500 text-sm">No pending matches.</p>`;
-    return;
-  }
-
-  pendingEl.innerHTML = list
-    .map((m) => {
-      const perspective = isPlayerA(m) ? "A" : "B";
-      const scoreStr = formatScore(m, perspective);
-      const typeStr = matchTypeLabel(m);
-
-      const canCancel = m.reported_by === currentPlayerId;
-
-      return `
-        <div class="border rounded-lg p-3 bg-yellow-50 flex flex-col gap-1" id="match-${m.id}">
-          <div class="flex justify-between text-sm">
-            <span class="font-semibold">
-              vs ${opponentName(m)}
-            </span>
-            <span class="text-xs text-slate-500">
-              ${formatWhen(m.played_at)}
-            </span>
-          </div>
-          <div class="text-xs text-slate-700">
-            ${typeStr} · ${scoreStr}
-          </div>
-          ${
-            m.notes
-              ? `<div class="text-xs text-slate-500 mt-1">Note: ${m.notes}</div>`
-              : ""
-          }
-          <div class="flex justify-between items-center mt-2">
-            <span class="text-[11px] text-slate-500">
-              Submitted by ${
-                m.reported_by === currentPlayerId ? "you" : "your opponent"
-              }
-            </span>
-            ${
-              canCancel
-                ? `<button
-                     class="text-[11px] px-2 py-1 border rounded bg-white hover:bg-red-50 text-red-700"
-                     onclick="window.cancelMatch('${m.id}')"
-                   >
-                     Cancel submission
-                   </button>`
-                : ""
-            }
-          </div>
-        </div>
-      `;
-    })
-    .join("");
-}
-
-function renderApproved(list, histMap) {
-  if (!list.length) {
-    approvedEl.innerHTML = `<p class="text-slate-500 text-sm">No approved matches yet.</p>`;
-    return;
-  }
-
-  approvedEl.innerHTML = list
-    .map((m) => {
-      const perspective = isPlayerA(m) ? "A" : "B";
-      const scoreStr = formatScore(m, perspective);
-      const typeStr = matchTypeLabel(m);
-      const kVal = effectiveK(m);
-      const hist = histMap[m.id];
-
-      const deltaStr =
-        hist && typeof hist.delta === "number"
-          ? (hist.delta >= 0 ? `+${hist.delta}` : `${hist.delta}`)
-          : "–";
-
-      const leagueDeltaStr =
-        hist && typeof hist.league_delta === "number"
-          ? (hist.league_delta >= 0 ? `+${hist.league_delta}` : `${hist.league_delta}`)
-          : "–";
-
-      const newRatingStr =
-        hist && typeof hist.new_rating === "number"
-          ? hist.new_rating
-          : "—";
-
-      const newLeagueStr =
-        hist && typeof hist.new_league_rating === "number"
-          ? hist.new_league_rating
-          : "—";
-
-      return `
-        <div class="border rounded-lg p-3 bg-white flex flex-col gap-1">
-          <div class="flex justify-between text-sm">
-            <span class="font-semibold">
-              vs ${opponentName(m)}
-            </span>
-            <span class="text-xs text-slate-500">
-              ${formatWhen(m.played_at)}
-            </span>
-          </div>
-          <div class="text-xs text-slate-700">
-            ${typeStr} · ${scoreStr}
-          </div>
-          <div class="text-[11px] text-slate-500 mt-1">
-            K = ${kVal} · ΔRating = ${deltaStr} → ${newRatingStr}
-            <br/>
-            League Δ = ${leagueDeltaStr} → ${newLeagueStr}
-          </div>
-          ${
-            m.notes
-              ? `<div class="text-xs text-slate-500 mt-1">Note: ${m.notes}</div>`
-              : ""
-          }
-        </div>
-      `;
-    })
-    .join("");
-}
-
-function renderRejected(list) {
-  if (!list.length) {
-    rejectedEl.innerHTML = `<p class="text-slate-500 text-sm">No rejected or cancelled matches.</p>`;
-    return;
-  }
-
-  rejectedEl.innerHTML = list
-    .map((m) => {
-      const perspective = isPlayerA(m) ? "A" : "B";
-      const scoreStr = formatScore(m, perspective);
-      const typeStr = matchTypeLabel(m);
-
-      return `
-        <div class="border rounded-lg p-3 bg-slate-50 flex flex-col gap-1">
-          <div class="flex justify-between text-sm">
-            <span class="font-semibold">
-              vs ${opponentName(m)}
-            </span>
-            <span class="text-xs text-slate-500">
-              ${formatWhen(m.played_at)}
-            </span>
-          </div>
-          <div class="text-xs text-slate-700">
-            ${typeStr} · ${scoreStr}
-          </div>
-          <div class="text-[11px] text-slate-500 mt-1">
-            Status: rejected/cancelled.
-          </div>
-        </div>
-      `;
-    })
-    .join("");
-}
-
-// ------- cancel pending match (player-owned only) -------
-
-async function cancelMatch(matchId) {
-  if (!confirm("Cancel this pending match submission? This cannot be undone.")) {
-    return;
-  }
-
-  clearError();
-  statusEl.textContent = "Cancelling match…";
-
-  // Only allow delete if it is:
-  //  - reported_by = current player
-  //  - approved = false
-  //  - rejected = false
-  const { error } = await supabase
-    .from("league_matches")
-    .delete()
-    .eq("id", matchId)
-    .eq("reported_by", currentPlayerId)
-    .eq("approved", false)
-    .eq("rejected", false);
-
-  if (error) {
-    console.error(error);
-    showError("Could not cancel match. It may have just been approved/rejected.");
-    statusEl.textContent = "Error.";
-    return;
-  }
-
-  const card = document.getElementById(`match-${matchId}`);
-  if (card) card.remove();
-
-  statusEl.textContent = "Pending match cancelled.";
-  // Optionally re-load everything to keep counts accurate:
-  await loadMatches();
-}
-
-// Expose for onclick in rendered HTML
-window.cancelMatch = cancelMatch;
-
-// ------- init -------
 
 async function init() {
-  const session = requireSessionOrRedirect();
-  if (!session) return;
+  try {
+    await ensureLoggedIn();
+    currentMonth = await findCurrentMonth();
 
-  currentPlayerId = session.playerId;
-  await loadMatches();
+    monthLabelEl.textContent =
+      `Month: ${currentMonth.name} (${currentMonth.start_date} → ${currentMonth.end_date})`;
+
+    podsById = await loadPodsForMonth(currentMonth.id);
+
+    const allMatches = await loadAllLeagueMatches(currentPlayer.id);
+    opponentsById = await loadOpponents(allMatches);
+
+    renderLists(allMatches);
+  } catch (err) {
+    console.error(err);
+    loadErrorEl.textContent = err.message || "Error loading matches.";
+    loadErrorEl.classList.remove("hidden");
+  }
 }
 
 init();

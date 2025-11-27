@@ -1,100 +1,100 @@
-import { supabase } from "./supabase.js";
+// js/admin-dashboard.js
+//
+// Admin overview using the new db.js layer.
+// If this page works, the architecture is sound.
 
-const statsContainer = document.getElementById("admin-stats");
-const pendingPlayersCountEl = document.getElementById("pending-players-count");
-const pendingMatchesCountEl = document.getElementById("pending-matches-count");
+import {
+  getCurrentAuthUser,
+  getPlayerById,
+  listPendingPlayers,
+  listPendingLeagueMatches,
+  getActiveSeasonForToday,
+  getMonthsForSeason,
+  listActiveSignupsForSeason,
+} from "/js/db.js";
+
+import { getLocalSession } from "/js/session.js";
+
+const adminNameEl = document.getElementById("admin-name");
+const currentMonthEl = document.getElementById("current-month");
+const statusEl = document.getElementById("admin-status");
 const errorEl = document.getElementById("admin-error");
 
+const pendingPlayersCountEl = document.getElementById("pending-players-count");
+const pendingMatchesCountEl = document.getElementById("pending-matches-count");
+
+/**
+ * Ensures user is logged in AND is admin.
+ */
+async function ensureAdmin() {
+  const sess = getLocalSession();
+  if (!sess || !sess.playerId) {
+    window.location.href = "/login.html";
+    return;
+  }
+
+  const player = await getPlayerById(sess.playerId);
+  if (!player) throw new Error("Could not load player record.");
+  if (!player.is_admin) throw new Error("Admin access required.");
+
+  adminNameEl.textContent = `${player.full_name} (Admin)`;
+}
+
+/**
+ * Loads basic statistics for the dashboard.
+ */
 async function loadStats() {
+  // Load parallel fast.
+  const [
+    pendingPlayers,
+    pendingMatches,
+    season,
+  ] = await Promise.all([
+    listPendingPlayers(),
+    listPendingLeagueMatches(),
+    getActiveSeasonForToday(),
+  ]);
+
+  pendingPlayersCountEl.textContent = pendingPlayers.length;
+  pendingMatchesCountEl.textContent = pendingMatches.length;
+
+  if (!season) {
+    currentMonthEl.textContent = "No active league season.";
+    return;
+  }
+
+  const months = await getMonthsForSeason(season.id);
+
+  // Identify today's month.
+  const today = new Date().toISOString().slice(0, 10);
+  const activeMonth =
+    months.find(
+      (m) => m.start_date <= today && m.end_date >= today
+    ) || null;
+
+  if (activeMonth) {
+    currentMonthEl.textContent =
+      `${activeMonth.name} (${activeMonth.start_date} → ${activeMonth.end_date})`;
+  } else {
+    currentMonthEl.textContent = "Season active — no current month.";
+  }
+}
+
+/**
+ * Main init.
+ */
+async function init() {
   try {
-    // Players by status
-    const { data: players, error: playersErr } = await supabase
-      .from("players")
-      .select("id, status, is_admin");
-
-    if (playersErr) throw playersErr;
-
-    const playerStats = {
-      total: players.length,
-      active: players.filter((p) => p.status === "active").length,
-      pending: players.filter((p) => p.status === "pending").length,
-      dropped: players.filter((p) => p.status === "dropped").length,
-      admins: players.filter((p) => p.is_admin === true).length,
-    };
-
-    // Matches
-    const { data: matches, error: matchesErr } = await supabase
-      .from("league_matches")
-      .select("id, approved");
-
-    if (matchesErr) throw matchesErr;
-
-    const matchStats = {
-      total: matches.length,
-      approved: matches.filter((m) => m.approved === true).length,
-      pending: matches.filter((m) => m.approved === false).length,
-    };
-
-    // Events
-    const { data: events, error: eventsErr } = await supabase
-      .from("events")
-      .select("id");
-
-    if (eventsErr) throw eventsErr;
-
-    const eventCount = events.length;
-
-    // Render top-level cards
-    statsContainer.innerHTML = `
-      <div class="bg-white border rounded-xl p-4 shadow">
-        <div class="text-xs font-semibold text-slate-600 uppercase mb-1">
-          Active Players
-        </div>
-        <div class="text-3xl font-bold">${playerStats.active}</div>
-        <p class="text-xs text-slate-500 mt-1">
-          ${playerStats.total} total · ${playerStats.pending} pending
-        </p>
-      </div>
-
-      <div class="bg-white border rounded-xl p-4 shadow">
-        <div class="text-xs font-semibold text-slate-600 uppercase mb-1">
-          Matches
-        </div>
-        <div class="text-3xl font-bold">${matchStats.approved}</div>
-        <p class="text-xs text-slate-500 mt-1">
-          ${matchStats.total} total · ${matchStats.pending} pending
-        </p>
-      </div>
-
-      <div class="bg-white border rounded-xl p-4 shadow">
-        <div class="text-xs font-semibold text-slate-600 uppercase mb-1">
-          Events
-        </div>
-        <div class="text-3xl font-bold">${eventCount}</div>
-        <p class="text-xs text-slate-500 mt-1">
-          Includes B.C. Premodern Masters and future events.
-        </p>
-      </div>
-
-      <div class="bg-white border rounded-xl p-4 shadow">
-        <div class="text-xs font-semibold text-slate-600 uppercase mb-1">
-          Admins
-        </div>
-        <div class="text-3xl font-bold">${playerStats.admins}</div>
-        <p class="text-xs text-slate-500 mt-1">
-          Players with admin privileges.
-        </p>
-      </div>
-    `;
-
-    // Work queue numbers
-    pendingPlayersCountEl.textContent = playerStats.pending;
-    pendingMatchesCountEl.textContent = matchStats.pending;
+    statusEl.textContent = "Loading admin dashboard…";
+    await ensureAdmin();
+    await loadStats();
+    statusEl.textContent = "Ready.";
   } catch (err) {
     console.error(err);
-    errorEl.textContent = "Error loading admin stats.";
+    statusEl.textContent = "";
+    errorEl.textContent = err.message || "Failed to load admin dashboard.";
     errorEl.classList.remove("hidden");
   }
 }
 
-loadStats();
+init();

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Workspace · magic1.ca</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+
+  <!-- GLOBAL MENU -->
+  <script type="module" src="/js/global-menu-loader.js"></script>
+
+  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+
+    <!-- HEADER -->
+    <header class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold">Admin Workspace</h1>
+        <p class="text-sm text-slate-600">
+          Central control for BC Winter League & B.C. Premodern Masters.
+        </p>
+      </div>
+      <div class="text-xs text-slate-500 text-right">
+        <p id="admin-name"></p>
+        <p id="current-month"></p>
+      </div>
+    </header>
+
+    <!-- STATUS / ERRORS -->
+    <section class="bg-white border rounded-xl shadow p-4 space-y-2">
+      <p id="admin-status" class="text-xs text-slate-600">
+        Loading admin overview…
+      </p>
+      <p id="admin-error" class="hidden text-sm text-red-600"></p>
+    </section>
+
+    <!-- GRID OF CARDS -->
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+
+      <!-- PLAYER ONBOARDING -->
+      <article class="bg-white border rounded-xl shadow p-4 flex flex-col justify-between">
+        <div class="space-y-1">
+          <h2 class="text-lg font-semibold">Player Onboarding</h2>
+          <p class="text-xs text-slate-600">
+            Approve newly-created accounts so they can join BCWL and events.
+          </p>
+        </div>
+        <div class="mt-3 flex items-center justify-between">
+          <div class="text-3xl font-bold" id="pending-players-count">–</div>
+          <a href="/awaiting-approval.html"
+             class="text-xs bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded">
+            Review Pending Players
+          </a>
+        </div>
+      </article>
+
+      <!-- MATCH APPROVAL -->
+      <article class="bg-white border rounded-xl shadow p-4 flex flex-col justify-between">
+        <div class="space-y-1">
+          <h2 class="text-lg font-semibold">Match Approval</h2>
+          <p class="text-xs text-slate-600">
+            Approve reported league matches and apply Elo changes.
+          </p>
+        </div>
+        <div class="mt-3 flex items-center justify-between">
+          <div class="text-3xl font-bold" id="pending-matches-count">–</div>
+          <a href="/admin/approve-matches.html"
+             class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded">
+            Go to Match Approval
+          </a>
+        </div>
+        <p class="mt-2 text-[11px] text-slate-500">
+          Count includes all unapproved league matches this season.
+        </p>
+      </article>
+
+      <!-- PODS & PAIRINGS -->
+      <article class="bg-white border rounded-xl shadow p-4 flex flex-col justify-between">
+        <div class="space-y-1">
+          <h2 class="text-lg font-semibold">Pods & Pairings</h2>
+          <p class="text-xs text-slate-600">
+            Set up monthly pods and generate 4 assigned matches per player.
+          </p>
+        </div>
+
+        <div class="mt-3 space-y-2 text-xs">
+          <p id="pods-status" class="text-slate-600">Checking pods…</p>
+          <p id="pairings-status" class="text-slate-500"></p>
+        </div>
+
+        <div class="mt-3 flex flex-wrap gap-2">
+          <a href="/admin/pods-generate.html"
+             class="text-xs bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded">
+            Generate Pods
+          </a>
+          <a href="/admin/pairings-generate.html"
+             class="text-xs bg-sky-700 hover:bg-sky-800 text-white px-3 py-2 rounded">
+            Generate Pairings
+          </a>
+        </div>
+      </article>
+
+      <!-- TEST TOOLS (STUB / INFO) -->
+      <article class="bg-white border rounded-xl shadow p-4 flex flex-col justify-between">
+        <div class="space-y-1">
+          <h2 class="text-lg font-semibold">Test Generators</h2>
+          <p class="text-xs text-slate-600">
+            Non-destructive pods/pairings sandbox for debugging or planning.
+          </p>
+        </div>
+        <p class="mt-3 text-[11px] text-slate-500">
+          Stub for now. We’ll wire this to dedicated
+          <code>pods-test</code> and <code>pairings-test</code> endpoints/pages.
+        </p>
+      </article>
+
+      <!-- PLAYER & LEAGUE DATA -->
+      <article class="bg-white border rounded-xl shadow p-4 flex flex-col justify-between">
+        <div class="space-y-1">
+          <h2 class="text-lg font-semibold">Player / League Data</h2>
+          <p class="text-xs text-slate-600">
+            Search player records, ratings, pod history, and league standings.
+          </p>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <a href="/league/standings.html"
+             class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-2 rounded">
+            View Standings
+          </a>
+          <a href="/player.html"
+             class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-2 rounded">
+            Player Lookup
+          </a>
+        </div>
+      </article>
+
+      <!-- BCPMM / EVENTS (FUTURE) -->
+      <article class="bg-white border rounded-xl shadow p-4 flex flex-col justify-between">
+        <div class="space-y-1">
+          <h2 class="text-lg font-semibold">B.C. Premodern Masters</h2>
+          <p class="text-xs text-slate-600">
+            Event registration, pairings, and standings (to be implemented).
+          </p>
+        </div>
+        <p class="mt-3 text-[11px] text-slate-500">
+          Placeholder. Once event matches are wired, this card will link to
+          the BCPMM event admin pages and show live counts.
+        </p>
+      </article>
+
+    </section>
+  </div>
+
+  <script type="module" src="/js/admin-dashboard.js"></script>
+</body>
+</html>

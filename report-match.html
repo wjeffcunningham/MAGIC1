@@ -15,85 +15,63 @@
   <div class="min-h-screen flex items-center justify-center px-4">
     <div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-lg space-y-5 border">
 
-      <header>
-        <h1 class="text-2xl font-bold mb-1">Report Match</h1>
-        <p class="text-xs text-slate-600">
-          Report a league or event match. Results immediately count toward standings;
-          ratings update after admin approval.
+      <header class="space-y-1">
+        <h1 class="text-2xl font-bold text-center">Report League Match</h1>
+        <p class="text-xs text-slate-600 text-center">
+          For BC Winter League monthly matches only. You’ll select from your
+          <strong>scheduled pairings</strong> for the current month.
         </p>
+        <p id="player-label" class="text-xs text-slate-500 text-center"></p>
       </header>
 
-      <!-- Status line -->
-      <p id="report-status" class="text-xs text-slate-600">
-        Loading your league context…
-      </p>
+      <section class="bg-slate-50 border rounded-lg p-3 text-xs text-slate-600">
+        <p id="month-label">Loading current month…</p>
+        <p id="pairings-note" class="mt-1">
+          Only matches that:
+          <span class="font-semibold">haven’t been reported yet</span>
+          and
+          <span class="font-semibold">aren’t BYEs</span>
+          will appear here.
+        </p>
+      </section>
 
-      <!-- Error / success messages -->
-      <p id="report-error" class="hidden text-sm text-red-600"></p>
-      <p id="report-success" class="hidden text-sm text-emerald-700"></p>
+      <form id="report-form" class="space-y-5">
 
-      <!-- Main form -->
-      <form id="report-form" class="space-y-4">
-
-        <!-- Opponent selection -->
+        <!-- OPPONENT SELECTION -->
         <section class="space-y-2">
-          <label class="block text-sm font-semibold">Opponent</label>
-          <select id="opponent-select"
-                  name="opponent"
-                  class="w-full border rounded px-3 py-2 text-sm"
-                  required>
-            <option value="">Loading players…</option>
-          </select>
-
-          <input
-            type="text"
-            id="external-opponent"
-            class="w-full border rounded px-3 py-2 text-sm hidden"
-            placeholder="External opponent full name"
-          />
+          <h2 class="text-sm font-semibold">1. Choose the opponent</h2>
           <p class="text-[11px] text-slate-500">
-            Choose an opponent from the list, or pick “External opponent” and
-            enter their name (for store events, etc.).
+            These are your scheduled matches for the current league month.
           </p>
-        </section>
-
-        <!-- Match type / event -->
-        <section class="space-y-2">
-          <label class="block text-sm font-semibold">Match type / event</label>
-          <select id="event-select"
-                  name="event"
+          <select id="match-select"
+                  name="match_id"
                   class="w-full border rounded px-3 py-2 text-sm">
-            <option value="">League match (no specific event)</option>
+            <option value="">Loading matches…</option>
           </select>
-          <p class="text-[11px] text-slate-500">
-            “League match” uses your league K-factor (casual/competitive).
-            Selecting an event (e.g. B.C. Premodern Masters, store event) uses
-            that event’s K-value.
-          </p>
         </section>
 
-        <!-- Result (best of 3 + draw) -->
+        <!-- RESULT SELECTION -->
         <section class="space-y-2">
-          <label class="block text-sm font-semibold">Result (Best of 3)</label>
-          <div class="space-y-1 text-sm">
+          <h2 class="text-sm font-semibold">2. Result (from your perspective)</h2>
 
+          <div class="space-y-1 text-sm">
             <label class="flex items-center gap-2">
-              <input type="radio" name="result" value="A_WIN_2_0" required />
+              <input type="radio" name="result" value="ME_WIN_2_0" />
               <span>I <strong>won</strong> 2–0</span>
             </label>
 
             <label class="flex items-center gap-2">
-              <input type="radio" name="result" value="A_WIN_2_1" />
+              <input type="radio" name="result" value="ME_WIN_2_1" />
               <span>I <strong>won</strong> 2–1</span>
             </label>
 
             <label class="flex items-center gap-2">
-              <input type="radio" name="result" value="B_WIN_2_1" />
+              <input type="radio" name="result" value="ME_LOSE_1_2" />
               <span>I <strong>lost</strong> 1–2</span>
             </label>
 
             <label class="flex items-center gap-2">
-              <input type="radio" name="result" value="B_WIN_2_0" />
+              <input type="radio" name="result" value="ME_LOSE_0_2" />
               <span>I <strong>lost</strong> 0–2</span>
             </label>
 
@@ -103,23 +81,24 @@
             </label>
           </div>
           <p class="text-[11px] text-slate-500">
-            League points: win = 3, draw = 1, loss = 0 (we’ll use this later
-            for standings).
+            League points: win = 3, draw = 1, loss = 0.
+            Elo rating uses 1 for win, 0.5 for draw, 0 for loss.
           </p>
         </section>
 
-        <!-- Notes -->
-        <section class="space-y-1">
-          <label class="block text-sm font-semibold" for="notes">
-            Notes (optional)
-          </label>
+        <!-- NOTES -->
+        <section class="space-y-2">
+          <h2 class="text-sm font-semibold">3. Notes (optional)</h2>
           <textarea
             id="notes"
+            name="notes"
             class="w-full border rounded px-3 py-2 text-sm"
-            rows="2"
-            placeholder="Store event name, table number, or anything useful for TO/admin."
-          ></textarea>
+            rows="3"
+            placeholder="Anything the admins should know (concessions, disconnects, etc.)"></textarea>
         </section>
+
+        <p id="report-error" class="text-sm text-red-600 hidden"></p>
+        <p id="report-success" class="text-sm text-emerald-700 hidden"></p>
 
         <button
           type="submit"

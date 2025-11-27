@@ -1,203 +1,149 @@
-// ===============================
-//  MENU.JS (FINAL CLEAN VERSION)
-// ===============================
+// menu.js
+//
+// Builds the dynamic menu inside #menu-panel.
+// Requires:
+//   - session.js
+//   - db.js
+//   - supabase.js
+//
 
-import { supabase } from "./supabase.js";
-import { getLocalSession, clearLocalSession, saveLocalSession } from "./session.js";
+import { getLocalSession, clearLocalSession } from "/js/session.js";
+import {
+  getCurrentPlayer,
+  getActiveSeasonForToday,
+  listActiveSignupsForSeason,
+} from "/js/db.js";
 
-// DOM reference
 const panel = document.getElementById("menu-panel");
-const hamburger = document.getElementById("hamburger");
+const icon  = document.getElementById("menu-icon");
 
-// ---------------------------------------------
-// Load Supabase user + player row
-// ---------------------------------------------
-async function loadUserState() {
-  const { data: { user } } = await supabase.auth.getUser();
+// Toggle panel open/closed
+icon.addEventListener("click", () => {
+  panel.classList.toggle("open");
+});
 
-  if (!user) {
-    // Logged out
-    clearLocalSession();
-    return {
-      loggedIn: false,
-      player: null,
-      inLeague: false,
-      isAdmin: false,
-    };
-  }
-
-  // Logged in — load player row
-  const { data: player } = await supabase
-    .from("players")
-    .select("*")
-    .eq("email", user.email)
-    .maybeSingle();
-
-  if (!player) {
-    // User exists in auth but not in players table
-    // Send them to awaiting-approval or profile creation
-    return {
-      loggedIn: true,
-      player: null,
-      inLeague: false,
-      isAdmin: false,
-    };
-  }
-
-  // Save locally (for speed / Safari back-forward cache)
-  saveLocalSession({
-    loggedIn: true,
-    playerId: player.id,
-    fullName: player.full_name,
-    isAdmin: player.is_admin === true,
-  });
-
-  // Determine league membership
-  const { data: signup } = await supabase
-    .from("league_signups")
-    .select("status")
-    .eq("player_id", player.id)
-    .maybeSingle();
-
-  const inLeague = signup?.status === "active";
-
-  return {
-    loggedIn: true,
-    player,
-    inLeague,
-    isAdmin: player.is_admin === true,
-  };
-}
-
-// ---------------------------------------------
-// Render the menu based on state
-// ---------------------------------------------
-async function renderMenu() {
-  const state = await loadUserState();
-  let html = `<div class="menu-title">Menu</div>`;
-
-  // ---------------------------
-  // LOGGED OUT
-  // ---------------------------
-  if (!state.loggedIn) {
-    html += `
-      <a href="/login.html" class="menu-link">Log In / Create Account</a>
-    `;
-    panel.innerHTML = html;
-    return;
-  }
-
-  // ---------------------------
-  // LOGGED IN but NO player row yet
-  // (awaiting approval or first-time)
-  // ---------------------------
-  if (state.loggedIn && !state.player) {
-    html += `
-      <a href="/" class="menu-link">Home</a>
-      <a href="/awaiting-approval.html" class="menu-link">Awaiting Approval</a>
-      <hr>
-      <a href="#" id="logout-link" class="menu-link">Log Out</a>
-    `;
-    panel.innerHTML = html;
-    attachLogout();
-    return;
-  }
-
-  // ---------------------------
-  // LOGGED IN but NOT IN LEAGUE
-  // ---------------------------
-  if (!state.inLeague) {
-    html += `
-      <a href="/" class="menu-link">Home</a>
-      <a href="/league/index.html" class="menu-link">League Home</a>
-      <a href="/league/signup.html" class="menu-link">Join the League</a>
-      <hr>
-      <a href="#" id="logout-link" class="menu-link">Log Out</a>
-    `;
-    panel.innerHTML = html;
-    attachLogout();
-    return;
-  }
-
-  // ---------------------------
-  // LOGGED IN + IN LEAGUE
-  // ---------------------------
-  html += `
-    <a href="/" class="menu-link">Home</a>
-    <a href="/league/index.html" class="menu-link">League Home</a>
-    <a href="/my-matches.html" class="menu-link">My Matches</a>
-    <a href="/report-match.html" class="menu-link">Report Match</a>
-    <a href="/profile.html" class="menu-link">My Profile</a>
-  `;
-
-  // ---------------------------
-  // ADMIN BLOCK (Option A — grouped)
-  // ---------------------------
-  if (state.isAdmin) {
-    html += `
-      <hr>
-      <div class="menu-title">Admin</div>
-
-      <a href="/admin/league.html" class="menu-link">League Admin</a>
-      <a href="/admin/pending-players.html" class="menu-link">Approve Players</a>
-      <a href="/admin/approve-matches.html" class="menu-link">Approve Matches</a>
-      <a href="/admin/players.html" class="menu-link">Player Database</a>
-      <a href="/admin/pods.html" class="menu-link">Pods</a>
-      <a href="/admin/reshuffle.html" class="menu-link">Reshuffle Tool</a>
-      <a href="/admin/standings.html" class="menu-link">Standings (Admin)</a>
-      <a href="/admin/generate-tokens.html" class="menu-link">Token Generator</a>
-    `;
-  }
-
-  html += `
-    <hr>
-    <a href="#" id="logout-link" class="menu-link">Log Out</a>
-  `;
-
-  panel.innerHTML = html;
-  attachLogout();
-}
-
-// ---------------------------------------------
-// LOG OUT
-// ---------------------------------------------
-function attachLogout() {
-  const logout = document.getElementById("logout-link");
-  if (!logout) return;
-
-  logout.addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    clearLocalSession();
-    window.location.href = "/login.html";
-  });
-}
-
-// ---------------------------------------------
-// Close menu when clicking outside
-// ---------------------------------------------
+// Close panel if clicking outside
 document.addEventListener("click", (e) => {
-  if (
-    panel.classList.contains("open") &&
-    !panel.contains(e.target) &&
-    !hamburger.contains(e.target)
-  ) {
+  if (!panel.contains(e.target) && e.target !== icon) {
     panel.classList.remove("open");
   }
 });
 
-// ---------------------------------------------
-// Hamburger toggle
-// ---------------------------------------------
-hamburger.addEventListener("click", () => {
-  panel.classList.toggle("open");
-});
+// Utility: Create a menu link
+function makeLink(label, href, extra = "") {
+  return `<a class="menu-link" href="${href}">${label}${extra}</a>`;
+}
 
-// ---------------------------------------------
-// Safari back/forward fix
-// ---------------------------------------------
-window.addEventListener("pageshow", () => {
-  renderMenu();
-});
+// Utility: Group titles
+function makeGroup(title) {
+  return `<div class="menu-group-title">${title}</div>`;
+}
 
-// Initial render
+// Render menu
+async function renderMenu() {
+  let html = "";
+  const sess = getLocalSession();
+  const loggedIn = sess && sess.playerId;
+
+  let player = null;
+  let isAdmin = false;
+  let season = null;
+  let alreadySignedUp = false;
+
+  if (loggedIn) {
+    player = await getCurrentPlayer();
+    isAdmin = player?.is_admin === true;
+
+    season = await getActiveSeasonForToday();
+    if (season) {
+      const signups = await listActiveSignupsForSeason(season.id);
+      alreadySignedUp = signups.some((s) => s.player_id === player.id);
+    }
+  }
+
+  // -------------------------------
+  // LOGGED OUT MENU
+  // -------------------------------
+  if (!loggedIn) {
+    html += makeGroup("Account");
+    html += makeLink("Log In", "/login.html");
+    html += makeLink("Create Account", "/login.html#signup");
+    panel.innerHTML = html;
+    return;
+  }
+
+  // -------------------------------
+  // LOGGED IN MENU
+  // -------------------------------
+  html += makeGroup("Account");
+
+  html += `
+    <div class="menu-link" style="cursor:default;">
+      <span style="font-weight:600;">${player.full_name}</span>
+    </div>
+  `;
+
+  html += makeLink("Profile", "/profile.html");
+  html += makeLink("My Matches", "/my-matches.html");
+
+  html += `<a class="menu-link" href="#" id="logout-link">Log Out</a>`;
+
+  // -------------------------------
+  // LEAGUE SECTION
+  // -------------------------------
+  html += makeGroup("League");
+
+  if (season) {
+    html += `
+      <div class="menu-link" style="cursor:default;">
+        ${season.name}
+      </div>
+    `;
+
+    if (!alreadySignedUp) {
+      html += makeLink("Join the League", "/league/signup.html");
+    } else {
+      html += `
+        <div class="menu-link" style="cursor:default;">
+          <span style="color:#0a0;font-weight:600;">Joined ✔</span>
+        </div>
+      `;
+      html += makeLink("League Standings", "/league/standings.html");
+      html += makeLink("Report Match", "/report-match.html");
+    }
+
+  } else {
+    html += `
+      <div class="menu-link" style="cursor:default;">
+        No active league season
+      </div>
+    `;
+  }
+
+  // -------------------------------
+  // ADMIN SECTION
+  // -------------------------------
+  if (isAdmin) {
+    html += makeGroup("Admin");
+    html += makeLink("Admin Workspace", "/admin/index.html");
+    html += makeLink("Approve Players", "/admin/pending-players.html");
+    html += makeLink("Approve Matches", "/admin/approve-matches.html");
+    html += makeLink("Pods & Pairings", "/admin/pods.html");
+    html += makeLink("League Data", "/admin/players.html");
+  }
+
+  // Insert into panel
+  panel.innerHTML = html;
+
+  // Logout handler
+  const logoutLink = document.getElementById("logout-link");
+  if (logoutLink) {
+    logoutLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      clearLocalSession();
+      window.location.href = "/";
+    });
+  }
+}
+
 renderMenu();

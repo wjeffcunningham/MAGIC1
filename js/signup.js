@@ -1,4 +1,4 @@
-// signup.js — handles creating new accounts
+// signup.js — handles creating new accounts (updated)
 import { supabase } from "./supabase.js";
 import { saveLocalSession } from "./session.js";
 
@@ -14,6 +14,7 @@ if (signupForm) {
     signupSuccess.classList.add("hidden");
 
     const fd = new FormData(signupForm);
+
     const fullName = fd.get("full_name");
     const email = fd.get("email");
     const password = fd.get("password");
@@ -25,7 +26,26 @@ if (signupForm) {
       return;
     }
 
-    // Create auth user
+    // NEW: form fields for our schema
+    const homeStore = fd.get("home_store");
+    const remotePreferenceUI = fd.get("remote_preference"); // "yes" | "sometimes" | "no"
+    const remoteLocation = fd.get("remote_location") || null;
+    const remoteMethods = fd.getAll("remote_methods"); // array of "MTGO"/"Webcam"
+
+    // Convert UI → DB remote_preference
+    let remote_preference;
+
+    if (homeStore === "Remote Only") {
+      remote_preference = "remote_only";
+    } else if (remotePreferenceUI === "no") {
+      remote_preference = "no_remote";
+    } else {
+      remote_preference = "remote_ok";
+    }
+
+    // -------------------------
+    // Create Auth User
+    // -------------------------
     const { data: authData, error: authErr } = await supabase.auth.signUp({
       email,
       password,
@@ -39,14 +59,23 @@ if (signupForm) {
 
     const authUserId = authData.user.id;
 
-    // Create players row with status = 'pending'
+    // -------------------------
+    // Create Player
+    // -------------------------
     const { data: player, error: pErr } = await supabase
       .from("players")
       .insert({
         full_name: fullName,
-        email,
+        email: email,
         auth_user_id: authUserId,
-        status: "pending",
+
+        home_store: homeStore,
+        remote_preference,
+        remote_location: homeStore === "Remote Only" ? remoteLocation : null,
+        remote_methods: remoteMethods.length ? remoteMethods : null,
+
+        social_link: null,
+        status: "pending" // matches your existing logic
       })
       .select()
       .single();
@@ -61,11 +90,11 @@ if (signupForm) {
     saveLocalSession({
       playerId: player.id,
       fullName: player.full_name,
-      username: player.username || "(no username yet)",
-      authUserId,
+      username: player.username || null,
+      authUserId
     });
 
-    // Success → go to awaiting approval page
+    // Redirect to awaiting approval
     window.location.href = "/awaiting-approval.html";
   });
 }

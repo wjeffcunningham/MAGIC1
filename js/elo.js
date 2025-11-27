@@ -1,29 +1,24 @@
 // /js/elo.js
-// Universal ELO support with draws
+//
+// Pure Elo helpers, no Supabase calls.
 
-export function computeElo(rA, rB, scoreA, K) {
-  const expectedA = 1 / (1 + Math.pow(10, (rB - rA) / 400));
-  const expectedB = 1 - expectedA;
+export function calculateEloDelta(ratingA, ratingB, scoreA, k) {
+  // ratingA, ratingB: ints
+  // scoreA: 1 (win), 0.5 (draw), 0 (loss)
+  // k: K-factor (16 for BCWL league)
+  const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+  const deltaA = Math.round(k * (scoreA - expectedA));
+  return deltaA;
+}
 
-  const scoreB = 1 - scoreA;
-
-  const newA = Math.round(rA + K * (scoreA - expectedA));
-  const newB = Math.round(rB + K * (scoreB - expectedB));
-
+export function applyElo(ratingA, ratingB, scoreA, k) {
+  const deltaA = calculateEloDelta(ratingA, ratingB, scoreA, k);
+  const newA = ratingA + deltaA;
+  const newB = ratingB - deltaA;
   return {
     newA,
     newB,
-    deltaA: newA - rA,
-    deltaB: newB - rB,
+    deltaA,
+    deltaB: -deltaA,
   };
-}
-
-export function scoreFromResult(result) {
-  switch (result) {
-    case "A_WIN": return 1;
-    case "B_WIN": return 0;
-    case "DRAW":  return 0.5;
-    default:
-      throw new Error("Invalid match result flag: " + result);
-  }
 }
