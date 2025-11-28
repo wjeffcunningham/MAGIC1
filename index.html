@@ -233,7 +233,8 @@
 <body>
 
 <!-- HAMBURGER -->
-<div id="hamburger">☰</div>
+<div id="menu-icon" class="menu-icon">☰</div>
+<div id="menu-panel" class="menu-panel"></div>
 
 <!-- MENU PANEL -->
 <div id="menu-panel"></div>
@@ -339,7 +340,10 @@
 
 <!-- Supabase + menu -->
 <script type="module" src="/js/supabase.js"></script>
-<script type="module" src="/js/menu.js"></script>
+<!-- MENU LOADER (injects menu-icon + panel + loads menu.js) -->
+<script type="module" src="/js/global-menu-loader.js"></script>
+<!-- Supabase -->
+<script type="module" src="/js/supabase.js"></script>
 
 <script>
 /* ---------------------------------
@@ -352,7 +356,8 @@
     "#E8F4FF", // light blue
     "#EBFFE8"  // light green
   ];
-  document.body.style.background = colors[Math.floor(Math.random() * colors.length)];
+  document.body.style.background =
+    colors[Math.floor(Math.random() * colors.length)];
 })();
 
 /* ---------------------------------
@@ -367,7 +372,7 @@ const prizes = [
 ];
 
 let idx = 0;
-prizeImg.addEventListener("click", () => {
+prizeImg?.addEventListener("click", () => {
   idx = (idx + 1) % prizes.length;
   prizeImg.src = prizes[idx];
 });
@@ -376,7 +381,7 @@ prizeImg.addEventListener("click", () => {
    LIGHTBOX FOR SPONSOR ICONS
 -----------------------------------*/
 const lightbox = document.getElementById("card-lightbox");
-const lbImg = lightbox.querySelector("img");
+const lbImg = lightbox?.querySelector("img");
 
 document.querySelectorAll(".logos img").forEach(img => {
   img.addEventListener("click", () => {
@@ -385,12 +390,26 @@ document.querySelectorAll(".logos img").forEach(img => {
   });
 });
 
-lightbox.addEventListener("click", () => {
+lightbox?.addEventListener("click", () => {
   lightbox.style.display = "none";
   lbImg.src = "";
 });
 
+/* ---------------------------------
+   POSTER FLIP ARROW
+-----------------------------------*/
+const posters = document.querySelectorAll(".poster");
+const arrow = document.getElementById("poster-arrow");
+let posterIndex = 0;
+
+arrow?.addEventListener("click", () => {
+  posterIndex = (posterIndex + 1) % posters.length;
+  posters.forEach((p, i) => p.classList.toggle("active", i === posterIndex));
+});
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
