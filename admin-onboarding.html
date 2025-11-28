@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Player Onboarding · magic1.ca</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+  <script type="module" src="/js/global-menu-loader.js"></script>
+
+  <div class="max-w-3xl mx-auto mt-10 px-4 pb-20">
+
+    <h1 class="text-3xl font-bold mb-6 text-center">Player Onboarding</h1>
+
+    <!-- NOT ADMIN BLOCK -->
+    <div id="not-admin" class="hidden bg-white p-6 rounded-2xl shadow text-center">
+      <p class="mb-4 font-medium">
+        You do not have admin privileges.
+      </p>
+      <a href="/" class="bg-slate-200 text-slate-900 px-4 py-2 rounded">
+        Return Home
+      </a>
+    </div>
+
+    <!-- ADMIN CONTENT -->
+    <div id="admin-content" class="hidden">
+
+      <div class="bg-white p-6 rounded-2xl shadow mb-6">
+        <label class="block text-sm font-medium mb-2">Search</label>
+        <input id="search-input" type="text"
+               placeholder="Name or email..."
+               class="w-full border rounded px-3 py-2 text-sm" />
+      </div>
+
+      <div id="pending-list" class="space-y-3">
+        <!-- Rows injected dynamically -->
+      </div>
+
+      <div id="no-results" class="hidden text-center text-slate-600 mt-6">
+        No pending players found.
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="/js/admin-onboarding.js"></script>
+</body>
+</html>

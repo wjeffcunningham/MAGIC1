@@ -1,228 +1,204 @@
-// js/admin-approve-matches.js
-//
-// Clean consolidated admin match approval tool.
-// Shows all league_matches.approved = false
-// Admin can:
-//  - Approve (apply Elo + rating_history + set approved=true)
-//  - Reject (delete the match OR mark it invalid)
-//
-// Uses:
-//   db.js (named functions)
-//   elo.js (compute Elo deltas)
-//
+import { supabase } from "./supabase.js";
+import { getLocalSession } from "./session.js";
 
-import {
-  listPendingLeagueMatches,
-  getPlayerById,
-  approveLeagueMatch,
-  insertRatingHistoryRow,
-} from "/js/db.js";
+const list = document.getElementById("match-list");
+const notAdmin = document.getElementById("not-admin");
 
-import { getLocalSession } from "/js/session.js";
-import { computeEloDelta } from "/js/elo.js"; // your existing elo.js
+// ------------------------------
+// ELO CALCULATION
+// ------------------------------
+function calculateElo(oldA, oldB, winner, k) {
+  const Qa = Math.pow(10, oldA / 400);
+  const Qb = Math.pow(10, oldB / 400);
 
-const listEl = document.getElementById("pending-matches-list");
-const errorEl = document.getElementById("error-msg");
+  const Ea = Qa / (Qa + Qb);
+  const Eb = Qb / (Qa + Qb);
 
-/**
- * Ensure you're an admin.
- */
-async function ensureAdmin() {
-  const sess = getLocalSession();
-  if (!sess || !sess.playerId) {
-    window.location.href = "/login.html";
-    return false;
-  }
+  const Sa = winner === "A" ? 1 : 0;
+  const Sb = winner === "B" ? 1 : 0;
 
-  const me = await getPlayerById(sess.playerId);
-  if (!me || !me.is_admin) {
-    throw new Error("Admin access required.");
-  }
+  const newA = Math.round(oldA + k * (Sa - Ea));
+  const newB = Math.round(oldB + k * (Sb - Eb));
 
-  return true;
+  return { newA, newB, deltaA: newA - oldA, deltaB: newB - oldB };
 }
 
-/**
- * Render a single pending match row.
- */
-async function renderMatchRow(match) {
-  const row = document.createElement("div");
-  row.className =
-    "border rounded-xl p-4 bg-white shadow flex flex-col gap-2 text-sm";
+// ------------------------------
+// LOAD + ADMIN CHECK
+// ------------------------------
+async function main() {
+  const session = getLocalSession();
+  if (!session?.isAdmin) {
+    notAdmin.classList.remove("hidden");
+    return;
+  }
 
-  const pA = await getPlayerById(match.player_a);
-  const pB = await getPlayerById(match.player_b);
+  loadMatches();
+}
 
-  const winner =
-    match.winner === pA.id
-      ? pA.full_name
-      : match.winner === pB.id
-      ? pB.full_name
-      : "Draw";
+// ------------------------------
+// LOAD UNAPPROVED MATCHES
+// ------------------------------
+async function loadMatches() {
+  const { data, error } = await supabase
+    .from("league_matches")
+    .select(`
+      id,
+      pod_id,
+      month_id,
+      player_a,
+      player_b,
+      winner,
+      k_factor,
+      notes,
+      played_at,
+      players!league_matches_player_a_fkey (
+        id,
+        full_name,
+        rating
+      ),
+      players_b:players!league_matches_player_b_fkey (
+        id,
+        full_name,
+        rating
+      )
+    `)
+    .eq("approved", false)
+    .order("played_at", { ascending: true });
 
-  row.innerHTML = `
-    <div class="flex justify-between items-center">
-      <div>
-        <strong>${pA.full_name}</strong>
-        <span class="text-xs text-slate-500">vs</span>
-        <strong>${pB.full_name}</strong>
-      </div>
-      <div class="text-xs text-slate-500">
-        ${match.played_at.slice(0,10)}
-      </div>
-    </div>
+  if (error) {
+    list.innerHTML = `<p class="text-red-600">Error loading matches.</p>`;
+    list.classList.remove("hidden");
+    return;
+  }
 
-    <div class="mt-1 text-xs">
-      Reported Result:
-      <span class="font-medium">${winner}</span>
-    </div>
+  if (!data.length) {
+    list.innerHTML = `<p class="text-center text-slate-600">No pending matches.</p>`;
+    list.classList.remove("hidden");
+    return;
+  }
 
-    ${
-      match.notes
-        ? `<div class="mt-1 text-[11px] text-slate-600">Notes: ${match.notes}</div>`
-        : ""
-    }
+  list.innerHTML = "";
+  list.classList.remove("hidden");
 
-    <div class="flex gap-3 mt-2">
-      <button class="approve-btn bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1 rounded" data-id="${match.id}">
+  data.forEach(match => renderMatch(match));
+}
+
+// ------------------------------
+// CARD RENDERER
+// ------------------------------
+function renderMatch(m) {
+  const card = document.createElement("div");
+  card.className = "bg-white rounded-xl shadow p-6";
+
+  const A = m.players;
+  const B = m.players_b;
+
+  card.innerHTML = `
+    <p class="text-lg font-semibold mb-1">
+      ${A.full_name}
+      <span class="text-slate-500">(R ${A.rating})</span>
+       vs
+      ${B.full_name}
+      <span class="text-slate-500">(R ${B.rating})</span>
+    </p>
+
+    <p class="text-sm text-slate-600 mb-2">
+      Winner: <strong>${m.winner === A.id ? A.full_name : B.full_name}</strong>
+    </p>
+
+    ${m.notes ? `<p class="text-sm italic mb-3 text-slate-500">${m.notes}</p>` : ""}
+
+    <div class="flex gap-3 mt-3">
+      <button
+        class="approve bg-green-600 text-white px-4 py-2 rounded"
+        data-id="${m.id}"
+        data-a="${A.id}"
+        data-b="${B.id}"
+        data-ra="${A.rating}"
+        data-rb="${B.rating}"
+        data-w="${m.winner}"
+        data-k="${m.k_factor}"
+      >
         Approve
       </button>
 
-      <button class="reject-btn bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded" data-id="${match.id}">
-        Reject
+      <button
+        class="deny bg-red-600 text-white px-4 py-2 rounded"
+        data-id="${m.id}"
+      >
+        Deny
       </button>
     </div>
   `;
 
-  listEl.appendChild(row);
+  list.appendChild(card);
+
+  card.querySelector(".approve").addEventListener("click", approveMatch);
+  card.querySelector(".deny").addEventListener("click", denyMatch);
 }
 
-/**
- * Approve a match:
- *  - compute Elo deltas
- *  - update both players' ratings
- *  - insert rating_history
- *  - mark match approved
- */
-async function handleApprove(match) {
-  const pA = await getPlayerById(match.player_a);
-  const pB = await getPlayerById(match.player_b);
+// ------------------------------
+// APPROVE MATCH
+// ------------------------------
+async function approveMatch(e) {
+  const id = e.target.dataset.id;
 
-  let winner = match.winner; // could be null = draw
+  const A = e.target.dataset.a;
+  const B = e.target.dataset.b;
+  const RA = parseInt(e.target.dataset.ra);
+  const RB = parseInt(e.target.dataset.rb);
+  const winnerId = e.target.dataset.w;
+  const K = parseInt(e.target.dataset.k);
 
-  // Elo calculation based on your elo.js
-  const { newA, newB, deltaA, deltaB } = computeEloDelta({
-    ratingA: pA.rating,
-    ratingB: pB.rating,
-    winnerId: winner, // null = draw
-    k: match.k_factor || 16, // fallback
-  });
+  const winner = winnerId === A ? "A" : "B";
 
-  // Update player A’s rating
-  await insertRatingHistoryRow({
-    player_id: pA.id,
-    match_id: match.id,
-    old_rating: pA.rating,
-    new_rating: newA,
-    delta: deltaA,
-  });
+  // ELO update
+  const { newA, newB, deltaA, deltaB } = calculateElo(RA, RB, winner, K);
 
+  // Update players
+  await supabase.from("players").update({ rating: newA }).eq("id", A);
+  await supabase.from("players").update({ rating: newB }).eq("id", B);
+
+  // Write rating history
+  await supabase.from("rating_history").insert([
+    {
+      player_id: A,
+      match_id: id,
+      old_rating: RA,
+      new_rating: newA,
+      delta: deltaA
+    },
+    {
+      player_id: B,
+      match_id: id,
+      old_rating: RB,
+      new_rating: newB,
+      delta: deltaB
+    }
+  ]);
+
+  // Mark match as approved
   await supabase
-    .from("players")
-    .update({ rating: newA })
-    .eq("id", pA.id);
+    .from("league_matches")
+    .update({ approved: true })
+    .eq("id", id);
 
-  // Update player B’s rating
-  await insertRatingHistoryRow({
-    player_id: pB.id,
-    match_id: match.id,
-    old_rating: pB.rating,
-    new_rating: newB,
-    delta: deltaB,
-  });
-
-  await supabase
-    .from("players")
-    .update({ rating: newB })
-    .eq("id", pB.id);
-
-  // Mark match approved
-  await approveLeagueMatch(match.id);
+  loadMatches();
 }
 
-/**
- * Reject a match.
- * Option: delete the match entirely (simplest), OR mark it invalid.
- */
-async function handleReject(matchId) {
-  // ❗ Option chosen: REMOVE the row completely
+// ------------------------------
+// DENY MATCH
+// ------------------------------
+async function denyMatch(e) {
+  const id = e.target.dataset.id;
+
   await supabase
     .from("league_matches")
     .delete()
-    .eq("id", matchId);
+    .eq("id", id);
+
+  loadMatches();
 }
 
-/**
- * Refresh list of pending matches
- */
-async function refresh() {
-  listEl.innerHTML = "";
-
-  const pending = await listPendingLeagueMatches();
-
-  if (pending.length === 0) {
-    listEl.innerHTML =
-      `<p class="text-sm text-slate-600 italic">No pending matches — all caught up.</p>`;
-    return;
-  }
-
-  for (const match of pending) {
-    await renderMatchRow(match);
-  }
-
-  // Attach button handlers
-  document.querySelectorAll(".approve-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const id = btn.dataset.id;
-      const match = pending.find((m) => m.id === id);
-      try {
-        await handleApprove(match);
-        await refresh();
-      } catch (e) {
-        console.error(e);
-        errorEl.textContent = e.message;
-        errorEl.classList.remove("hidden");
-      }
-    });
-  });
-
-  document.querySelectorAll(".reject-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const id = btn.dataset.id;
-      try {
-        await handleReject(id);
-        await refresh();
-      } catch (e) {
-        console.error(e);
-        errorEl.textContent = e.message;
-        errorEl.classList.remove("hidden");
-      }
-    });
-  });
-}
-
-/**
- * Init
- */
-async function init() {
-  try {
-    await ensureAdmin();
-    await refresh();
-  } catch (err) {
-    console.error(err);
-    errorEl.textContent = err.message;
-    errorEl.classList.remove("hidden");
-  }
-}
-
-init();
+main();

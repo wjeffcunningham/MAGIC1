@@ -1,63 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>My Matches · BCWL</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://cdn.tailwindcss.com"></script>
+<title>My Matches · BCWL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/css/style.css">
 </head>
+<body>
 
-<body class="bg-slate-100 text-slate-900">
+<div class="poster">
+  <h1>My Matches</h1>
+  <div id="out">Loading…</div>
+</div>
 
-  <!-- GLOBAL MENU (only does anything once logged in) -->
-  <script type="module" src="/js/global-menu-loader.js"></script>
+<script type="module">
+import { supabase } from "./js/supabase.js";
+import { getLocalSession } from "./js/session.js";
 
-  <div class="max-w-3xl mx-auto px-4 py-10 space-y-6">
-    <header class="space-y-1">
-      <h1 class="text-2xl font-bold">My Matches</h1>
-      <p class="text-sm text-slate-600">
-        View your league and event matches, results, and rating changes.
-      </p>
-    </header>
+const out = document.getElementById("out");
+const session = getLocalSession();
 
-    <!-- Status + error -->
-    <p id="matches-status" class="text-xs text-slate-600"></p>
-    <p id="matches-error" class="text-sm text-red-600 hidden"></p>
+if (!session) {
+  out.textContent = "Please log in.";
+  throw "";
+}
 
-    <!-- Pending -->
-    <section class="bg-white border rounded-xl shadow p-4 space-y-2">
-      <h2 class="text-lg font-semibold">Pending Matches</h2>
-      <p class="text-xs text-slate-500">
-        These have been reported but are not yet approved by an admin.
-      </p>
-      <div id="pending-list" class="space-y-2 text-sm">
-        <!-- JS fills -->
-      </div>
-    </section>
+const { data } = await supabase
+  .from("league_matches")
+  .select("*, A:player_a(full_name), B:player_b(full_name)")
+  .or(`player_a.eq.${session.playerId},player_b.eq.${session.playerId}`)
+  .order("id", { ascending: true });
 
-    <!-- Approved -->
-    <section class="bg-white border rounded-xl shadow p-4 space-y-2">
-      <h2 class="text-lg font-semibold">Approved Matches</h2>
-      <p class="text-xs text-slate-500">
-        These results are locked and have already affected your ratings.
-      </p>
-      <div id="approved-list" class="space-y-2 text-sm">
-        <!-- JS fills -->
-      </div>
-    </section>
-
-    <!-- Rejected -->
-    <section class="bg-white border rounded-xl shadow p-4 space-y-2">
-      <h2 class="text-lg font-semibold">Rejected / Cancelled</h2>
-      <p class="text-xs text-slate-500">
-        Matches that were rejected by an admin or cancelled before approval.
-      </p>
-      <div id="rejected-list" class="space-y-2 text-sm">
-        <!-- JS fills -->
-      </div>
-    </section>
+out.innerHTML = data.map(m => `
+  <div style="margin:10px 0; padding:8px; border:1px solid #000;">
+    <strong>${m.A.full_name}</strong> vs <strong>${m.B.full_name}</strong><br>
+    Status: ${m.approved ? "✔ Approved" : "Pending"}<br>
+    Result: ${m.winner ? (m.winner === session.playerId ? "You won" : "You lost") : "—"}<br>
   </div>
+`).join("");
+</script>
 
-  <script type="module" src="/js/my-matches.js"></script>
 </body>
 </html>

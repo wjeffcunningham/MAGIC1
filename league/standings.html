@@ -2,67 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>BCWL Standings · magic1.ca</title>
+  <title>Standings · BCWL</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-slate-100 text-slate-900">
+<script type="module" src="/js/global-menu-loader.js"></script>
 
-  <!-- Optional global menu -->
-  <script type="module" src="/js/global-menu-loader.js"></script>
+<div class="max-w-4xl mx-auto mt-10 bg-white shadow rounded p-6">
+  <h1 class="text-2xl font-bold mb-4">League Standings</h1>
+  <p id="season-info" class="text-sm text-slate-600 mb-4"></p>
 
-  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b">
+        <th class="text-left py-2">Player</th>
+        <th class="text-right">League Pts</th>
+        <th class="text-right">Comp%</th>
+        <th class="text-right">GW%</th>
+        <th class="text-right">OMW%</th>
+        <th class="text-right">Elo</th>
+      </tr>
+    </thead>
+    <tbody id="standings-body"></tbody>
+  </table>
+</div>
 
-    <header class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold">B.C. Winter League — Standings</h1>
-        <p id="standings-subtitle" class="text-sm text-slate-600">
-          Loading current month…
-        </p>
-      </div>
-      <div class="text-xs text-slate-500">
-        <span id="season-label"></span>
-      </div>
-    </header>
-
-    <section class="bg-white border rounded-xl shadow p-4 space-y-2">
-      <p class="text-xs text-slate-600">
-        Ordering:
-        <strong>League Points</strong> →
-        <strong>Competitive Win %</strong> (if both have data) →
-        <strong>Match Win %</strong> →
-        <strong>Opponents’ Win % (OMW)</strong>.
-      </p>
-      <p id="standings-status" class="text-xs text-slate-500"></p>
-      <p id="standings-error" class="hidden text-sm text-red-600"></p>
-    </section>
-
-    <!-- Standings Table -->
-    <section class="bg-white border rounded-xl shadow overflow-x-auto">
-      <table class="min-w-full text-xs">
-        <thead class="bg-slate-100 border-b text-[11px] uppercase tracking-wide">
-          <tr>
-            <th class="px-3 py-2 text-left">#</th>
-            <th class="px-3 py-2 text-left">Player</th>
-            <th class="px-3 py-2 text-left">Pod</th>
-            <th class="px-3 py-2 text-right">Pts</th>
-            <th class="px-3 py-2 text-right">W</th>
-            <th class="px-3 py-2 text-right">D</th>
-            <th class="px-3 py-2 text-right">L</th>
-            <th class="px-3 py-2 text-right">Win %</th>
-            <th class="px-3 py-2 text-right">OMW%</th>
-            <th class="px-3 py-2 text-right">Rating</th>
-          </tr>
-        </thead>
-        <tbody id="standings-body" class="divide-y divide-slate-100">
-          <!-- JS injects rows -->
-        </tbody>
-      </table>
-    </section>
-
-  </div>
-
-  <script type="module" src="/js/league-standings.js"></script>
+<script type="module" src="/js/standings.js"></script>
 </body>
 </html>

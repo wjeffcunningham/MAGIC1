@@ -1,17 +1,17 @@
-// /js/global-menu-loader.js
-document.addEventListener("DOMContentLoaded", () => {
-  // Prevent duplication if menu already exists
-  if (document.getElementById("hamburger")) return;
+// global-menu-loader.js — inject hamburger + empty menu panel, then load menu.js
 
+document.addEventListener("DOMContentLoaded", () => {
+  // Create menu icon + panel
   const html = `
-    <div id="hamburger">☰</div>
-    <div id="menu-panel"></div>
+    <div id="menu-icon" class="menu-icon">☰</div>
+    <div id="menu-panel" class="menu-panel"></div>
   `;
   document.body.insertAdjacentHTML("beforeend", html);
 
+  // Inject CSS for icon + menu panel
   const style = document.createElement("style");
   style.textContent = `
-    #hamburger {
+    #menu-icon {
       position: fixed;
       top: 18px;
       right: 18px;
@@ -20,54 +20,64 @@ document.addEventListener("DOMContentLoaded", () => {
       cursor: pointer;
       z-index: 5000;
       user-select: none;
-      opacity: 0.85;
-      line-height: 1;
+      opacity: 0.9;
     }
-    #hamburger:hover { opacity: 1; }
 
-    #menu-panel {
+    #menu-icon:hover { opacity: 1; }
+
+    .menu-panel {
       position: fixed;
-      top: 70px;
+      top: 84px;
       right: 18px;
-      width: 240px;
-      padding: 16px;
-
-      background: #fff;
+      width: 260px;
+      background: white;
       border: 2px solid black;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,.2);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
 
+      display: none;
       opacity: 0;
-      transform: translateY(-6px);
-      pointer-events: none;
+      transform: translateY(-8px);
+      transition: opacity .18s ease, transform .18s ease;
 
-      transition: opacity .2s ease, transform .2s ease;
-      z-index: 4999;
+      z-index: 4000;
     }
 
-    #menu-panel.open {
+    .menu-panel.open {
+      display: block;
       opacity: 1;
       transform: translateY(0);
-      pointer-events: auto;
+    }
+
+    .menu-section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 10px;
     }
 
     .menu-link {
       display: block;
+      font-size: 1.05rem;
       padding: 6px 0;
-      text-align: left;
-      text-decoration: none;
       color: #000;
-      font-size: 0.95rem;
+      text-decoration: none;
     }
-    .menu-link:hover { text-decoration: underline; }
+    .menu-link:hover {
+      text-decoration: underline;
+    }
 
-    .menu-title {
-      font-weight: 700;
-      margin: 10px 0 4px;
-      font-size: 0.95rem;
+    hr.menu-divider {
+      border: none;
+      border-bottom: 1px solid #ddd;
+      margin: 14px 0;
     }
   `;
   document.head.appendChild(style);
 
-  import("/js/menu.js");
+  // Load menu.js after layout
+  requestAnimationFrame(() => {
+    setTimeout(() => import("/js/menu.js?v=1"), 0);
+  });
 });

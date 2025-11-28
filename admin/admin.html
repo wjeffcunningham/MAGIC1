@@ -1,203 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Admin Dashboard · B.C. Premodern Masters</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-  body {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    margin: 40px;
-    color: #000;
-    background: #fff;
-  }
-  h1 { margin-bottom: 5px; }
-  h2 { margin-top: 40px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
-  .item { padding: 6px 0; border-bottom: 1px solid #eee; }
-  pre { background: #f7f7f7; padding: 10px; border-radius: 4px; }
-  .sub { margin-left: 20px; font-size: 0.9em; }
-</style>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard · magic1.ca</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
 
-<h1>Admin Dashboard</h1>
-<div id="auth-status">Checking login…</div>
+<body class="bg-slate-100 text-slate-900">
+  <script type="module" src="/js/global-menu-loader.js"></script>
 
-<h2>Players</h2>
-<div id="players"></div>
+  <div class="max-w-4xl mx-auto mt-10 px-4 pb-20">
 
-<h2>Events</h2>
-<div id="events"></div>
+    <h1 class="text-3xl font-bold text-center mb-8">Admin Dashboard</h1>
 
-<h2>League Seasons</h2>
-<div id="league-seasons"></div>
+    <!-- NOT ADMIN BLOCK -->
+    <div id="not-admin" class="hidden bg-white p-6 rounded-2xl shadow text-center">
+      <p class="mb-4 font-medium">
+        You do not have admin privileges.
+      </p>
+      <a href="/" class="bg-slate-200 text-slate-900 px-4 py-2 rounded">
+        Return Home
+      </a>
+    </div>
 
-<h2>League Months</h2>
-<div id="league-months"></div>
+    <!-- ADMIN CARDS -->
+    <div id="admin-cards" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
 
-<h2>Pods</h2>
-<div id="pods"></div>
-
-<h2>Pod Members</h2>
-<div id="pod-members"></div>
-
-<h2>League Signups</h2>
-<div id="league-signups"></div>
-
-<script>
-// -----------------------------
-// Initialize Supabase Client
-// -----------------------------
-const supabase = supabase.createClient(
-  "https://YOUR-PROJECT.supabase.co",
-  "YOUR-ANON-KEY"
-);
-
-// -----------------------------
-// 1. Auth Check
-// -----------------------------
-async function checkAuth() {
-  const { data: { user } } = await supabase.auth.getUser();
-  const el = document.getElementById("auth-status");
-
-  if (!user) {
-    el.innerHTML = `<strong>Not logged in.</strong> <a href="/login.html">Login</a>`;
-  } else {
-    el.textContent = `Logged in as: ${user.email}`;
-  }
-}
-checkAuth();
-
-// Utility to dump arrays
-function dumpArray(arr, formatter) {
-  if (!arr.length) return "<em>None</em>";
-  return arr.map(formatter).join("");
-}
-
-// -----------------------------
-// 2. Load Players
-// -----------------------------
-async function loadPlayers() {
-  const { data, error } = await supabase.from("players").select("*");
-  document.getElementById("players").innerHTML =
-    dumpArray(data || [], p => `
-      <div class="item">
-        <strong>${p.full_name}</strong><br>
-        Rating: ${p.rating} | Email: ${p.email}
+      <!-- Player Onboarding -->
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h2 class="text-xl font-semibold mb-2">Player Onboarding</h2>
+        <p class="text-sm text-slate-600 mb-2">
+          Approve new BCWL accounts.
+        </p>
+        <p class="text-sky-700 font-semibold mb-4">
+          Pending: <span id="pending-count">—</span>
+        </p>
+        <a href="/admin-onboarding.html"
+           class="block text-center bg-sky-600 text-white py-2 rounded font-medium">
+          Review Pending Players
+        </a>
       </div>
-    `);
-}
-loadPlayers();
 
-// -----------------------------
-// 3. Load Events
-// -----------------------------
-async function loadEvents() {
-  const { data } = await supabase.from("events").select("*").order("event_date");
-  document.getElementById("events").innerHTML =
-    dumpArray(data || [], e => `
-      <div class="item">
-        <strong>${e.name}</strong><br>
-        Date: ${e.event_date}<br>ID: ${e.id}
+      <!-- Match Approval -->
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h2 class="text-xl font-semibold mb-2">Match Approval</h2>
+        <p class="text-sm text-slate-600 mb-2">
+          Approve reported league matches.
+        </p>
+        <p class="text-sky-700 font-semibold mb-4">
+          Unapproved Matches: <span id="match-count">—</span>
+        </p>
+        <a href="/admin-match-approval.html"
+           class="block text-center bg-sky-600 text-white py-2 rounded font-medium">
+          Go to Match Approval
+        </a>
       </div>
-    `);
-}
-loadEvents();
 
-// -----------------------------
-// 4. League Seasons
-// -----------------------------
-async function loadSeasons() {
-  const { data } = await supabase.from("league_seasons").select("*").order("start_date");
-  document.getElementById("league-seasons").innerHTML =
-    dumpArray(data || [], s => `
-      <div class="item">
-        <strong>${s.name}</strong><br>
-        ${s.start_date} → ${s.end_date}<br>
-        ID: ${s.id}
+      <!-- Pods & Pairings -->
+      <div class="bg-white p-6 rounded-2xl shadow md:col-span-2">
+        <h2 class="text-xl font-semibold mb-2">Pods & Pairings</h2>
+
+        <p class="text-sm text-slate-600 mb-4">
+          Season: <span id="season-name">—</span> •
+          Month: <span id="month-name">—</span>
+        </p>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <a href="/admin-pods.html"
+             class="bg-sky-600 text-white text-center py-2 rounded font-medium">
+            Generate Pods
+          </a>
+
+          <a href="/admin-pairings.html"
+             class="bg-sky-600 text-white text-center py-2 rounded font-medium">
+            Generate Pairings
+          </a>
+
+          <a href="/admin-pods-test.html"
+             class="bg-slate-200 text-slate-900 text-center py-2 rounded font-medium">
+            Test Pods
+          </a>
+
+          <a href="/admin-pairings-test.html"
+             class="bg-slate-200 text-slate-900 text-center py-2 rounded font-medium">
+            Test Pairings
+          </a>
+
+          <a href="/admin-pod-swap.html"
+             class="bg-orange-200 text-slate-900 text-center py-2 rounded font-medium">
+            Swap Players
+          </a>
+        </div>
       </div>
-    `);
-}
-loadSeasons();
 
-// -----------------------------
-// 5. League Months
-// -----------------------------
-async function loadMonths() {
-  const { data } = await supabase.from("league_months").select("*").order("month_index");
-  document.getElementById("league-months").innerHTML =
-    dumpArray(data || [], m => `
-      <div class="item">
-        <strong>${m.name}</strong><br>
-        Month ${m.month_index}<br>
-        ${m.start_date} → ${m.end_date}<br>
-        Season: ${m.season_id}<br>
-        ID: ${m.id}
+      <!-- Data Tools -->
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h2 class="text-xl font-semibold mb-2">Player / League Data</h2>
+        <a href="/standings.html"
+           class="block bg-slate-200 text-slate-900 text-center py-2 rounded mb-3 font-medium">
+          View Standings
+        </a>
+        <a href="/player-lookup.html"
+           class="block bg-slate-200 text-slate-900 text-center py-2 rounded font-medium">
+          Player Lookup
+        </a>
       </div>
-    `);
-}
-loadMonths();
 
-// -----------------------------
-// 6. Pods
-// -----------------------------
-async function loadPods() {
-  const { data } = await supabase.from("pods").select("*");
-  document.getElementById("pods").innerHTML =
-    dumpArray(data || [], p => `
-      <div class="item">
-        <strong>${p.name}</strong><br>
-        Month: ${p.month_id}<br>
-        Max Players: ${p.max_players}<br>
-        ID: ${p.id}
+      <!-- BCPMM -->
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h2 class="text-xl font-semibold mb-2">B.C. Premodern Masters</h2>
+        <p class="text-sm text-slate-600 mb-2">
+          Event registration and pairings (coming soon).
+        </p>
+        <a href="/admin-bcpmm.html"
+           class="block bg-slate-200 text-slate-900 text-center py-2 rounded font-medium">
+          BCPMM Admin
+        </a>
       </div>
-    `);
-}
-loadPods();
 
-// -----------------------------
-// 7. Pod Members
-// -----------------------------
-async function loadPodMembers() {
-  const { data } = await supabase
-    .from("pod_members")
-    .select("*, players(full_name)")
-    .order("joined_at");
+    </div>
 
-  document.getElementById("pod-members").innerHTML =
-    dumpArray(data || [], pm => `
-      <div class="item">
-        Player: ${pm.players.full_name}<br>
-        Pod: ${pm.pod_id}<br>
-        Joined: ${pm.joined_at}
-      </div>
-    `);
-}
-loadPodMembers();
+  </div>
 
-// -----------------------------
-// 8. League Signups
-// -----------------------------
-async function loadSignups() {
-  const { data } = await supabase
-    .from("league_signups")
-    .select("*, players(full_name)")
-    .order("signup_date");
-
-  document.getElementById("league-signups").innerHTML =
-    dumpArray(data || [], ls => `
-      <div class="item">
-        <strong>${ls.players.full_name}</strong><br>
-        Season: ${ls.season_id}<br>
-        Status: ${ls.status}<br>
-        Signed up: ${ls.signup_date}
-      </div>
-    `);
-}
-loadSignups();
-
-</script>
-
+  <script type="module" src="/js/admin.js"></script>
 </body>
 </html>

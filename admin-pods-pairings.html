@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pods & Pairings · magic1.ca</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900 pb-16">
+
+  <script type="module" src="/js/global-menu-loader.js"></script>
+
+  <div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Pods & Pairings (Admin)</h1>
+
+    <div id="not-admin" class="hidden text-red-700">
+      You do not have admin privileges.
+    </div>
+
+    <div id="admin-content" class="hidden space-y-8">
+
+      <!-- Season + Month -->
+      <section class="bg-white rounded shadow p-5">
+        <h2 class="text-xl font-semibold">Active Season / Month</h2>
+
+        <p class="mt-2 text-sm">
+          <strong>Season:</strong>
+          <span id="season-name">—</span>
+        </p>
+
+        <p class="text-sm">
+          <strong>Month:</strong>
+          <span id="month-name">—</span>
+        </p>
+      </section>
+
+      <!-- Actions -->
+      <section class="bg-white rounded shadow p-5 space-y-4">
+        <h2 class="text-xl font-semibold">Actions</h2>
+
+        <button id="test-pods-btn"
+          class="bg-slate-700 text-white py-2 px-4 rounded">
+          Test Pods (Preview)
+        </button>
+
+        <button id="generate-pods-btn"
+          class="bg-green-700 text-white py-2 px-4 rounded">
+          Generate Pods (Save)
+        </button>
+
+        <hr />
+
+        <button id="test-pairings-btn"
+          class="bg-slate-700 text-white py-2 px-4 rounded">
+          Test Pairings (Preview)
+        </button>
+
+        <button id="generate-pairings-btn"
+          class="bg-green-700 text-white py-2 px-4 rounded">
+          Generate Pairings (Save)
+        </button>
+      </section>
+
+      <!-- Results -->
+      <section id="preview" class="hidden bg-white rounded shadow p-5">
+        <h2 class="text-xl font-semibold mb-3">Preview</h2>
+        <pre id="preview-content"
+             class="whitespace-pre-wrap text-sm"></pre>
+      </section>
+
+    </div>
+  </div>
+
+  <script type="module" src="/js/admin-pods-pairings.js"></script>
+</body>
+</html>

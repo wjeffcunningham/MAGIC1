@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>League Signup · BCWL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-900">
+
+<script type="module" src="/js/global-menu-loader.js"></script>
+
+<div class="max-w-lg mx-auto mt-10 bg-white shadow rounded p-6">
+  <h1 class="text-2xl font-bold mb-4">Join the B.C. Winter League</h1>
+  <p id="season-info" class="text-sm text-slate-600 mb-4"></p>
+
+  <div id="not-logged-in" class="hidden text-sm text-red-600">
+    You must <a href="/login.html" class="underline text-sky-600">log in</a> to join the league.
+  </div>
+
+  <div id="pending-approval" class="hidden text-sm text-slate-600">
+    Your account is still pending admin approval. Once approved, you can join the league.
+  </div>
+
+  <div id="already-signed" class="hidden text-sm text-slate-600">
+    You are already signed up for this season.
+  </div>
+
+  <div id="join-area" class="hidden">
+    <button id="join-btn"
+      class="w-full bg-sky-600 text-white py-2 rounded font-semibold">
+      Join Season
+    </button>
+
+    <p id="join-result" class="text-sm mt-3 hidden"></p>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, getLocalSession } from "/js/session.js";
+
+const info = document.getElementById("season-info");
+const notLogged = document.getElementById("not-logged-in");
+const pending = document.getElementById("pending-approval");
+const already = document.getElementById("already-signed");
+const joinArea = document.getElementById("join-area");
+const joinBtn = document.getElementById("join-btn");
+const joinResult = document.getElementById("join-result");
+
+let season = null;
+
+main();
+async function main() {
+  const session = getLocalSession();
+  if (!session) {
+    notLogged.classList.remove("hidden");
+    return;
+  }
+
+  const { data: s } = await supabase
+    .from("league_seasons")
+    .select("*")
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!s) {
+    info.textContent = "No active Winter League season.";
+    return;
+  }
+
+  season = s;
+  info.textContent = `Season: ${s.name}, Jan–Mar ${new Date(s.start_date).getFullYear()}`;
+
+  const { data: player } = await supabase
+    .from("players")
+    .select("status")
+    .eq("id", session.playerId)
+    .single();
+
+  if (!player || player.status === "pending") {
+    pending.classList.remove("hidden");
+    return;
+  }
+
+  const { data: signed } = await supabase
+    .from("league_signups")
+    .select("*")
+    .eq("season_id", s.id)
+    .eq("player_id", session.playerId)
+    .maybeSingle();
+
+  if (signed) {
+    already.classList.remove("hidden");
+    return;
+  }
+
+  joinArea.classList.remove("hidden");
+}
+
+joinBtn.addEventListener("click", async () => {
+  const { error } = await supabase.from("league_signups").insert({
+    season_id: season.id,
+    player_id: getLocalSession().playerId,
+    status: "active"
+  });
+
+  if (error) {
+    joinResult.textContent = "Error joining league.";
+    joinResult.classList.remove("hidden");
+  } else {
+    joinResult.textContent = "Successfully joined! You are now in the Winter League.";
+    joinResult.classList.remove("hidden");
+    joinBtn.disabled = true;
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,159 +1,122 @@
-// standings.js — computes 3/1/0 standings for a given month
+import { supabase } from "./session.js";
 
-import { supabase } from "./supabase.js";
+const loading = document.getElementById("loading");
+const table = document.getElementById("standings-table");
+const body = document.getElementById("standings-body");
 
-const monthSelect = document.getElementById("month-select");
-const standingsEl = document.getElementById("standings-container");
-const errorEl = document.getElementById("standings-error");
+main();
 
-function showError(msg) {
-  errorEl.textContent = msg;
-  errorEl.classList.remove("hidden");
-}
+async function main() {
+  const { data: season } = await supabase
+    .from("league_seasons")
+    .select("*")
+    .eq("is_active", true)
+    .maybeSingle();
 
-// -----------------------------
-// Load months
-// -----------------------------
-async function loadMonths() {
-  const { data, error } = await supabase
-    .from("league_months")
-    .select("id, name, start_date")
-    .order("start_date");
+  if (!season) {
+    loading.textContent = "No active season.";
+    return;
+  }
 
-  if (error) return showError("Error loading months.");
+  const { data: players } = await supabase
+    .from("players")
+    .select("*")
+    .eq("status", "active");
 
-  monthSelect.innerHTML = data
-    .map((m) => `<option value="${m.id}">${m.name}</option>`)
-    .join("");
-
-  loadStandings(data[0]?.id);
-
-  monthSelect.addEventListener("change", (e) => {
-    loadStandings(e.target.value);
-  });
-}
-
-// -----------------------------
-// Load matches for a given month
-// -----------------------------
-async function loadStandings(monthId) {
-  standingsEl.innerHTML = "<p>Loading standings…</p>";
-
-  const { data: matches, error } = await supabase
+  const { data: matches } = await supabase
     .from("league_matches")
-    .select(`
-      id, month_id, result, games_won_a, games_won_b, approved,
-      player_a ( id, full_name, rating ),
-      player_b ( id, full_name, rating )
-    `)
-    .eq("month_id", monthId)
+    .select("*")
     .eq("approved", true);
 
-  if (error) return showError("Error loading matches.");
+  // Build standings rows
+  const stats = players.map(p => ({
+    player: p,
+    id: p.id,
+    name: p.full_name,
+    elo: p.rating,
+    points: 0,
+    wins: 0,
+    losses: 0,
+    opps: new Set()
+  }));
 
-  // Compute standings
-  const standings = computeStandings(matches);
+  const byId = Object.fromEntries(stats.map(s => [s.id, s]));
 
-  standingsEl.innerHTML = renderTable(standings);
-}
-
-// -----------------------------
-// Compute 3/1/0 standings table
-// -----------------------------
-function computeStandings(matches) {
-  const table = {}; // playerId → record
-
+  // count wins/losses and track opponents
   for (const m of matches) {
-    const a = m.player_a;
-    const b = m.player_b;
+    if (!byId[m.player_a] || !byId[m.player_b]) continue;
 
-    if (!table[a.id])
-      table[a.id] = { player: a, points: 0, matches: 0, oppPoints: 0 };
-    if (!table[b.id])
-      table[b.id] = { player: b, points: 0, matches: 0, oppPoints: 0 };
+    const A = byId[m.player_a];
+    const B = byId[m.player_b];
 
-    // Add match played
-    table[a.id].matches++;
-    table[b.id].matches++;
+    A.opps.add(B.id);
+    B.opps.add(A.id);
 
-    // League points (3/1/0)
-    if (m.result === "A_WIN") {
-      table[a.id].points += 3;
-    } else if (m.result === "B_WIN") {
-      table[b.id].points += 3;
-    } else if (m.result === "DRAW") {
-      table[a.id].points += 1;
-      table[b.id].points += 1;
+    if (m.winner === A.id) {
+      A.wins++;
+      A.points += (m.match_type === "monthly_pod" ? 3 : 0);
+      B.losses++;
+    } else {
+      B.wins++;
+      B.points += (m.match_type === "monthly_pod" ? 3 : 0);
+      A.losses++;
     }
   }
 
-  // Compute opponent points for tie-break
-  for (const m of matches) {
-    const a = m.player_a;
-    const b = m.player_b;
+  // Compute percentages
+  for (const s of stats) {
+    s.games = s.wins + s.losses;
+    s.winPct = s.games ? s.wins / s.games : 0;
 
-    const ptsA = table[a.id].points;
-    const ptsB = table[b.id].points;
+    let oppTotals = 0, oppWins = 0;
 
-    table[a.id].oppPoints += ptsB;
-    table[b.id].oppPoints += ptsA;
+    for (const oid of s.opps) {
+      const o = byId[oid];
+      oppTotals += o.games;
+      oppWins += o.wins;
+    }
+
+    s.oppPct = oppTotals ? oppWins / oppTotals : 0;
+
+    let oppOppTotals = 0, oppOppWins = 0;
+    for (const oid of s.opps) {
+      for (const oid2 of byId[oid].opps) {
+        const o2 = byId[oid2];
+        oppOppTotals += o2.games;
+        oppOppWins += o2.wins;
+      }
+    }
+
+    s.oppOppPct = oppOppTotals ? oppOppWins / oppOppTotals : 0;
   }
-
-  // Convert to array
-  const arr = Object.values(table);
 
   // Sort by:
-  // 1. points desc
-  // 2. oppPoints desc (tie-break)
-  // 3. rating desc (secondary tie-break)
-  arr.sort((x, y) =>
-    y.points - x.points ||
-    y.oppPoints - x.oppPoints ||
-    y.player.rating - x.player.rating
+  stats.sort((a, b) =>
+    b.points - a.points ||
+    b.winPct - a.winPct ||
+    b.oppPct - a.oppPct ||
+    b.oppOppPct - a.oppOppPct ||
+    b.elo - a.elo
   );
 
-  return arr;
-}
+  loading.classList.add("hidden");
+  table.classList.remove("hidden");
 
-// -----------------------------
-// Render standings table
-// -----------------------------
-function renderTable(rows) {
-  if (rows.length === 0) {
-    return "<p class='text-slate-600'>No matches this month.</p>";
-  }
+  let rank = 1;
+  for (const s of stats) {
+    const row = document.createElement("tr");
+    row.className = "border-b";
 
-  let html = `
-    <table class="w-full border text-sm">
-      <thead class="bg-slate-200 border-b">
-        <tr>
-          <th class="p-2 text-left">#</th>
-          <th class="p-2 text-left">Player</th>
-          <th class="p-2 text-left">Rating</th>
-          <th class="p-2 text-left">Points</th>
-          <th class="p-2 text-left">Matches</th>
-          <th class="p-2 text-left">Opp Pts</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  rows.forEach((r, i) => {
-    html += `
-      <tr class="border-b">
-        <td class="p-2">${i + 1}</td>
-        <td class="p-2 font-medium">${r.player.full_name}</td>
-        <td class="p-2">${r.player.rating}</td>
-        <td class="p-2 font-semibold">${r.points}</td>
-        <td class="p-2">${r.matches}</td>
-        <td class="p-2">${r.oppPoints}</td>
-      </tr>
+    row.innerHTML = `
+      <td class="p-2">${rank++}</td>
+      <td class="p-2">${s.name}</td>
+      <td class="p-2">${s.points}</td>
+      <td class="p-2">${(s.winPct * 100).toFixed(1)}%</td>
+      <td class="p-2">${(s.oppPct * 100).toFixed(1)}%</td>
+      <td class="p-2">${(s.oppOppPct * 100).toFixed(1)}%</td>
+      <td class="p-2">${s.elo}</td>
     `;
-  });
 
-  html += "</tbody></table>";
-  return html;
+    body.appendChild(row);
+  }
 }
-
-// Begin
-loadMonths();

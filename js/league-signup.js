@@ -1,91 +1,90 @@
-// league-signup.js
-//
-// Allows a logged-in player to join the nearest active or upcoming league season.
-// Creates a row in league_signups with status='active'.
-// Integrates with db.js and session.js.
-//
+import { supabase, getLocalSession } from "./session.js";
 
-import { supabase } from "/js/supabase.js";
-import {
-  getCurrentPlayer,
-  getActiveOrUpcomingSeason,
-  listActiveSignupsForSeason,
-} from "/js/db.js";
+const session = getLocalSession();
 
-import { getLocalSession } from "/js/session.js";
+const notLoggedIn = document.getElementById("not-logged-in");
+const awaiting = document.getElementById("awaiting-approval");
+const signupPanel = document.getElementById("signup-panel");
+const signupComplete = document.getElementById("signup-complete");
 
-const seasonInfoEl  = document.getElementById("season-info");
+const joinBtn = document.getElementById("join-btn");
+const signupError = document.getElementById("signup-error");
 const signupSuccess = document.getElementById("signup-success");
-const signupError   = document.getElementById("signup-error");
-const joinBtn       = document.getElementById("join-btn");
 
-let player = null;
-let season = null;
+main();
 
-async function init() {
-  // Require login
-  const sess = getLocalSession();
-  if (!sess || !sess.playerId) {
-    window.location.href = "/login.html";
+async function main() {
+  if (!session) {
+    notLoggedIn.classList.remove("hidden");
     return;
   }
 
-  // Load current player
-  player = await getCurrentPlayer();
+  // Load player record
+  const { data: player } = await supabase
+    .from("players")
+    .select("*")
+    .eq("id", session.playerId)
+    .maybeSingle();
+
   if (!player) {
-    window.location.href = "/login.html";
+    notLoggedIn.classList.remove("hidden");
     return;
   }
 
-  // Load the nearest active or upcoming season
-  season = await getActiveOrUpcomingSeason();
+  if (player.status === "pending") {
+    awaiting.classList.remove("hidden");
+    return;
+  }
+
+  // Load active season
+  const { data: season } = await supabase
+    .from("league_seasons")
+    .select("*")
+    .eq("is_active", true)
+    .maybeSingle();
+
   if (!season) {
-    seasonInfoEl.textContent = "There is no upcoming league season at the moment.";
-    joinBtn.disabled = true;
-    return;
-  }
-
-  seasonInfoEl.textContent =
-    `${season.name} (${season.start_date} → ${season.end_date})`;
-
-  // Check if already signed up
-  const signups = await listActiveSignupsForSeason(season.id);
-  const already = signups.some((s) => s.player_id === player.id);
-
-  if (already) {
-    signupSuccess.textContent = "You are already registered for this league.";
-    signupSuccess.classList.remove("hidden");
-    joinBtn.textContent = "Already Joined ✔";
-    joinBtn.disabled = true;
-    return;
-  }
-
-  joinBtn.addEventListener("click", joinSeason);
-}
-
-async function joinSeason() {
-  signupError.classList.add("hidden");
-  signupSuccess.classList.add("hidden");
-
-  const { error } = await supabase
-    .from("league_signups")
-    .insert({
-      season_id: season.id,
-      player_id: player.id,
-      status: "active",
-    });
-
-  if (error) {
-    console.error(error);
-    signupError.textContent = "Could not join league. Please try again.";
+    signupError.textContent = "No active league season.";
     signupError.classList.remove("hidden");
     return;
   }
 
-  signupSuccess.textContent = "Welcome! You are now registered for the league.";
-  signupSuccess.classList.remove("hidden");
-  joinBtn.textContent = "Joined ✔";
-  joinBtn.disabled = true;
+  // Check if already signed up
+  const { data: existing } = await supabase
+    .from("league_signups")
+    .select("*")
+    .eq("season_id", season.id)
+    .eq("player_id", player.id)
+    .maybeSingle();
+
+  if (existing) {
+    signupComplete.classList.remove("hidden");
+    return;
+  }
+
+  signupPanel.classList.remove("hidden");
+
+  joinBtn.addEventListener("click", () => joinLeague(player.id, season.id));
 }
 
-init();
+async function joinLeague(playerId, seasonId) {
+  signupError.classList.add("hidden");
+  signupSuccess.classList.add("hidden");
+
+  const { error } = await supabase.from("league_signups").insert({
+    season_id: seasonId,
+    player_id: playerId,
+    status: "active",
+  });
+
+  if (error) {
+    signupError.textContent = "Could not join league.";
+    signupError.classList.remove("hidden");
+    return;
+  }
+
+  signupSuccess.textContent = "You’ve joined the league!";
+  signupSuccess.classList.remove("hidden");
+
+  joinBtn.disabled = true;
+}

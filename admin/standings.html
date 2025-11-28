@@ -1,232 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>League Standings · BC Winter League</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-  body {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    margin: 40px;
-    background: #fff;
-    color: #000;
-  }
-  h1 { margin-bottom: 0.3rem; }
-  h2 {
-    margin-top: 2rem;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 4px;
-  }
-  table {
-    border-collapse: collapse;
-    margin-top: 1rem;
-    width: 100%;
-  }
-  th, td {
-    padding: 8px 10px;
-    border-bottom: 1px solid #eee;
-    text-align: left;
-  }
-  th {
-    background: #f5f5f5;
-    font-weight: 600;
-  }
-  .small { font-size: 0.85rem; color: #444; }
-  #season-select { margin-top: 1rem; padding: 4px 6px; font-size: 1rem; }
-</style>
+  <meta charset="UTF-8" />
+  <title>League Standings · magic1.ca</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
 
-<h1>BC Winter League Standings</h1>
-<div class="small">Updated live as results are approved.</div>
+<body class="bg-slate-100 text-slate-900 pb-20">
 
-<label for="season-select" class="small">Season:</label>
-<select id="season-select"></select>
+  <script type="module" src="/js/global-menu-loader.js"></script>
 
-<h2>Standings</h2>
-<table id="standings-table">
-  <thead>
-    <tr>
-      <th>Player</th>
-      <th>W</th>
-      <th>L</th>
-      <th>Win %</th>
-      <th>Rating</th>
-      <th>Pod</th>
-    </tr>
-  </thead>
-  <tbody id="standings-body">
-    <tr><td colspan="6" class="small">Loading…</td></tr>
-  </tbody>
-</table>
+  <div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">League Standings</h1>
 
-<script type="module">
-  const supabase = window.supabase.createClient(
-    "https://dkzdfhzlewlvfmunywal.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI"
-  );
+    <div id="loading">Loading…</div>
 
-  const seasonSelect = document.getElementById("season-select");
-  const standingsBody = document.getElementById("standings-body");
-
-  let currentSeasonId = null;
-
-  // ----------------------
-  // Load seasons
-  // ----------------------
-  async function loadSeasons() {
-    const { data, error } = await supabase
-      .from("league_seasons")
-      .select("*")
-      .order("start_date", { ascending: true });
-
-    if (error || !data) {
-      standingsBody.innerHTML = `<tr><td colspan="6" class="small">Error loading seasons.</td></tr>`;
-      return;
-    }
-
-    seasonSelect.innerHTML = "";
-    data.forEach((s, idx) => {
-      const opt = document.createElement("option");
-      opt.value = s.id;
-      opt.textContent = `${s.name} (${s.start_date} → ${s.end_date})`;
-      seasonSelect.appendChild(opt);
-      if (idx === 0) currentSeasonId = s.id;
-    });
-
-    if (currentSeasonId) {
-      seasonSelect.value = currentSeasonId;
-      loadStandings(currentSeasonId);
-    }
-  }
-
-  seasonSelect.addEventListener("change", e => {
-    currentSeasonId = e.target.value;
-    loadStandings(currentSeasonId);
-  });
-
-  // ------------------------
-  // Load standings
-  // ------------------------
-  async function loadStandings(seasonId) {
-    standingsBody.innerHTML = `<tr><td colspan="6" class="small">Loading…</td></tr>`;
-
-    // 1. Load players registered for the season
-    const { data: signups, error: signupErr } = await supabase
-      .from("league_signups")
-      .select("player_id, status, players(full_name, league_rating)")
-      .eq("season_id", seasonId);
-
-    if (signupErr) {
-      standingsBody.innerHTML = `<tr><td colspan="6" class="small">Error loading signups.</td></tr>`;
-      return;
-    }
-
-    const players = signups.map(s => ({
-      id: s.player_id,
-      name: s.players.full_name,
-      rating: s.players.league_rating || 1600,
-      status: s.status
-    }));
-
-    if (!players.length) {
-      standingsBody.innerHTML = `<tr><td colspan="6" class="small">No players registered for this season.</td></tr>`;
-      return;
-    }
-
-    // 2. Load approved matches for this season
-    const { data: matches, error: matchErr } = await supabase
-      .from("league_matches")
-      .select("*")
-      .eq("approved", true)
-      .eq("winner", null, { negate: true }); // only matches with a winner
-
-    if (matchErr) {
-      standingsBody.innerHTML = `<tr><td colspan="6" class="small">Error loading matches.</td></tr>`;
-      return;
-    }
-
-    // 3. Load pods (to show Pod A / B / C)
-    const { data: pods, error: podErr } = await supabase
-      .from("pods")
-      .select("*");
-
-    const { data: members, error: memErr } = await supabase
-      .from("pod_members")
-      .select("player_id, pod_id");
-
-    const podNames = {};
-    if (!podErr && !memErr) {
-      pods.forEach(p => { podNames[p.id] = p.name; });
-    }
-
-    const playerPod = {};
-    if (members) {
-      members.forEach(m => {
-        playerPod[m.player_id] = podNames[m.pod_id] || null;
-      });
-    }
-
-    // 4. Compute wins/losses
-    const stats = {};
-    players.forEach(p => {
-      stats[p.id] = {
-        name: p.name,
-        rating: p.rating,
-        wins: 0,
-        losses: 0,
-        pod: playerPod[p.id] || "—"
-      };
-    });
-
-    (matches || []).forEach(m => {
-      if (!stats[m.player_a] || !stats[m.player_b]) return;
-
-      // Winner increments
-      if (m.winner === m.player_a) {
-        stats[m.player_a].wins++;
-        stats[m.player_b].losses++;
-      } else if (m.winner === m.player_b) {
-        stats[m.player_b].wins++;
-        stats[m.player_a].losses++;
-      }
-    });
-
-    // 5. Sort by standings (wins desc, rating desc)
-    const sorted = Object.entries(stats)
-      .map(([id, s]) => ({ player_id: id, ...s }))
-      .sort((a, b) => {
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        return b.rating - a.rating;
-      });
-
-    // 6. Render table
-    if (!sorted.length) {
-      standingsBody.innerHTML = `<tr><td colspan="6" class="small">No match results yet.</td></tr>`;
-      return;
-    }
-
-    standingsBody.innerHTML = sorted.map(s => {
-      const played = s.wins + s.losses;
-      const pct = played ? (s.wins / played * 100).toFixed(1) + "%" : "—";
-      return `
-        <tr>
-          <td>${s.name}</td>
-          <td>${s.wins}</td>
-          <td>${s.losses}</td>
-          <td>${pct}</td>
-          <td>${s.rating}</td>
-          <td>${s.pod}</td>
+    <table id="standings-table"
+           class="hidden w-full text-left bg-white shadow rounded">
+      <thead class="border-b">
+        <tr class="font-semibold">
+          <th class="p-2">Rank</th>
+          <th class="p-2">Player</th>
+          <th class="p-2">Points</th>
+          <th class="p-2">H2H</th>
+          <th class="p-2">Opp %</th>
+          <th class="p-2">Opp-Opp %</th>
+          <th class="p-2">Elo</th>
         </tr>
-      `;
-    }).join("");
-  }
+      </thead>
+      <tbody id="standings-body"></tbody>
+    </table>
+  </div>
 
-  // Init
-  loadSeasons();
-
-</script>
-
+  <script type="module" src="/js/standings.js"></script>
 </body>
 </html>

@@ -2,101 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Pods · Admin · magic1.ca</title>
+  <title>Pod Assignment · magic1.ca</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-slate-100 text-slate-900">
+<script type="module" src="/js/global-menu-loader.js"></script>
 
-  <script type="module" src="/js/global-menu-loader.js"></script>
+<div class="max-w-4xl mx-auto mt-10 px-4">
 
-  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+  <h1 class="text-3xl font-bold mb-6 text-center">Pod Assignment (Admin)</h1>
 
-    <header class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold">Pod Assignment — Admin</h1>
-        <p class="text-sm text-slate-600">
-          Generate balanced pods (Emerald, Sapphire, Ruby, Pearl) for the active month.
-        </p>
-      </div>
-      <div class="text-xs text-slate-500 text-right">
-        <p id="season-label">Season: —</p>
-        <p id="month-label">Month: —</p>
-      </div>
-    </header>
+  <div id="not-admin" class="text-center text-red-600 font-semibold hidden">
+    You do not have admin access.
+  </div>
 
-    <!-- STATUS / ERRORS -->
-    <section class="bg-white border rounded-xl shadow p-4 space-y-2">
-      <p id="pods-status" class="text-xs text-slate-600">
-        Loading pod information…
-      </p>
-      <p id="pods-error" class="hidden text-sm text-red-600"></p>
-    </section>
+  <div id="ui" class="hidden">
 
-    <!-- ACTIVE SIGNUPS -->
-    <section class="bg-white border rounded-xl shadow p-4">
-      <h2 class="text-lg font-semibold mb-2">Active League Signups</h2>
-      <p class="text-xs text-slate-500 mb-3">
-        These players will be assigned to pods for the current month.
-      </p>
-      <div id="signup-list" class="grid gap-1 text-xs max-h-52 overflow-y-auto border rounded p-2 bg-slate-50">
-        <!-- Filled by JS -->
-      </div>
-    </section>
+    <!-- Current Active League Month -->
+    <div id="month-block" class="bg-white p-6 rounded-xl shadow mb-8"></div>
 
-    <!-- EXISTING PODS -->
-    <section class="bg-white border rounded-xl shadow p-4">
-      <h2 class="text-lg font-semibold mb-2">Existing Pods for this Month</h2>
-      <p class="text-xs text-slate-500 mb-3" id="existing-pods-note">
-        If pods already exist, you must explicitly overwrite them to regenerate.
-      </p>
-      <div id="existing-pods" class="grid gap-3 md:grid-cols-2 xl:grid-cols-4 text-xs">
-        <!-- Filled by JS -->
-      </div>
-    </section>
+    <!-- Active Signups -->
+    <h2 class="text-xl font-bold mb-2">Active Signups</h2>
+    <div id="signup-list" class="bg-white p-4 rounded-xl shadow mb-8"></div>
 
-    <!-- ACTIONS -->
-    <section class="bg-white border rounded-xl shadow p-4 space-y-3">
-      <h2 class="text-lg font-semibold">Actions</h2>
-      <p class="text-xs text-slate-500">
-        "Test Pods" shows a preview using the current active signups without writing
-        anything to the database. "Generate Pods" writes pods + membership
-        for the active month.
-      </p>
+    <!-- Existing Pods -->
+    <h2 class="text-xl font-bold mb-2">Existing Pods For This Month</h2>
+    <div id="existing-pods" class="bg-white p-4 rounded-xl shadow mb-8"></div>
 
-      <div class="flex flex-wrap gap-2 text-xs">
-        <button id="btn-test"
-                class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded">
-          Test Pods (no save)
-        </button>
+    <!-- Actions -->
+    <div class="flex gap-4 mt-6">
+      <button id="btn-preview" class="bg-blue-600 text-white px-4 py-2 rounded">
+        Test Pods (no save)
+      </button>
 
-        <button id="btn-generate"
-                class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded">
-          Generate Pods (save)
-        </button>
+      <button id="btn-generate" class="bg-green-600 text-white px-4 py-2 rounded">
+        Generate Pods (save)
+      </button>
+    </div>
 
-        <button id="btn-overwrite"
-                class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded hidden">
-          Overwrite Existing Pods
-        </button>
-      </div>
-    </section>
+    <!-- Preview Output -->
+    <div id="preview-block" class="mt-8 hidden"></div>
 
-    <!-- TEST PREVIEW -->
-    <section class="bg-white border rounded-xl shadow p-4">
-      <h2 class="text-lg font-semibold mb-2">Test Pod Preview</h2>
-      <p class="text-xs text-slate-500 mb-3">
-        This reflects the current signups using the pod algorithm, but nothing
-        is saved until you click "Generate Pods" or "Overwrite Existing Pods".
-      </p>
-      <div id="test-preview" class="grid gap-3 md:grid-cols-2 xl:grid-cols-4 text-xs">
-        <!-- Filled by JS -->
-      </div>
-    </section>
+    <!-- Pairings -->
+    <h2 class="text-xl font-bold mt-10 mb-2">Generate Pairings</h2>
+    <div class="flex gap-4">
+      <button id="btn-pairings-preview" class="bg-purple-600 text-white px-4 py-2 rounded">
+        Preview Pairings
+      </button>
+
+      <button id="btn-pairings-commit" class="bg-purple-800 text-white px-4 py-2 rounded">
+        Commit Pairings
+      </button>
+    </div>
+
+    <div id="pairings-preview" class="mt-8 hidden"></div>
 
   </div>
 
-  <script type="module" src="/js/admin-pods.js"></script>
+</div>
+
+<script type="module" src="/js/admin-pods.js"></script>
 </body>
 </html>

@@ -1,253 +1,106 @@
-// /js/league-standings.js
-//
-// Public standings page for the *current month* of BCWL.
-// - Finds active league_month
-// - Loads approved league_matches for that month
-// - Loads players + pods
-// - Uses standings-utils to compute + sort
-// - Renders table
+import { supabase } from "./session.js";
 
-import { supabase } from "/js/supabase.js";
-import { computeLeagueStats, sortStandings } from "/js/standings-utils.js";
+const body = document.getElementById("standings-body");
+const info = document.getElementById("season-info");
 
-const subtitleEl = document.getElementById("standings-subtitle");
-const seasonLabelEl = document.getElementById("season-label");
-const statusEl = document.getElementById("standings-status");
-const errorEl = document.getElementById("standings-error");
-const tbodyEl = document.getElementById("standings-body");
-
-let currentMonth = null;
-let currentSeason = null;
-let podsById = {};
-
-async function findCurrentMonth() {
-  const todayStr = new Date().toISOString().slice(0, 10);
-
-  const { data, error } = await supabase
-    .from("league_months")
-    .select("id, name, season_id, start_date, end_date")
-    .lte("start_date", todayStr)
-    .gte("end_date", todayStr)
-    .limit(1);
-
-  if (error) throw error;
-  if (!data || !data.length) {
-    throw new Error("No active league month found.");
-  }
-  return data[0];
-}
-
-async function loadSeason(seasonId) {
-  const { data, error } = await supabase
+main();
+async function main() {
+  const { data: s } = await supabase
     .from("league_seasons")
-    .select("id, name, start_date, end_date")
-    .eq("id", seasonId)
-    .single();
+    .select("*")
+    .eq("is_active", true)
+    .maybeSingle();
 
-  if (error) throw error;
-  return data;
-}
-
-async function loadPodsForMonth(monthId) {
-  const { data, error } = await supabase
-    .from("pods")
-    .select("id, name")
-    .eq("month_id", monthId);
-
-  if (error) throw error;
-
-  const map = {};
-  for (const p of data || []) {
-    map[p.id] = p;
-  }
-  return map;
-}
-
-async function loadApprovedMatchesForMonth(monthId) {
-  const { data, error } = await supabase
-    .from("league_matches")
-    .select("id, month_id, pod_id, player_a, player_b, winner, approved, notes")
-    .eq("month_id", monthId)
-    .eq("approved", true);
-
-  if (error) throw error;
-  return data || [];
-}
-
-async function loadPlayersForMatches(matches) {
-  const ids = new Set();
-  for (const m of matches || []) {
-    if (m.player_a) ids.add(m.player_a);
-    if (m.player_b) ids.add(m.player_b);
-  }
-  if (!ids.size) return [];
-
-  const { data, error } = await supabase
-    .from("players")
-    .select("id, full_name, rating, home_store")
-    .in("id", Array.from(ids));
-
-  if (error) throw error;
-  return data || [];
-}
-
-function podColorClass(podName) {
-  switch (podName) {
-    case "Emerald":
-      return "bg-emerald-100 text-emerald-800 border border-emerald-300";
-    case "Ruby":
-      return "bg-red-100 text-red-800 border border-red-300";
-    case "Sapphire":
-      return "bg-indigo-100 text-indigo-800 border border-indigo-300";
-    case "Pearl":
-      return "bg-slate-100 text-slate-800 border border-slate-300";
-    default:
-      return "bg-slate-50 text-slate-700 border border-slate-200";
-  }
-}
-
-function formatPct(v) {
-  if (v == null) return "—";
-  return (v * 100).toFixed(1) + "%";
-}
-
-function renderStandings(rows, statsMap, playerPods) {
-  tbodyEl.innerHTML = "";
-
-  if (!rows.length) {
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 10;
-    td.className = "px-3 py-4 text-center text-xs text-slate-500";
-    td.textContent = "No completed matches yet.";
-    tr.appendChild(td);
-    tbodyEl.appendChild(tr);
+  if (!s) {
+    info.textContent = "No active league season.";
     return;
   }
 
-  let rank = 1;
-  for (const row of rows) {
-    const tr = document.createElement("tr");
+  info.textContent = `${s.name} — Standings`;
 
-    const podName =
-      playerPods[row.player_id]?.name || "";
+  const { data: players } = await supabase.from("players").select("*");
 
-    const rankTd = document.createElement("td");
-    rankTd.className = "px-3 py-2 text-left align-middle text-[11px]";
-    rankTd.textContent = rank++;
+  const { data: signups } = await supabase
+    .from("league_signups")
+    .select("*")
+    .eq("season_id", s.id)
+    .eq("status", "active");
 
-    const nameTd = document.createElement("td");
-    nameTd.className = "px-3 py-2 text-left align-middle";
-    nameTd.textContent = row.full_name;
+  const activeIds = new Set(signups.map(x => x.player_id));
 
-    const podTd = document.createElement("td");
-    podTd.className = "px-3 py-2 text-left align-middle";
-    if (podName) {
-      const span = document.createElement("span");
-      span.className =
-        "inline-block px-2 py-0.5 rounded-full text-[10px] " +
-        podColorClass(podName);
-      span.textContent = podName;
-      podTd.appendChild(span);
-    } else {
-      podTd.textContent = "—";
-    }
+  const filtered = players.filter(p => activeIds.has(p.id));
 
-    const ptsTd = document.createElement("td");
-    ptsTd.className = "px-3 py-2 text-right align-middle";
-    ptsTd.textContent = row.points;
+  const rows = [];
 
-    const wTd = document.createElement("td");
-    wTd.className = "px-3 py-2 text-right align-middle";
-    wTd.textContent = row.wins;
-
-    const dTd = document.createElement("td");
-    dTd.className = "px-3 py-2 text-right align-middle";
-    dTd.textContent = row.draws;
-
-    const lTd = document.createElement("td");
-    lTd.className = "px-3 py-2 text-right align-middle";
-    lTd.textContent = row.losses;
-
-    const wpTd = document.createElement("td");
-    wpTd.className = "px-3 py-2 text-right align-middle";
-    wpTd.textContent = formatPct(row.matchWinPct);
-
-    const omwTd = document.createElement("td");
-    omwTd.className = "px-3 py-2 text-right align-middle";
-    omwTd.textContent = formatPct(row.omw);
-
-    const ratingTd = document.createElement("td");
-    ratingTd.className = "px-3 py-2 text-right align-middle";
-    ratingTd.textContent = row.rating ?? "—";
-
-    tr.appendChild(rankTd);
-    tr.appendChild(nameTd);
-    tr.appendChild(podTd);
-    tr.appendChild(ptsTd);
-    tr.appendChild(wTd);
-    tr.appendChild(dTd);
-    tr.appendChild(lTd);
-    tr.appendChild(wpTd);
-    tr.appendChild(omwTd);
-    tr.appendChild(ratingTd);
-
-    tbodyEl.appendChild(tr);
+  for (const p of filtered) {
+    const stats = await computeStats(p.id, s.id);
+    rows.push({ player: p, ...stats });
   }
+
+  rows.sort((a, b) =>
+    b.league_points - a.league_points ||
+    b.comp_pct - a.comp_pct ||
+    b.gw_pct - a.gw_pct ||
+    b.omw_pct - a.omw_pct ||
+    b.elo - a.elo
+  );
+
+  body.innerHTML = rows
+    .map(r => `
+      <tr class="border-b">
+        <td class="py-1">${r.player.full_name}</td>
+        <td class="text-right">${r.league_points}</td>
+        <td class="text-right">${(r.comp_pct*100).toFixed(1)}%</td>
+        <td class="text-right">${(r.gw_pct*100).toFixed(1)}%</td>
+        <td class="text-right">${(r.omw_pct*100).toFixed(1)}%</td>
+        <td class="text-right">${r.elo}</td>
+      </tr>
+    `)
+    .join("");
 }
 
-async function init() {
-  try {
-    statusEl.textContent = "Loading current month…";
+async function computeStats(playerId, seasonId) {
+  const { data: months } = await supabase
+    .from("league_months")
+    .select("*")
+    .eq("season_id", seasonId);
 
-    currentMonth = await findCurrentMonth();
-    currentSeason = await loadSeason(currentMonth.season_id);
+  const monthIds = months.map(m => m.id);
 
-    subtitleEl.textContent =
-      `Current month: ${currentMonth.name} ` +
-      `(${currentMonth.start_date} → ${currentMonth.end_date})`;
+  const { data: matches } = await supabase
+    .from("league_matches")
+    .select("*")
+    .in("month_id", monthIds)
+    .or(`player_a.eq.${playerId},player_b.eq.${playerId}`);
 
-    seasonLabelEl.textContent =
-      `${currentSeason.name} · ${currentSeason.start_date} → ${currentSeason.end_date}`;
+  const league_points = matches
+    .filter(m => m.winner === playerId && m.approved)
+    .length * 3;
 
-    podsById = await loadPodsForMonth(currentMonth.id);
+  const compMatches = matches.filter(m => m.k_factor === 40);
+  const compWins = compMatches.filter(m => m.winner === playerId).length;
+  const comp_pct = compMatches.length ? compWins / compMatches.length : 0;
 
-    statusEl.textContent = "Loading completed matches…";
+  const gamesPlayed = matches.length;
+  const gamesWon = matches.filter(m => m.winner === playerId).length;
+  const gw_pct = gamesPlayed ? gamesWon / gamesPlayed : 0;
 
-    const matches = await loadApprovedMatchesForMonth(currentMonth.id);
-    const players = await loadPlayersForMatches(matches);
+  const opponents = matches.map(m => (m.player_a === playerId ? m.player_b : m.player_a));
+  let omw = 0;
 
-    const statsMap = computeLeagueStats(matches, players);
-    const rows = sortStandings(statsMap);
-
-    // Map player -> pod (for this month)
-    const playerPods = {};
-    if (matches.length) {
-      // Get pod_members for this month’s pods
-      const podIds = Object.keys(podsById);
-      if (podIds.length) {
-        const { data: members, error: memErr } = await supabase
-          .from("pod_members")
-          .select("pod_id, player_id")
-          .in("pod_id", podIds);
-
-        if (!memErr) {
-          for (const m of members || []) {
-            playerPods[m.player_id] = podsById[m.pod_id];
-          }
-        }
-      }
-    }
-
-    renderStandings(rows, statsMap, playerPods);
-
-    statusEl.textContent = `Showing ${rows.length} players.`;
-  } catch (err) {
-    console.error(err);
-    statusEl.textContent = "";
-    errorEl.textContent = err.message || "Error loading standings.";
-    errorEl.classList.remove("hidden");
+  for (const opp of opponents) {
+    const oppMatches = matches.filter(m => m.player_a === opp || m.player_b === opp);
+    const oppWins = oppMatches.filter(m => m.winner === opp).length;
+    omw += oppMatches.length ? oppWins / oppMatches.length : 0;
   }
-}
 
-init();
+  const omw_pct = opponents.length ? omw / opponents.length : 0;
+
+  return {
+    league_points,
+    comp_pct,
+    gw_pct,
+    omw_pct,
+    elo: (await supabase.from("players").select("rating").eq("id", playerId).single()).data.rating
+  };
+}

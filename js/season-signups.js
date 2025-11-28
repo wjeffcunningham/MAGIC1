@@ -1,7 +1,7 @@
 import { supabase } from "./supabase.js";
 import { getLocalSession } from "./session.js";
 
-const list = document.getElementById("pending-list");
+const list = document.getElementById("signup-list");
 const notAdmin = document.getElementById("not-admin");
 
 async function main() {
@@ -11,23 +11,38 @@ async function main() {
     return;
   }
 
-  loadPending();
+  loadSignups();
 }
 
-async function loadPending() {
-  const { data, error } = await supabase
-    .from("players")
+async function loadSignups() {
+  // Get current active season
+  const { data: seasons } = await supabase
+    .from("league_seasons")
     .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
+    .eq("active", true)
+    .single();
+
+  if (!seasons) {
+    list.innerHTML = `<p class="text-center text-slate-600">No active season.</p>`;
+    list.classList.remove("hidden");
+    return;
+  }
+
+  const { id: seasonId } = seasons;
+
+  const { data, error } = await supabase
+    .from("league_signups")
+    .select("id, status, player_id, players(full_name, email)")
+    .eq("season_id", seasonId)
+    .eq("status", "pending");
 
   if (error) {
-    list.innerHTML = `<p class="text-red-600">Error loading players.</p>`;
+    list.innerHTML = `<p class="text-red-600">Error loading signups.</p>`;
     return;
   }
 
   if (!data.length) {
-    list.innerHTML = `<p class="text-center text-slate-600">No pending players.</p>`;
+    list.innerHTML = `<p class="text-center text-slate-600">No pending signups.</p>`;
     list.classList.remove("hidden");
     return;
   }
@@ -35,7 +50,9 @@ async function loadPending() {
   list.innerHTML = "";
   list.classList.remove("hidden");
 
-  data.forEach(player => {
+  data.forEach(row => {
+    const player = row.players;
+
     const card = document.createElement("div");
     card.className = "bg-white p-5 rounded-xl shadow";
 
@@ -45,12 +62,12 @@ async function loadPending() {
 
       <div class="flex gap-3 mt-3">
         <button class="approve bg-green-600 text-white px-4 py-2 rounded"
-                data-id="${player.id}">
+                data-id="${row.id}">
           Approve
         </button>
         <button class="deny bg-red-600 text-white px-4 py-2 rounded"
-                data-id="${player.id}">
-          Deny
+                data-id="${row.id}">
+          Reject
         </button>
       </div>
     `;
@@ -60,34 +77,34 @@ async function loadPending() {
 
   // attach actions
   document.querySelectorAll(".approve").forEach(btn =>
-    btn.addEventListener("click", approvePlayer)
+    btn.addEventListener("click", approveSignup)
   );
 
   document.querySelectorAll(".deny").forEach(btn =>
-    btn.addEventListener("click", denyPlayer)
+    btn.addEventListener("click", rejectSignup)
   );
 }
 
-async function approvePlayer(e) {
+async function approveSignup(e) {
   const id = e.target.dataset.id;
 
   await supabase
-    .from("players")
-    .update({ status: "active" })
+    .from("league_signups")
+    .update({ status: "approved" })
     .eq("id", id);
 
-  loadPending();
+  loadSignups();
 }
 
-async function denyPlayer(e) {
+async function rejectSignup(e) {
   const id = e.target.dataset.id;
 
   await supabase
-    .from("players")
-    .delete()
+    .from("league_signups")
+    .update({ status: "rejected" })
     .eq("id", id);
 
-  loadPending();
+  loadSignups();
 }
 
 main();
