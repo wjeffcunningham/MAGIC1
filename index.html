@@ -10,6 +10,9 @@
 <!-- KEFA fallback via Alegreya -->
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet">
 
+<!-- Main site CSS -->
+<link rel="stylesheet" href="/css/style.css" />
+
 <style>
   :root {
     --icon-size: 28px;
@@ -24,75 +27,6 @@
     font-family: "Kefa", "Alegreya", serif;
     text-align: center;
     transition: background 0.3s ease;
-  }
-
-  /* ================================
-       HAMBURGER MENU BUTTON
-     ================================ */
-  #hamburger {
-    position: fixed;
-    top: 18px;
-    right: 18px;
-    font-size: 2.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    z-index: 5000;
-    user-select: none;
-    opacity: 0.85;
-  }
-  #hamburger:hover { opacity: 1; }
-
-  /* ================================
-           MENU PANEL
-     ================================ */
-  #menu-panel {
-    position: fixed;
-    top: 70px;
-    right: 18px;
-
-    width: 240px;
-    padding: 16px;
-
-    background: #fff;
-    border: 2px solid black;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,.2);
-
-    opacity: 0;
-    transform: translateY(-8px);
-    transition: opacity .2s ease, transform .2s ease;
-    pointer-events: none;
-
-    z-index: 4999;
-  }
-
-  #menu-panel.open {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-
-  .menu-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 10px;
-    text-align: left;
-  }
-
-  .menu-link {
-    display: block;
-    padding: 6px 0;
-    text-align: left;
-    text-decoration: none;
-    color: #000;
-    font-size: 0.95rem;
-  }
-  .menu-link:hover { text-decoration: underline; }
-
-  hr {
-    border: none;
-    border-bottom: 1px solid #bbb;
-    margin: 10px 0;
   }
 
   /* ================================
@@ -232,20 +166,11 @@
 
 <body>
 
-<!-- HAMBURGER -->
-<div id="menu-icon" class="menu-icon">☰</div>
-<div id="menu-panel" class="menu-panel"></div>
-
-<!-- MENU PANEL -->
-<div id="menu-panel"></div>
+<!-- MENU SYSTEM (injected by global-menu-loader.js) -->
+<!-- DO NOT place any #menu-icon or #menu-panel here -->
 
 <!-- POSTER SLIDER -->
 <div class="poster-slider">
-
-  <!-- (POSTERS REMAIN EXACTLY AS YOU PROVIDED THEM) -->
-  <!-- --------------------------------------------- -->
-  <!-- I keep the posters untouched, only changed global styles -->
-  <!-- --------------------------------------------- -->
 
   <!-- POSTER 1 -->
   <div class="poster active" id="poster-1">
@@ -296,7 +221,7 @@
 
     <h1>B.C. Winter League</h1>
 
-        <img src="./assets/winter.jpg"
+    <img src="./assets/winter.jpg"
          style="max-width:300px; margin:10px auto; display:block;" />
 
     <h2>January – March 2026</h2>
@@ -338,10 +263,9 @@
   <img src="" />
 </div>
 
-<!-- Supabase + menu -->
-<script type="module" src="/js/supabase.js"></script>
-<!-- MENU LOADER (injects menu-icon + panel + loads menu.js) -->
+<!-- MENU LOADER (injects hamburger + panel) -->
 <script type="module" src="/js/global-menu-loader.js"></script>
+
 <!-- Supabase -->
 <script type="module" src="/js/supabase.js"></script>
 
@@ -351,14 +275,32 @@
 -----------------------------------*/
 (() => {
   const colors = [
-    "#FFF9D6", // light yellow
-    "#FFE8EF", // light pink
-    "#E8F4FF", // light blue
-    "#EBFFE8"  // light green
+    "#FFF9D6",
+    "#FFE8EF",
+    "#E8F4FF",
+    "#EBFFE8"
   ];
   document.body.style.background =
     colors[Math.floor(Math.random() * colors.length)];
 })();
+
+/* ---------------------------------
+   LIGHTBOX FOR SPONSOR ICONS
+-----------------------------------*/
+const lightbox = document.getElementById("card-lightbox");
+const lbImg = lightbox.querySelector("img");
+
+document.querySelectorAll(".logos img").forEach(img => {
+  img.addEventListener("click", () => {
+    lbImg.src = img.src;
+    lightbox.style.display = "flex";
+  });
+});
+
+lightbox.addEventListener("click", () => {
+  lightbox.style.display = "none";
+  lbImg.src = "";
+});
 
 /* ---------------------------------
    PRIZE CAROUSEL
@@ -371,28 +313,10 @@ const prizes = [
   "./assets/card_etdr.webp"
 ];
 
-let idx = 0;
-prizeImg?.addEventListener("click", () => {
-  idx = (idx + 1) % prizes.length;
-  prizeImg.src = prizes[idx];
-});
-
-/* ---------------------------------
-   LIGHTBOX FOR SPONSOR ICONS
------------------------------------*/
-const lightbox = document.getElementById("card-lightbox");
-const lbImg = lightbox?.querySelector("img");
-
-document.querySelectorAll(".logos img").forEach(img => {
-  img.addEventListener("click", () => {
-    lbImg.src = img.src;
-    lightbox.style.display = "flex";
-  });
-});
-
-lightbox?.addEventListener("click", () => {
-  lightbox.style.display = "none";
-  lbImg.src = "";
+let prizeIdx = 0;
+prizeImg.addEventListener("click", () => {
+  prizeIdx = (prizeIdx + 1) % prizes.length;
+  prizeImg.src = prizes[prizeIdx];
 });
 
 /* ---------------------------------
@@ -402,14 +326,11 @@ const posters = document.querySelectorAll(".poster");
 const arrow = document.getElementById("poster-arrow");
 let posterIndex = 0;
 
-arrow?.addEventListener("click", () => {
+arrow.addEventListener("click", () => {
   posterIndex = (posterIndex + 1) % posters.length;
   posters.forEach((p, i) => p.classList.toggle("active", i === posterIndex));
 });
 </script>
-
-</body>
-</html>
 
 </body>
 </html>

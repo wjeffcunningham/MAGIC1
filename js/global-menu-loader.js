@@ -1,90 +1,73 @@
-// global-menu-loader.js
-// Injects menu icon + container + CSS, then loads menu.js (which builds menu links)
-
+// /js/global-menu-loader.js
 document.addEventListener("DOMContentLoaded", () => {
+  // Prevent duplication if menu already exists
+  if (document.getElementById("hamburger")) return;
 
-  // Inject menu icon + panel container
   const html = `
-    <img src="/assets/magic1.svg" id="menu-icon" class="menu-icon" />
-    <div id="menu-panel" class="menu-panel"></div>
+    <div id="hamburger">☰</div>
+    <div id="menu-panel"></div>
   `;
   document.body.insertAdjacentHTML("beforeend", html);
 
-  // Inject CSS styles for menu
   const style = document.createElement("style");
   style.textContent = `
-    .menu-icon {
+    #hamburger {
       position: fixed;
-      top: 16px;
-      right: 16px;
-      width: 64px;
-      height: 64px;
+      top: 18px;
+      right: 18px;
+      font-size: 2.2rem;
+      font-weight: 700;
       cursor: pointer;
       z-index: 5000;
       user-select: none;
-      opacity: 0.97;
+      opacity: 0.85;
+      line-height: 1;
     }
-
-    @media(max-width:600px){
-      .menu-icon {
-        width: 64px;
-        height: 64px;
-      }
-    }
+    #hamburger:hover { opacity: 1; }
 
     #menu-panel {
       position: fixed;
-      top: 96px;
-      right: 20px;
-      width: 220px;
-      background: white;
+      top: 70px;
+      right: 18px;
+      width: 240px;
+      padding: 16px;
+
+      background: #fff;
       border: 2px solid black;
-      padding: 14px;
       border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      display: none;
-      z-index: 4999;
+      box-shadow: 0 4px 10px rgba(0,0,0,.2);
 
       opacity: 0;
       transform: translateY(-6px);
+      pointer-events: none;
+
       transition: opacity .2s ease, transform .2s ease;
+      z-index: 4999;
     }
 
     #menu-panel.open {
-      display: block;
       opacity: 1;
       transform: translateY(0);
+      pointer-events: auto;
     }
 
     .menu-link {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: block;
       padding: 6px 0;
-      font-size: 0.92rem;
+      text-align: left;
       text-decoration: none;
-      color: black;
-
-      position: relative;
-      overflow: hidden;
+      color: #000;
+      font-size: 0.95rem;
     }
-
     .menu-link:hover { text-decoration: underline; }
-    .menu-link.active { font-weight: 600; text-decoration: underline; }
 
-    .menu-group-title {
-      font-weight: 600;
+    .menu-title {
+      font-weight: 700;
       margin: 10px 0 4px;
-      font-size: 0.9rem;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 3px;
+      font-size: 0.95rem;
     }
   `;
   document.head.appendChild(style);
 
-  // Load menu.js AFTER the DOM + CSS + panel exist
-  requestAnimationFrame(() => {
-    setTimeout(() => import("/js/menu.js"), 0);
-  });
-
+  import("/js/menu.js");
 });
