@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BC Winter League Hub · magic1.ca</title>
+
+<style>
+body {
+  margin:0;
+  background:#f5f5ff;
+  font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+}
+.shell {
+  max-width:800px;
+  margin:80px auto;
+  padding:20px;
+  background:white;
+  border:2px solid black;
+  border-radius:12px;
+}
+h1 { text-align:center; margin-bottom:10px; }
+h2 { font-size:1.2rem; margin-top:20px; }
+.btn {
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid #111;
+  background:#eee;
+  cursor:pointer;
+}
+.btn.primary { background:black; color:white; }
+.list {
+  border:1px solid #ccc;
+  padding:10px;
+  border-radius:8px;
+  background:#fafafa;
+  margin-top:8px;
+}
+.list-row {
+  padding:4px 0;
+  display:flex;
+  justify-content:space-between;
+}
+.muted { opacity:0.7; font-size:0.85rem; }
+.hidden { display:none; }
+</style>
+
+</head>
+<body>
+
+<div class="shell">
+
+  <h1>B.C. Winter League Hub</h1>
+  <p class="muted">Premodern · $20/month · January 2026</p>
+
+  <div id="not-logged">
+    <p>Please sign in first.</p>
+  </div>
+
+  <div id="hub" class="hidden">
+
+    <h2>Your Status</h2>
+    <p><strong id="user-name"></strong></p>
+
+    <div id="league-actions">
+      <button class="btn primary" id="join-btn">Join the League ($20/month)</button>
+      <button class="btn" id="leave-btn">Leave League</button>
+      <p id="join-status" class="muted"></p>
+    </div>
+
+    <h2>Players Registered</h2>
+    <p><strong><span id="player-count">0</span> players</strong></p>
+
+    <div id="player-list" class="list"></div>
+
+    <div id="admin-section" class="hidden">
+      <h2>Admin Tools</h2>
+
+      <button class="btn" id="verify-btn">Load Users</button>
+      <div id="verify-list" class="list"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script type="module" src="/js/global-menu-loader.js"></script>
+<script type="module" src="/js/bcwl-hub.js"></script>
+
+</body>
+</html>

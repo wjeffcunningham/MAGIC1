@@ -1,3 +1,7 @@
-// config.js
-export const SUPABASE_URL = "https://dkzdfhzlewlvfmunywal.supabase.co";
-export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI";
+// /js/config.js
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+export const supabase = createClient(
+  "https://dkzdfhzlewlvfmunywal.supabase.co",
+  "sb_publishable_B1r1cUzqYm-aMel-yW-4TA_-s3kdZ7N"
+);

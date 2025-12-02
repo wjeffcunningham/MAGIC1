@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Login / Sign Up · magic1.ca</title>
+</head>
+<body>
+<div class="shell">
+  <h1>Login / Sign-Up</h1>
+
+  <input id="email" placeholder="email">
+  <input id="password" type="password" placeholder="password">
+
+  <button id="login-btn">Log in</button>
+  <button id="signup-btn">Sign up</button>
+
+  <p id="msg"></p>
+</div>
+
+<script type="module">
+import { supabase } from "/js/config.js";
+
+const email = document.getElementById("email");
+const pw = document.getElementById("password");
+const msg = document.getElementById("msg");
+
+document.getElementById("login-btn").onclick = async () => {
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email.value,
+    password: pw.value
+  });
+  msg.textContent = error ? error.message : "Logged in!";
+  if (!error) location.href = "/user-settings.html";
+};
+
+document.getElementById("signup-btn").onclick = async () => {
+  const { data, error } = await supabase.auth.signUp({
+    email: email.value,
+    password: pw.value
+  });
+  if (error) { msg.textContent = error.message; return; }
+
+  // create profile
+  await supabase.from("users").insert({
+    id: data.user.id,
+    email: email.value,
+    name: email.value
+  });
+
+  msg.textContent = "Account created!";
+  location.href = "/user-settings.html";
+};
+</script>
+</body>
+</html>

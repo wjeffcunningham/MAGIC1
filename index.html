@@ -263,9 +263,6 @@
   <img src="" />
 </div>
 
-<!-- Supabase -->
-<script type="module" src="/js/supabase.js"></script>
-
 <script>
 /* ---------------------------------
    RANDOM PRINT-SHOP BACKGROUND
@@ -328,6 +325,9 @@ arrow.addEventListener("click", () => {
   posters.forEach((p, i) => p.classList.toggle("active", i === posterIndex));
 });
 </script>
+
+<!-- Global menu loader – must come last -->
+<script type="module" src="/js/global-menu-loader.js"></script>
 
 </body>
 </html>

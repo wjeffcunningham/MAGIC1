@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>User Settings · magic1.ca</title>
+
+<style>
+body {
+  margin:0; padding:0;
+  font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+  background:#fafafa;
+}
+
+.shell {
+  max-width:600px;
+  margin:80px auto;
+  padding:20px;
+  background:white;
+  border:2px solid black;
+  border-radius:12px;
+}
+
+h1 {
+  text-align:center;
+  margin-bottom: 20px;
+}
+
+label { font-weight:600; }
+input, textarea {
+  width:100%;
+  padding:8px;
+  margin:6px 0 14px 0;
+  border:1px solid #888;
+  border-radius:8px;
+  font-family:inherit;
+}
+
+.btn {
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid #111;
+  background:#eee;
+  cursor:pointer;
+}
+.btn.primary {
+  background:black;
+  color:white;
+}
+
+#status { font-size:0.85rem; opacity:0.7; margin-top:10px; }
+
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <h1>Your Settings</h1>
+
+  <div id="not-logged">
+    <p>Please sign in first.</p>
+  </div>
+
+  <div id="settings-area" style="display:none;">
+    <label>Display Name</label>
+    <input id="name-input" type="text" placeholder="Your league name">
+
+    <label>Profile Image URL (optional)</label>
+    <input id="img-input" type="text" placeholder="https://example.com/me.jpg">
+
+    <label>Bio / Notes (optional)</label>
+    <textarea id="bio-input" rows="6"></textarea>
+
+    <button class="btn primary" id="save-btn">Save Settings</button>
+    <p id="status"></p>
+  </div>
+</div>
+
+<script type="module" src="/js/global-menu-loader.js"></script>
+<script type="module" src="/js/settings.js"></script>
+
+</body>
+</html>
