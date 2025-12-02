@@ -55,6 +55,7 @@ input, textarea {
 <body>
 
 <div class="shell">
+
   <h1>Your Settings</h1>
 
   <div id="not-logged">
@@ -62,18 +63,23 @@ input, textarea {
   </div>
 
   <div id="settings-area" style="display:none;">
-    <label>Display Name</label>
-    <input id="name-input" type="text" placeholder="Your league name">
 
-    <label>Profile Image URL (optional)</label>
-    <input id="img-input" type="text" placeholder="https://example.com/me.jpg">
+  <label>Email (cannot be changed)</label>
+  <input id="email-input" type="text" disabled style="background:#eee;">
 
-    <label>Bio / Notes (optional)</label>
-    <textarea id="bio-input" rows="6"></textarea>
+  <label>Display Name</label>
+  <input id="name-input" type="text" placeholder="Your league name">
 
-    <button class="btn primary" id="save-btn">Save Settings</button>
-    <p id="status"></p>
-  </div>
+  <label>Profile Image URL (optional)</label>
+  <input id="img-input" type="text" placeholder="https://example.com/me.jpg">
+
+  <label>Bio / Notes (optional)</label>
+  <textarea id="bio-input" rows="6"></textarea>
+
+  <button class="btn primary" id="save-btn">Save Settings</button>
+  <p id="status"></p>
+</div>
+
 </div>
 
 <script type="module" src="/js/global-menu-loader.js"></script>

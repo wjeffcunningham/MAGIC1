@@ -9,6 +9,7 @@ const imgInput = document.getElementById("img-input");
 const bioInput = document.getElementById("bio-input");
 const saveBtn = document.getElementById("save-btn");
 const status = document.getElementById("status");
+const emailInput = document.getElementById("email-input");
 
 // Wait for Supabase to restore the session
 async function waitForSupabaseAuth() {
@@ -51,10 +52,10 @@ async function init() {
   }
   notLogged.style.display = "none";
   settings.style.display = "block";
-  nameInput.value = profile.name || "";
-  imgInput.value = profile.image || "";
-  bioInput.value = profile.bio || "";
-
+emailInput.value = profile.email || "";
+nameInput.value = profile.name || profile.email || "";
+imgInput.value = profile.image || "";
+bioInput.value = profile.bio || "";
   saveBtn.onclick = async () => {
     status.textContent = "Saving...";
     const { error } = await supabase
