@@ -1,21 +1,10 @@
+// /js/global-menu-loader.js
 import { supabase } from "./config.js";
 import { getProfile } from "./db.js";
 
-// Wait for Supabase session
+// Just let Supabase initialize; do NOT block waiting for a session
 async function waitForSupabaseAuth() {
-  const { data } = await supabase.auth.getSession();
-  if (data?.session) return;
-
-  return new Promise((resolve) => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session) {
-          subscription.unsubscribe();
-          resolve();
-        }
-      }
-    );
-  });
+  await supabase.auth.getSession();
 }
 
 function insertMenu() {
@@ -58,6 +47,7 @@ function insertMenu() {
       display:none;
       z-index:5001;
       box-shadow:0 6px 18px rgba(0,0,0,0.18);
+      font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
     "></div>
   `;
   document.body.insertAdjacentHTML("beforeend", html);
@@ -70,7 +60,13 @@ function togglePanel() {
 
 async function renderMenu() {
   const panel = document.getElementById("menu-panel");
-  const profile = await getProfile();
+  let profile = null;
+
+  try {
+    profile = await getProfile();
+  } catch (e) {
+    console.error("menu getProfile error", e);
+  }
 
   const btn = (label, href) =>
     `<button onclick="location.href='${href}'"
@@ -85,11 +81,13 @@ async function renderMenu() {
         cursor:pointer;
       ">${label}</button>`;
 
+  // Logged-out menu
   if (!profile) {
     panel.innerHTML = btn("Login / Sign-up", "/login.html");
     return;
   }
 
+  // Logged-in menu
   panel.innerHTML = `
     <div style="padding-bottom:6px; font-weight:600;">
       ${profile.name}
@@ -115,11 +113,11 @@ async function renderMenu() {
   };
 }
 
-insertMenu();
-
-// IMPORTANT FIX: wait for cookies before reading user
+// Run after DOM is ready
 document.addEventListener("DOMContentLoaded", async () => {
+  insertMenu();
   document.getElementById("menu-icon").onclick = togglePanel;
+
   await waitForSupabaseAuth();
   renderMenu();
 });
