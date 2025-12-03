@@ -324,6 +324,15 @@ arrow.addEventListener("click", () => {
   posterIndex = (posterIndex + 1) % posters.length;
   posters.forEach((p, i) => p.classList.toggle("active", i === posterIndex));
 });
+
+// START: Read ?poster=2 to jump directly to page 2
+const params = new URLSearchParams(window.location.search);
+const posterParam = Number(params.get("poster"));
+if (posterParam && posterParam >= 1 && posterParam <= posters.length) {
+  posterIndex = posterParam - 1;
+  posters.forEach((p, i) => p.classList.toggle("active", i === posterIndex));
+}
+// END
 </script>
 
 <!-- Global menu loader – must come last -->

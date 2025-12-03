@@ -5,7 +5,6 @@ import { supabase } from "./config.js";
 const notLogged = document.getElementById("not-logged");
 const settings = document.getElementById("settings-area");
 const nameInput = document.getElementById("name-input");
-const imgInput = document.getElementById("img-input");
 const bioInput = document.getElementById("bio-input");
 
 const remoteInput = document.getElementById("remote-input");

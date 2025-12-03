@@ -52,6 +52,7 @@ h2 { font-size:1.2rem; margin-top:20px; }
 
   <h1>B.C. Winter League Hub</h1>
   <p class="muted">Premodern · $20/month · January 2026</p>
+  <a href="/index.html?poster=2" class="btn small">BCWL Poster →</a>
 
   <div id="not-logged">
     <p>Please sign in first.</p>
@@ -67,6 +68,16 @@ h2 { font-size:1.2rem; margin-top:20px; }
       <button class="btn" id="leave-btn">Leave League</button>
       <p id="join-status" class="muted"></p>
     </div>
+
+<h2>Monthly Participation</h2>
+
+<div id="month-controls" style="margin-bottom:20px;">
+  <button data-month="1" class="month-btn">January (10-31)</button>
+  <button data-month="2" class="month-btn">February (1-28)</button>
+  <button data-month="3" class="month-btn">March (1-31)</button>
+</div>
+
+<div id="month-status"></div>
 
     <h2>Players Registered</h2>
     <p><strong><span id="player-count">0</span> players</strong></p>
