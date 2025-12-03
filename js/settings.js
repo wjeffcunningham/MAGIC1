@@ -15,18 +15,8 @@ const saveBtn = document.getElementById("save-btn");
 const status = document.getElementById("status");
 const emailInput = document.getElementById("email-input");
 
-// Wait for Supabase to restore the session
 async function waitForSupabaseAuth() {
-  const { data } = await supabase.auth.getSession();
-  if (data?.session) return;
-  return new Promise((resolve) => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        subscription.unsubscribe();
-        resolve();
-      }
-    });
-  });
+  await supabase.auth.getSession();
 }
 
 // Fetch current user's profile with allowed columns

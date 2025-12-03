@@ -13,18 +13,8 @@ const verifyListEl = document.getElementById("verify-list");
 let currentProfile = null;
 let playersCache = [];
 
-// Wait for Supabase session
 async function waitForSupabaseAuth() {
-  const { data } = await supabase.auth.getSession();
-  if (data?.session) return;
-  return new Promise((resolve) => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        subscription.unsubscribe();
-        resolve();
-      }
-    });
-  });
+  await supabase.auth.getSession();
 }
 
 async function getProfile() {
