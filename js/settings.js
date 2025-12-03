@@ -7,6 +7,11 @@ const settings = document.getElementById("settings-area");
 const nameInput = document.getElementById("name-input");
 const imgInput = document.getElementById("img-input");
 const bioInput = document.getElementById("bio-input");
+
+const remoteInput = document.getElementById("remote-input");
+const imageFile = document.getElementById("image-file");
+const imgPreview = document.getElementById("img-preview");
+
 const saveBtn = document.getElementById("save-btn");
 const status = document.getElementById("status");
 const emailInput = document.getElementById("email-input");
@@ -52,22 +57,75 @@ async function init() {
   }
   notLogged.style.display = "none";
   settings.style.display = "block";
+
 emailInput.value = profile.email || "";
 nameInput.value = profile.name || profile.email || "";
-imgInput.value = profile.image || "";
 bioInput.value = profile.bio || "";
-  saveBtn.onclick = async () => {
-    status.textContent = "Saving...";
-    const { error } = await supabase
-      .from("users")
-      .update({
-        name: nameInput.value.trim(),
-        image: imgInput.value.trim(),
-        bio: bioInput.value.trim(),
-      })
-      .eq("id", profile.id);
-    status.textContent = error ? error.message : "Saved!";
+remoteInput.value = profile.remote_preference || "no_remote";
+
+if (profile.image) {
+  imgPreview.src = profile.image;
+  imgPreview.style.display = "block";
+}
+
+saveBtn.onclick = async () => {
+  status.textContent = "Saving...";
+
+  let imageUrl = profile.image;
+  if (imageFile.files.length > 0) {
+    imageUrl = await uploadImage(imageFile.files[0], profile.id);
+  }
+
+  const updates = {
+    name: nameInput.value.trim(),
+    bio: bioInput.value.trim(),
+    image: imageUrl,
+    remote_preference: remoteInput.value
   };
+
+  // Update public.users
+  const { error } = await supabase
+    .from("users")
+    .update(updates)
+    .eq("id", profile.id);
+
+  if (error) {
+    status.textContent = "Error saving settings.";
+    return;
+  }
+
+  // ⭐ NEW: sync to players table
+  await supabase
+    .from("players")
+    .update({
+      full_name: nameInput.value.trim(),
+      remote_preference: remoteInput.value
+    })
+    .eq("user_id", profile.id);
+
+  status.textContent = "Saved!";
+};
+
+
+async function uploadImage(file, userId) {
+  const ext = file.name.split('.').pop();
+  const path = `${userId}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("profile-images")
+    .upload(path, file, { upsert: true });
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  const { data: urlData } = supabase
+    .storage
+    .from("profile-images")
+    .getPublicUrl(path);
+
+  return urlData.publicUrl;
 }
 
 init();

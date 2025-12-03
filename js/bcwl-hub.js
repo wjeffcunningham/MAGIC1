@@ -56,6 +56,51 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
+// NEW: load players from the league players table
+async function loadPlayers() {
+  const { data, error } = await supabase
+    .from("players")
+    .select("id, full_name, email, has_paid, rating")
+    .order("full_name");
+
+  if (error) {
+    playerListEl.innerHTML = "<div class='muted'>Error loading players.</div>";
+    return;
+  }
+
+  playersCache = data;
+
+  playerCountEl.textContent = data.length;
+
+  if (!data.length) {
+    playerListEl.innerHTML = "<div class='muted'>No players yet.</div>";
+    return;
+  }
+
+  playerListEl.innerHTML = data
+    .map(
+      (p) => `
+      <div class="list-row">
+        <span>${escapeHtml(p.full_name)}</span>
+        <label>
+          Paid: <input type="checkbox" data-id="${p.id}" ${p.has_paid ? "checked" : ""}>
+        </label>
+      </div>
+    `
+    )
+    .join("");
+
+  // paid/unpaid updater
+  playerListEl.querySelectorAll("input[type=checkbox]").forEach((cb) => {
+    cb.onchange = async () => {
+      await supabase
+        .from("players")
+        .update({ has_paid: cb.checked })
+        .eq("id", cb.dataset.id);
+    };
+  });
+}
+
 async function loadSignups() {
   const { count } = await supabase
     .from("league_signups")
@@ -108,7 +153,7 @@ async function joinLeague() {
     .from("league_signups")
     .insert({ user_id: currentProfile.id, league: LEAGUE });
   joinStatus.textContent = error ? error.message : "Joined!";
-  await loadSignups();
+await loadPlayers();
 }
 
 async function leaveLeague() {
