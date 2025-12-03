@@ -102,82 +102,59 @@ async function leaveMonth(month) {
 // Player list
 // ----------------------------------------
 
-async function loadPlayers() {
+async function loadPlayers(monthIndex = 1) {
+  // Load all players signed up for this month with relational join
   const { data, error } = await supabase
     .from("monthly_participation")
-    .select("player_id, players(full_name, email, has_paid)")
+    .select(`
+      player_id,
+      players (
+        id,
+        full_name,
+        email,
+        has_paid
+      )
+    `)
     .eq("league_year", 2026)
-    .eq("month_index", 1) // JANUARY
-    .order("players.full_name");
+    .eq("month_index", monthIndex)
+    .order("player_id", { ascending: true });
 
   if (error) {
-    console.error(error);
+    console.error("loadPlayers error", error);
     playerListEl.innerHTML = "<div class='muted'>Error loading players.</div>";
     return;
   }
 
-  const rows = data || [];
-  playerCountEl.textContent = rows.length;
+  const mapped = data
+    .map(row => row.players)
+    .filter(p => p !== null);
 
-  if (rows.length === 0) {
+  playerCountEl.textContent = mapped.length;
+
+  if (!mapped.length) {
     playerListEl.innerHTML = "<div class='muted'>No players yet.</div>";
     return;
   }
 
-  playerListEl.innerHTML = rows
-    .map((r) => `
+  playerListEl.innerHTML = mapped
+    .map(
+      p => `
       <div class="list-row">
-        <span>${escapeHtml(r.players.full_name)}</span>
+        <span>${escapeHtml(p.full_name)}</span>
         <label>
-          Paid:
-          <input type="checkbox" data-id="${r.player_id}"
-            ${r.players.has_paid ? "checked" : ""} />
+          Paid: <input type="checkbox" data-id="${p.id}" ${p.has_paid ? "checked" : ""}>
         </label>
-      </div>
-    `)
+      </div>`
+    )
     .join("");
 
-  // Update payment status
-  playerListEl.querySelectorAll("input[type=checkbox]").forEach((box) => {
-    box.onchange = async () => {
+  // Paid / unpaid toggle
+  playerListEl.querySelectorAll("input[type=checkbox]").forEach(cb => {
+    cb.onchange = async () => {
       await supabase
         .from("players")
-        .update({ has_paid: box.checked })
-        .eq("id", box.dataset.id);
-    };
-  });
-}
-
-// ----------------------------------------
-// Admin: user verification
-// ----------------------------------------
-
-async function loadUsersForVerification() {
-  verifyListEl.innerHTML = "Loading…";
-
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, name, verified")
-    .order("created_at");
-
-  if (error) {
-    verifyListEl.innerHTML = "<div class='muted'>Error loading users.</div>";
-    return;
-  }
-
-  verifyListEl.innerHTML = data.map(
-    (u) => `
-    <div class="list-row">
-      <span>${escapeHtml(u.name)}</span>
-      <span><input type="checkbox" data-id="${u.id}" ${u.verified ? "checked" : ""}></span>
-    </div>`
-  ).join("");
-
-  verifyListEl.querySelectorAll("input").forEach(box => {
-    box.onchange = async () => {
-      await supabase.from("users")
-        .update({ verified: box.checked })
-        .eq("id", box.dataset.id);
+        .update({ has_paid: cb.checked })
+        .eq("id", cb.dataset.id);
     };
   });
 }
