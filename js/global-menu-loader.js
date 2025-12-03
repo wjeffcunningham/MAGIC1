@@ -1,6 +1,22 @@
-// /js/global-menu-loader.js
 import { supabase } from "./config.js";
 import { getProfile } from "./db.js";
+
+// Wait for Supabase session
+async function waitForSupabaseAuth() {
+  const { data } = await supabase.auth.getSession();
+  if (data?.session) return;
+
+  return new Promise((resolve) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session) {
+          subscription.unsubscribe();
+          resolve();
+        }
+      }
+    );
+  });
+}
 
 function insertMenu() {
   const html = `
@@ -25,12 +41,8 @@ function insertMenu() {
         background:black;
         position:relative;
       ">
-        <div style="
-          width:20px; height:2px; background:black;
-          position:absolute; top:-6px; left:0;"></div>
-        <div style="
-          width:20px; height:2px; background:black;
-          position:absolute; top:6px; left:0;"></div>
+        <div style="width:20px; height:2px; background:black; position:absolute; top:-6px;"></div>
+        <div style="width:20px; height:2px; background:black; position:absolute; top:6px;"></div>
       </div>
     </div>
 
@@ -46,7 +58,6 @@ function insertMenu() {
       display:none;
       z-index:5001;
       box-shadow:0 6px 18px rgba(0,0,0,0.18);
-      font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
     "></div>
   `;
   document.body.insertAdjacentHTML("beforeend", html);
@@ -106,7 +117,9 @@ async function renderMenu() {
 
 insertMenu();
 
-document.addEventListener("DOMContentLoaded", () => {
+// IMPORTANT FIX: wait for cookies before reading user
+document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("menu-icon").onclick = togglePanel;
+  await waitForSupabaseAuth();
   renderMenu();
 });
