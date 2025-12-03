@@ -68,18 +68,50 @@ async function renderMenu() {
     console.error("menu getProfile error", e);
   }
 
-  const btn = (label, href) =>
-    `<button onclick="location.href='${href}'"
-      style="
-        width:100%;
-        padding:8px 10px;
-        margin:4px 0;
-        text-align:left;
-        border:1px solid black;
-        border-radius:6px;
-        background:#f5f5f5;
-        cursor:pointer;
-      ">${label}</button>`;
+// inside renderMenu(), after we successfully have profile
+
+const btn = (label, href) =>
+  `<button onclick="location.href='${href}'"
+    style="
+      width:100%;
+      padding:8px 10px;
+      margin:4px 0;
+      text-align:left;
+      border:1px solid black;
+      border-radius:6px;
+      background:#f5f5f5;
+      cursor:pointer;
+    ">${label}</button>`;
+
+if (!profile) {
+  panel.innerHTML = btn("Login / Sign-up", "/login.html");
+  return;
+}
+
+// NEW: only show Admin Dashboard for moderators
+const adminBtn = profile.is_mod
+  ? btn("Admin Dashboard", "/admin-dashboard.html")
+  : "";
+
+panel.innerHTML = `
+  <div style="padding-bottom:6px; font-weight:600;">
+    ${profile.name}
+  </div>
+  ${btn("User Settings", "/user-settings.html")}
+  ${btn("BCWL Hub", "/bcwl-hub.html")}
+  ${btn("BCPMM Hub", "/bcpmmsheet.html")}
+  ${adminBtn}
+  <button id="logout-btn" style="
+    width:100%;
+    padding:8px 10px;
+    margin-top:8px;
+    background:black;
+    color:white;
+    border-radius:6px;
+    border:none;
+    cursor:pointer;
+  ">Logout</button>
+`;
 
   // Logged-out menu
   if (!profile) {
