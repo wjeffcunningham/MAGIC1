@@ -15,86 +15,29 @@ const saveBtn = document.getElementById("save-btn");
 const status = document.getElementById("status");
 const emailInput = document.getElementById("email-input");
 
+// SAFE VERSION — do not block, do not wait for events
 async function waitForSupabaseAuth() {
   await supabase.auth.getSession();
 }
 
-// Fetch current user's profile with allowed columns
+// Fetch current user's profile
 async function getProfile() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  try {
-    const { data } = await supabase
-      .from("users")
-      .select("id, name, is_mod, verified, image, bio")
-      .eq("id", user.id)
-      .maybeSingle();
-    return data ?? null;
-  } catch (err) {
-    console.error("getProfile error", err);
-    return { id: user.id, name: user.email, is_mod: false, verified: false };
-  }
-}
 
-async function init() {
-  await waitForSupabaseAuth();
-  const profile = await getProfile();
-  if (!profile) {
-    notLogged.style.display = "block";
-    settings.style.display = "none";
-    return;
-  }
-  notLogged.style.display = "none";
-  settings.style.display = "block";
-
-emailInput.value = profile.email || "";
-nameInput.value = profile.name || profile.email || "";
-bioInput.value = profile.bio || "";
-remoteInput.value = profile.remote_preference || "no_remote";
-
-if (profile.image) {
-  imgPreview.src = profile.image;
-  imgPreview.style.display = "block";
-}
-
-saveBtn.onclick = async () => {
-  status.textContent = "Saving...";
-
-  let imageUrl = profile.image;
-  if (imageFile.files.length > 0) {
-    imageUrl = await uploadImage(imageFile.files[0], profile.id);
-  }
-
-  const updates = {
-    name: nameInput.value.trim(),
-    bio: bioInput.value.trim(),
-    image: imageUrl,
-    remote_preference: remoteInput.value
-  };
-
-  // Update public.users
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("users")
-    .update(updates)
-    .eq("id", profile.id);
+    .select("id, email, name, image, bio, remote_preference")
+    .eq("id", user.id)
+    .maybeSingle();
 
   if (error) {
-    status.textContent = "Error saving settings.";
-    return;
+    console.error("getProfile error", error);
+    return null;
   }
 
-  // ⭐ NEW: sync to players table
-  await supabase
-    .from("players")
-    .update({
-      full_name: nameInput.value.trim(),
-      remote_preference: remoteInput.value
-    })
-    .eq("user_id", profile.id);
-
-  status.textContent = "Saved!";
-};
-
+  return data;
+}
 
 async function uploadImage(file, userId) {
   const ext = file.name.split('.').pop();
@@ -109,12 +52,73 @@ async function uploadImage(file, userId) {
     return null;
   }
 
-  const { data: urlData } = supabase
-    .storage
+  const { data: urlData } = supabase.storage
     .from("profile-images")
     .getPublicUrl(path);
 
   return urlData.publicUrl;
+}
+
+async function init() {
+  await waitForSupabaseAuth();
+
+  const profile = await getProfile();
+  if (!profile) {
+    notLogged.style.display = "block";
+    settings.style.display = "none";
+    return;
+  }
+
+  notLogged.style.display = "none";
+  settings.style.display = "block";
+
+  emailInput.value = profile.email;
+  nameInput.value = profile.name || profile.email;
+  bioInput.value = profile.bio || "";
+  remoteInput.value = profile.remote_preference || "no_remote";
+
+  if (profile.image) {
+    imgPreview.src = profile.image;
+    imgPreview.style.display = "block";
+  }
+
+  saveBtn.onclick = async () => {
+    status.textContent = "Saving...";
+
+    let imageUrl = profile.image;
+    if (imageFile.files.length > 0) {
+      imageUrl = await uploadImage(imageFile.files[0], profile.id);
+    }
+
+    const updates = {
+      name: nameInput.value.trim(),
+      bio: bioInput.value.trim(),
+      image: imageUrl,
+      remote_preference: remoteInput.value
+    };
+
+    const { error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("id", profile.id);
+
+    if (error) {
+      status.textContent = "Error saving settings.";
+      console.error(error);
+      return;
+    }
+
+    // Sync to players table
+    await supabase
+      .from("players")
+      .update({
+        full_name: nameInput.value.trim(),
+        remote_preference: remoteInput.value
+      })
+      .eq("user_id", profile.id);
+
+    status.textContent = "Saved!";
+  };
 }
 
 init();
