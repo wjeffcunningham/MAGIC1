@@ -1,165 +1,173 @@
 // /js/settings.js
 import { supabase } from "./config.js";
 
-const notLogged = document.getElementById("not-logged");
-const settings = document.getElementById("settings-area");
+// DOM elements
+const notLogged   = document.getElementById("not-logged");
+const settings    = document.getElementById("settings-area");
+const emailInput  = document.getElementById("email-input");
+const nameInput   = document.getElementById("name-input");
+const remoteInput = document.getElementById("remote-input");
+const bioInput    = document.getElementById("bio-input");
+const imageFile   = document.getElementById("image-file");
+const avatarImg   = document.getElementById("avatar-img");
+const saveBtn     = document.getElementById("save-btn");
+const statusEl    = document.getElementById("status");
 
-const emailInput   = document.getElementById("email-input");
-const nameInput    = document.getElementById("name-input");
-const imgInput     = document.getElementById("img-input");
-const bioInput     = document.getElementById("bio-input");
-const remoteInput  = document.getElementById("remote-input");
-const imageFile    = document.getElementById("image-file");
-const avatarImg    = document.getElementById("avatar-img");
-
-const saveBtn = document.getElementById("save-btn");
-const status  = document.getElementById("status");
-
+// Wait for Supabase to restore the session
 async function waitForSupabaseAuth() {
   const { data } = await supabase.auth.getSession();
   if (data?.session) return;
 
   return new Promise((resolve) => {
-    const { data: { subscription } } =
-      supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
         if (session) {
           subscription.unsubscribe();
           resolve();
         }
-      });
+      }
+    );
   });
 }
 
-async function fetchProfile() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, email, name, image, bio, remote_preference")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error("settings fetchProfile error", error);
-    return null;
-  }
-
-  return {
-    id: data.id,
-    email: data.email || user.email,
-    name: data.name || data.email || user.email,
-    image: data.image || null,
-    bio: data.bio || "",
-    remote_preference: data.remote_preference || "no_remote",
-  };
-}
-
+// Upload image to 'profile-images' bucket and return public URL
 async function uploadImage(file, userId) {
   if (!file) return null;
 
-  const ext  = file.name.split(".").pop() || "png";
+  const ext = (file.name.split(".").pop() || "png").toLowerCase();
   const path = `${userId}.${ext}`;
 
-  const { error } = await supabase
-    .storage
+  const { error: uploadErr } = await supabase.storage
     .from("profile-images")
     .upload(path, file, { upsert: true });
 
-  if (error) {
-    console.error("uploadImage error", error);
-    status.textContent = "Image upload failed.";
+  if (uploadErr) {
+    console.error("upload error", uploadErr);
+    statusEl.textContent = "Image upload failed.";
     return null;
   }
 
-  const { data } = supabase
-    .storage
+  const { data: urlData } = supabase.storage
     .from("profile-images")
     .getPublicUrl(path);
 
-  return data.publicUrl;
-}
-
-function setAvatar(url) {
-  if (url) {
-    avatarImg.src = url;
-    avatarImg.style.opacity = "1";
-  } else {
-    avatarImg.removeAttribute("src");
-    avatarImg.style.opacity = "0.3";
-  }
+  return urlData?.publicUrl ?? null;
 }
 
 async function init() {
   await waitForSupabaseAuth();
-  const profile = await fetchProfile();
 
-  if (!profile) {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
     notLogged.style.display = "block";
     settings.style.display  = "none";
-    setAvatar(null);
     return;
   }
 
   notLogged.style.display = "none";
   settings.style.display  = "block";
 
-  emailInput.value  = profile.email;
-  nameInput.value   = profile.name;
-  imgInput.value    = profile.image || "";
-  bioInput.value    = profile.bio;
-  remoteInput.value = profile.remote_preference || "no_remote";
-  setAvatar(profile.image);
+  // Base email
+  emailInput.value = user.email || "";
 
-  // live preview when URL changes
-  imgInput.addEventListener("input", () => {
-    const url = imgInput.value.trim();
-    if (url) setAvatar(url);
-  });
+  // Profile row from public.users
+  let profile = null;
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, name, image, bio")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    profile = data || { id: user.id, name: user.email, image: null, bio: "" };
+  } catch (err) {
+    console.error("getProfile error", err);
+    profile = { id: user.id, name: user.email, image: null, bio: "" };
+  }
+
+  // Player row just for remote_preference (optional)
+  let remotePref = "no_remote";
+  try {
+    const { data } = await supabase
+      .from("players")
+      .select("remote_preference")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data?.remote_preference) {
+      remotePref = data.remote_preference;
+    }
+  } catch (err) {
+    console.warn("players remote_preference lookup failed (ok)", err);
+  }
+
+  // Map stored remote preference → one of the four UI choices
+  if (remotePref === "no_remote") {
+    remoteInput.value = "no_remote";
+  } else {
+    // Any remote-OK bucket maps to "both" by default
+    remoteInput.value = "remote_both";
+  }
+
+  nameInput.value = profile.name || user.email || "";
+  bioInput.value  = profile.bio || "";
+
+  if (profile.image) {
+    avatarImg.src = profile.image;
+  }
 
   saveBtn.onclick = async () => {
-    status.textContent = "Saving…";
+    statusEl.textContent = "Saving…";
 
-    let imageUrl = imgInput.value.trim() || profile.image || null;
-
-    if (imageFile.files.length > 0) {
-      const uploadedUrl = await uploadImage(imageFile.files[0], profile.id);
-      if (uploadedUrl) {
-        imageUrl = uploadedUrl;
-        imgInput.value = uploadedUrl;
+    // Upload new image if chosen
+    let imageUrl = profile.image;
+    if (imageFile && imageFile.files.length > 0) {
+      const uploaded = await uploadImage(imageFile.files[0], profile.id);
+      if (uploaded) {
+        imageUrl = uploaded;
+        avatarImg.src = uploaded;
       }
     }
 
-    const updates = {
-      name: nameInput.value.trim() || profile.email,
-      bio: bioInput.value.trim(),
-      image: imageUrl,
-      remote_preference: remoteInput.value,
-    };
+    const displayName = nameInput.value.trim();
+    const bio         = bioInput.value.trim();
 
-    // Update users table
-    const { error } = await supabase
+    // Map the 4-way UI choice down to the existing DB enum
+    const remoteUi   = remoteInput.value;
+    const storedRemote =
+      remoteUi === "no_remote" ? "no_remote" : "remote_ok";
+
+    // Update public.users
+    const { error: userErr } = await supabase
       .from("users")
-      .update(updates)
+      .update({
+        name: displayName,
+        bio,
+        image: imageUrl
+      })
       .eq("id", profile.id);
 
-    if (error) {
-      console.error("settings update error", error);
-      status.textContent = "Error saving settings.";
+    if (userErr) {
+      console.error("users update error", userErr);
+      statusEl.textContent = "Error saving settings.";
       return;
     }
 
-    // Optional: keep players table in sync if it exists
-    await supabase
-      .from("players")
-      .update({
-        full_name: updates.name,
-        remote_preference: updates.remote_preference,
-      })
-      .eq("user_id", profile.id);
+    // Best-effort: sync players table (if row exists)
+    try {
+      await supabase
+        .from("players")
+        .update({
+          full_name: displayName,
+          remote_preference: storedRemote
+        })
+        .eq("user_id", profile.id);
+    } catch (err) {
+      console.warn("players update failed (ok for now)", err);
+    }
 
-    setAvatar(imageUrl);
-    status.textContent = "Saved!";
+    statusEl.textContent = "Saved!";
   };
 }
 

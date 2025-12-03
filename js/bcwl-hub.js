@@ -1,16 +1,17 @@
 // /js/bcwl-hub.js
 import { supabase } from "./config.js";
+import { getProfile } from "./db.js";
 
-const LEAGUE_CODE = "BCWL2026";
-const MAX_PLAYERS = 32; // soft cap used for display only for now
+// Constants
+const LEAGUE = "BCWL2026JAN";
 
-// DOM
+// DOM elements
 const notLogged     = document.getElementById("not-logged");
 const hub           = document.getElementById("hub");
 const userNameEl    = document.getElementById("user-name");
 const joinBtn       = document.getElementById("join-btn");
 const leaveBtn      = document.getElementById("leave-btn");
-const joinStatus    = document.getElementById("join-status");
+const joinStatusEl  = document.getElementById("join-status");
 const adminSection  = document.getElementById("admin-section");
 const pendingListEl = document.getElementById("pending-list");
 const playerCountEl = document.getElementById("player-count");
@@ -18,6 +19,7 @@ const playerListEl  = document.getElementById("player-list");
 
 let currentProfile = null;
 
+// Helpers
 function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -29,219 +31,98 @@ async function waitForSupabaseAuth() {
   const { data } = await supabase.auth.getSession();
   if (data?.session) return;
   return new Promise((resolve) => {
-    const { data: { subscription } } =
-      supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
         if (session) {
           subscription.unsubscribe();
           resolve();
         }
-      });
+      }
+    );
   });
 }
 
-async function getProfile() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, name, email, is_mod")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error("bcwl getProfile error", error);
-    return null;
-  }
-
-  return {
-    id: data.id,
-    name: data.name || data.email || user.email,
-    email: data.email || user.email,
-    is_mod: !!data.is_mod,
-  };
-}
-
-async function loadSignupStatus() {
-  const { data, error } = await supabase
-    .from("league_signups")
-    .select("id, status")
-    .eq("league", LEAGUE_CODE)
-    .eq("user_id", currentProfile.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error("loadSignupStatus error", error);
-    joinStatus.textContent = "Error loading your league status.";
-    joinBtn.disabled = true;
-    leaveBtn.disabled = true;
-    return null;
-  }
-
-  joinBtn.disabled  = false;
-  leaveBtn.disabled = false;
-
-  if (!data) {
-    joinStatus.textContent = "You are not currently signed up.";
-    leaveBtn.disabled      = true;
-    joinBtn.textContent    = "Join the League ($20/month)";
-    return null;
-  }
-
-  if (data.status === "approved") {
-    joinStatus.textContent = "You are approved for the league.";
-    joinBtn.disabled       = true;
-    leaveBtn.disabled      = false;
-  } else if (data.status === "pending") {
-    joinStatus.textContent = "Your signup is pending moderator approval.";
-    leaveBtn.disabled      = false;
-  } else if (data.status === "rejected") {
-    joinStatus.textContent = "Your signup has been declined.";
-    joinBtn.disabled       = true;
-    leaveBtn.disabled      = false;
-  }
-
-  return data;
-}
-
+// Join / leave actions
 async function joinLeague() {
   if (!currentProfile) {
-    joinStatus.textContent = "Please log in first.";
+    joinStatusEl.textContent = "Log in first.";
     return;
   }
 
-  joinStatus.textContent = "Sending signup…";
-
-  // Prevent duplicates
-  const existing = await loadSignupStatus();
-  if (existing) {
-    joinStatus.textContent = "You already have a signup record.";
-    return;
-  }
+  joinStatusEl.textContent = "Submitting…";
 
   const { error } = await supabase
     .from("league_signups")
     .insert({
+      league: LEAGUE,
       user_id: currentProfile.id,
-      league: LEAGUE_CODE,
-      // status stays 'pending' until a mod approves
+      approved: false
     });
 
   if (error) {
+    // Likely unique violation if already signed up
     console.error("joinLeague error", error);
-    joinStatus.textContent = error.message || "Could not join league.";
-    return;
+    joinStatusEl.textContent = error.message || "Error joining league.";
+  } else {
+    joinStatusEl.textContent = "Your signup is pending moderator approval.";
   }
 
-  joinStatus.textContent = "Signup submitted for approval.";
-  await refreshAdminView();
-  await loadSignupStatus();
+  await refreshState();
 }
 
 async function leaveLeague() {
   if (!currentProfile) return;
 
-  joinStatus.textContent = "Removing signup…";
+  joinStatusEl.textContent = "Removing…";
 
   const { error } = await supabase
     .from("league_signups")
     .delete()
-    .eq("league", LEAGUE_CODE)
+    .eq("league", LEAGUE)
     .eq("user_id", currentProfile.id);
 
   if (error) {
     console.error("leaveLeague error", error);
-    joinStatus.textContent = error.message || "Error leaving league.";
-    return;
+    joinStatusEl.textContent = error.message || "Error leaving league.";
+  } else {
+    joinStatusEl.textContent = "You are no longer signed up.";
   }
 
-  joinStatus.textContent = "You have left the league.";
-  await refreshAdminView();
-  await loadSignupStatus();
+  await refreshState();
 }
 
-// ---------- admin-only views ----------
+// Load current user's signup row
+async function loadMySignup() {
+  if (!currentProfile) return null;
 
-async function loadPendingSignups() {
   const { data, error } = await supabase
     .from("league_signups")
-    .select("id, created_at, users(name, email)")
-    .eq("league", LEAGUE_CODE)
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
+    .select("id, approved")
+    .eq("league", LEAGUE)
+    .eq("user_id", currentProfile.id)
+    .maybeSingle();
 
   if (error) {
-    console.error("loadPendingSignups error", error);
-    pendingListEl.innerHTML = "<div class='muted'>Error loading pending sign-ups.</div>";
-    return;
+    console.error("loadMySignup error", error);
+    return null;
   }
 
-  if (!data || !data.length) {
-    pendingListEl.innerHTML = "<div class='muted'>No pending sign-ups.</div>";
-    return;
-  }
-
-  pendingListEl.innerHTML = data.map(row => {
-    const u = row.users || {};
-    return `
-      <div class="list-row">
-        <span>
-          <strong>${escapeHtml(u.name || u.email || "Unnamed Player")}</strong><br>
-          <span class="muted">${escapeHtml(u.email || "")}</span>
-        </span>
-        <span>
-          <button class="btn" data-approve="${row.id}">Approve</button>
-          <button class="btn" data-reject="${row.id}">Reject</button>
-        </span>
-      </div>
-    `;
-  }).join("");
-
-  pendingListEl.querySelectorAll("[data-approve]").forEach(btn => {
-    btn.onclick = async () => {
-      const id = btn.dataset.approve;
-      const { error: upErr } = await supabase
-        .from("league_signups")
-        .update({
-          status: "approved",
-          approved_at: new Date().toISOString(),
-          approved_by: currentProfile.id,
-        })
-        .eq("id", id);
-
-      if (upErr) {
-        console.error("approve error", upErr);
-        return;
-      }
-
-      // TODO: trigger welcome email via Edge Function / external service here.
-      await refreshAdminView();
-    };
-  });
-
-  pendingListEl.querySelectorAll("[data-reject]").forEach(btn => {
-    btn.onclick = async () => {
-      const id = btn.dataset.reject;
-      const { error: upErr } = await supabase
-        .from("league_signups")
-        .update({ status: "rejected" })
-        .eq("id", id);
-
-      if (upErr) {
-        console.error("reject error", upErr);
-        return;
-      }
-      await refreshAdminView();
-    };
-  });
+  return data || null;
 }
 
+// Approved players (everyone sees count; mods see names)
 async function loadApprovedPlayers() {
   const { data, error } = await supabase
     .from("league_signups")
-    .select("id, has_paid, users(name, email)")
-    .eq("league", LEAGUE_CODE)
-    .eq("status", "approved")
+    .select(`
+      id,
+      user_id,
+      approved,
+      created_at,
+      users:users!league_signups_user_id_fkey (name)
+    `)
+    .eq("league", LEAGUE)
+    .eq("approved", true)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -251,52 +132,135 @@ async function loadApprovedPlayers() {
     return;
   }
 
-  const list = data || [];
-  playerCountEl.textContent = String(list.length);
+  const players = data.map(row => ({
+    id: row.user_id,
+    name: row.users?.name || "Player"
+  }));
 
-  if (!list.length) {
+  playerCountEl.textContent = players.length.toString();
+
+  if (!players.length) {
     playerListEl.innerHTML = "<div class='muted'>No approved players yet.</div>";
     return;
   }
 
-  playerListEl.innerHTML = list.map(row => {
-    const u = row.users || {};
-    return `
-      <div class="list-row">
-        <span>
-          <strong>${escapeHtml(u.name || u.email || "Unnamed Player")}</strong><br>
-          <span class="muted">${escapeHtml(u.email || "")}</span>
-        </span>
-        <label>
-          <input type="checkbox" data-paid="${row.id}" ${row.has_paid ? "checked" : ""} />
-          Paid
-        </label>
-      </div>
-    `;
-  }).join("");
+  if (currentProfile?.is_mod) {
+    playerListEl.innerHTML = players
+      .map(p =>
+        `<div class="list-row"><span>${escapeHtml(p.name)}</span></div>`
+      )
+      .join("");
+  } else {
+    playerListEl.innerHTML =
+      "<div class='muted'>Player names are visible to moderators only.</div>";
+  }
+}
 
-  playerListEl.querySelectorAll("input[data-paid]").forEach(box => {
-    box.onchange = async () => {
+// Pending sign-ups (mods only)
+async function loadPendingSignups() {
+  if (!currentProfile?.is_mod) {
+    pendingListEl.innerHTML =
+      "<div class='muted'>Moderator tools.</div>";
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("league_signups")
+    .select(`
+      id,
+      created_at,
+      user_id,
+      approved,
+      users:users!league_signups_user_id_fkey (name, email)
+    `)
+    .eq("league", LEAGUE)
+    .eq("approved", false)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("loadPendingSignups error", error);
+    pendingListEl.innerHTML =
+      "<div class='muted'>Error loading pending sign-ups.</div>";
+    return;
+  }
+
+  if (!data.length) {
+    pendingListEl.innerHTML =
+      "<div class='muted'>No pending sign-ups.</div>";
+    return;
+  }
+
+  pendingListEl.innerHTML = data
+    .map(row => {
+      const name = row.users?.name || row.users?.email || "Player";
+      return `
+        <div class="list-row">
+          <span>${escapeHtml(name)}</span>
+          <span>
+            <button class="btn small" data-approve="${row.id}">Approve</button>
+            <button class="btn small" data-remove="${row.id}">Remove</button>
+          </span>
+        </div>
+      `;
+    })
+    .join("");
+
+  pendingListEl.querySelectorAll("[data-approve]").forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.approve;
       const { error: upErr } = await supabase
         .from("league_signups")
-        .update({ has_paid: box.checked })
-        .eq("id", box.dataset.paid);
+        .update({
+          approved: true,
+          approved_by: currentProfile.id
+        })
+        .eq("id", id);
 
       if (upErr) {
-        console.error("has_paid update error", upErr);
-        box.checked = !box.checked;
+        console.error("approve error", upErr);
       }
+      await refreshState();
+    };
+  });
+
+  pendingListEl.querySelectorAll("[data-remove]").forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.remove;
+      const { error: delErr } = await supabase
+        .from("league_signups")
+        .delete()
+        .eq("id", id);
+      if (delErr) {
+        console.error("remove error", delErr);
+      }
+      await refreshState();
     };
   });
 }
 
-async function refreshAdminView() {
-  if (!currentProfile?.is_mod) return;
-  await Promise.all([loadPendingSignups(), loadApprovedPlayers()]);
+// Overall refresh
+async function refreshState() {
+  if (!currentProfile) return;
+
+  const signup = await loadMySignup();
+
+  if (!signup) {
+    joinBtn.disabled  = false;
+    leaveBtn.disabled = true;
+    joinStatusEl.textContent = "You are not signed up for this league.";
+  } else {
+    joinBtn.disabled  = true;
+    leaveBtn.disabled = false;
+    joinStatusEl.textContent = signup.approved
+      ? "You are enrolled for this league."
+      : "Your signup is pending moderator approval.";
+  }
+
+  await loadApprovedPlayers();
+  await loadPendingSignups();
 }
 
-// ---------- init ----------
-
+// Init
 async function init() {
   await waitForSupabaseAuth();
   currentProfile = await getProfile();
@@ -310,20 +274,18 @@ async function init() {
   notLogged.style.display = "none";
   hub.classList.remove("hidden");
 
-  userNameEl.textContent = currentProfile.name || currentProfile.email;
-
-  await loadSignupStatus();
+  userNameEl.textContent = currentProfile.name || "";
 
   if (currentProfile.is_mod) {
     adminSection.classList.remove("hidden");
-    await refreshAdminView();
   } else {
     adminSection.classList.add("hidden");
-    // players list is effectively hidden for non-mods
   }
-}
 
-joinBtn.onclick  = joinLeague;
-leaveBtn.onclick = leaveLeague;
+  joinBtn.onclick  = joinLeague;
+  leaveBtn.onclick = leaveLeague;
+
+  await refreshState();
+}
 
 init();

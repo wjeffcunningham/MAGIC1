@@ -6,69 +6,57 @@
 <title>BC Winter League Hub · magic1.ca</title>
 
 <style>
-  body {
-    margin:0;
-    background:#f5f5ff;
-    font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
-  }
-  .shell {
-    max-width:800px;
-    margin:80px auto;
-    padding:24px 20px 30px;
-    background:white;
-    border:2px solid black;
-    border-radius:16px;
-  }
-  h1 { text-align:center; margin-bottom:6px; }
-  h2 { font-size:1.2rem; margin-top:24px; }
-  h3 { font-size:1rem; margin-top:16px; }
-
-  .muted { opacity:0.7; font-size:0.9rem; }
-
-  .btn {
-    padding:8px 14px;
-    border-radius:10px;
-    border:1px solid #111;
-    background:#eee;
-    cursor:pointer;
-    font-size:0.95rem;
-  }
-  .btn.primary {
-    background:#000;
-    color:#fff;
-  }
-
-  .list {
-    border:1px solid #ccc;
-    padding:10px;
-    border-radius:8px;
-    background:#fafafa;
-    margin-top:8px;
-  }
-  .list-row {
-    padding:4px 0;
-    display:flex;
-    justify-content:space-between;
-    gap:8px;
-    align-items:center;
-    font-size:0.95rem;
-  }
-  .pill {
-    display:inline-block;
-    padding:2px 8px;
-    border-radius:999px;
-    border:1px solid #000;
-    font-size:0.8rem;
-    margin-right:6px;
-  }
+body {
+  margin:0;
+  background:#f5f5ff;
+  font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+}
+.shell {
+  max-width:800px;
+  margin:80px auto;
+  padding:20px;
+  background:white;
+  border:2px solid black;
+  border-radius:12px;
+}
+h1 { text-align:center; margin-bottom:10px; }
+h2 { font-size:1.2rem; margin-top:24px; }
+h3 { font-size:1.05rem; margin-top:16px; }
+.btn {
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid #111;
+  background:#eee;
+  cursor:pointer;
+}
+.btn.primary { background:black; color:white; }
+.btn.small {
+  padding:4px 8px;
+  font-size:0.85rem;
+}
+.list {
+  border:1px solid #ccc;
+  padding:10px;
+  border-radius:8px;
+  background:#fafafa;
+  margin-top:8px;
+}
+.list-row {
+  padding:4px 0;
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+}
+.muted { opacity:0.7; font-size:0.85rem; }
+.hidden { display:none; }
 </style>
 </head>
 <body>
 
 <div class="shell">
-  <h1>B.C. Winter League Hub</h1>
-  <p class="muted">Premodern · January–March 2026 · BCWL2026</p>
-  <p><a href="/index.html?poster=2" class="btn">View BCWL Poster →</a></p>
+  <h1>BC Winter League Hub</h1>
+  <p class="muted">Premodern · $20/month · January 2026</p>
+  <a href="/index.html?poster=2" class="btn small">View BCWL Poster →</a>
 
   <div id="not-logged">
     <p>Please sign in first.</p>
@@ -78,25 +66,30 @@
 
     <h2>Your Status</h2>
     <p><strong id="user-name"></strong></p>
-    <button class="btn primary" id="join-btn">Join the League ($20/month)</button>
-    <button class="btn" id="leave-btn">Leave League</button>
-    <p id="join-status" class="muted"></p>
+
+    <div id="league-actions">
+      <button class="btn primary" id="join-btn">Join the League ($20/month)</button>
+      <button class="btn" id="leave-btn">Leave League</button>
+      <p id="join-status" class="muted"></p>
+    </div>
+
+    <h2>Approved Players</h2>
+    <p><strong><span id="player-count">0</span> players</strong></p>
+    <div id="player-list" class="list"></div>
+    <p class="muted" id="player-note">
+      Names are visible to moderators; everyone can see the count.
+    </p>
 
     <div id="admin-section" class="hidden">
       <h2>Admin Tools</h2>
 
       <h3>Pending Sign-ups</h3>
       <div id="pending-list" class="list"></div>
-
-      <h3>Approved Players</h3>
-      <p class="muted"><strong><span id="player-count">0</span> players</strong></p>
-      <div id="player-list" class="list"></div>
     </div>
 
   </div>
 </div>
 
-<script type="module" src="/js/config.js"></script>
 <script type="module" src="/js/db.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>
 <script type="module" src="/js/bcwl-hub.js"></script>
