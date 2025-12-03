@@ -1,32 +1,230 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Login / Sign Up · magic1.ca</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-</head>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 
+<style>
+  body {
+    margin:0;
+    padding:0;
+    background:#fce9f1;
+    font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+  }
+  .shell {
+    max-width:420px;
+    margin:80px auto;
+    padding:24px 20px 28px;
+    background:white;
+    border-radius:18px;
+    border:2px solid #000;
+  }
+  h1 { text-align:center; margin-top:0; }
+  label { display:block; margin-top:10px; font-weight:600; }
+  input {
+    width:100%;
+    padding:8px 10px;
+    margin-top:4px;
+    border-radius:10px;
+    border:1px solid #666;
+    font-family:inherit;
+    box-sizing:border-box;
+  }
+  .btn-row {
+    margin-top:16px;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  button {
+    flex:1 1 auto;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid #000;
+    cursor:pointer;
+    font-size:0.95rem;
+  }
+  .primary {
+    background:#000;
+    color:#fff;
+  }
+  #msg {
+    margin-top:10px;
+    font-size:0.9rem;
+    opacity:0.85;
+  }
+  .hint {
+    font-size:0.8rem;
+    opacity:0.75;
+    margin-top:4px;
+  }
+
+  /* Welcome modal */
+  #welcome-overlay {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9000;
+  }
+  #welcome-card {
+    background:#fff;
+    border-radius:16px;
+    border:3px solid #000;
+    max-width:360px;
+    padding:20px 18px 16px;
+    text-align:center;
+  }
+  #welcome-card .bear {
+    font-size:4rem;
+    margin-bottom:6px;
+  }
+</style>
+</head>
 <body>
+
 <div class="shell">
   <h1>Login / Sign-Up</h1>
 
-  <input id="email" placeholder="email" />
+  <label for="email">Email (your username)</label>
+  <input id="email" type="email" placeholder="you@example.com" />
+
+  <label for="password">Password</label>
   <input id="password" type="password" placeholder="password" />
 
-  <button id="login-btn">Log in</button>
-  <button id="signup-btn">Sign up</button>
+  <div class="hint">
+    Your username is simply your email address.
+  </div>
+
+  <div class="btn-row">
+    <button id="login-btn"  class="primary">Log in</button>
+    <button id="signup-btn">Sign up</button>
+  </div>
+
+  <div class="btn-row">
+    <button id="reset-btn">Forgot my password</button>
+  </div>
 
   <p id="msg"></p>
 </div>
 
-<!-- Global menu (optional) -->
-<script type="module" src="/js/db.js"></script>
-<script type="module" src="/js/global-menu-loader.js"></script>
+<!-- Welcome modal -->
+<div id="welcome-overlay">
+  <div id="welcome-card">
+    <div class="bear">🐻</div>
+    <h2>Welcome to Magic1.ca!</h2>
+    <p>Bear with us as we get started.</p>
+    <button id="welcome-ok" class="primary" style="margin-top:12px; padding:8px 16px;">
+      Continue
+    </button>
+  </div>
+</div>
 
-<!-- ⭐ MUST BE LAST MODULE SCRIPT -->
-<script type="module" src="/js/login.js"></script>
+<script type="module">
+import { supabase } from "/js/config.js";
+
+const emailEl = document.getElementById("email");
+const pwEl    = document.getElementById("password");
+const msgEl   = document.getElementById("msg");
+
+const loginBtn  = document.getElementById("login-btn");
+const signupBtn = document.getElementById("signup-btn");
+const resetBtn  = document.getElementById("reset-btn");
+
+const welcomeOverlay = document.getElementById("welcome-overlay");
+const welcomeOk      = document.getElementById("welcome-ok");
+
+function showWelcomeModalOnce(next) {
+  const key = "magic1_welcome_seen_v1";
+  if (localStorage.getItem(key)) {
+    next();
+    return;
+  }
+  localStorage.setItem(key, "yes");
+  welcomeOverlay.style.display = "flex";
+  welcomeOk.onclick = () => {
+    welcomeOverlay.style.display = "none";
+    next();
+  };
+}
+
+function getEmailAndPassword() {
+  const email = emailEl.value.trim();
+  const password = pwEl.value;
+  return { email, password };
+}
+
+loginBtn.onclick = async () => {
+  msgEl.textContent = "";
+  const { email, password } = getEmailAndPassword();
+  if (!email || !password) {
+    msgEl.textContent = "Enter email and password.";
+    return;
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    msgEl.textContent = error.message;
+    return;
+  }
+
+  msgEl.textContent = "Logged in!";
+  showWelcomeModalOnce(() => {
+    window.location.href = "/user-settings.html";
+  });
+};
+
+signupBtn.onclick = async () => {
+  msgEl.textContent = "";
+  const { email, password } = getEmailAndPassword();
+  if (!email || !password) {
+    msgEl.textContent = "Choose an email and password.";
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) {
+    msgEl.textContent = error.message;
+    return;
+  }
+
+  if (data.user) {
+    // create profile row if it doesn't exist yet
+    await supabase.from("users").insert({
+      id: data.user.id,
+      email,
+      name: email,
+    }).catch(() => {});
+  }
+
+  msgEl.textContent = "Account created! You’re now logged in.";
+  showWelcomeModalOnce(() => {
+    window.location.href = "/user-settings.html";
+  });
+};
+
+resetBtn.onclick = async () => {
+  msgEl.textContent = "";
+  const email = emailEl.value.trim();
+  if (!email) {
+    msgEl.textContent = "Enter your email above first.";
+    return;
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://magic1.ca/login.html",
+  });
+
+  if (error) {
+    msgEl.textContent = error.message;
+    return;
+  }
+  msgEl.textContent = "If that account exists, a reset link has been emailed.";
+};
+</script>
 
 </body>
 </html>
-
-

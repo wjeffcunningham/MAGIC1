@@ -1,39 +1,22 @@
+// /js/bcwl-hub.js
 import { supabase } from "./config.js";
 
-// DOM elements
-const notLogged = document.getElementById("not-logged");
-const hub = document.getElementById("hub");
-const userNameEl = document.getElementById("user-name");
+const LEAGUE_CODE = "BCWL2026";
+const MAX_PLAYERS = 32; // soft cap used for display only for now
+
+// DOM
+const notLogged     = document.getElementById("not-logged");
+const hub           = document.getElementById("hub");
+const userNameEl    = document.getElementById("user-name");
+const joinBtn       = document.getElementById("join-btn");
+const leaveBtn      = document.getElementById("leave-btn");
+const joinStatus    = document.getElementById("join-status");
+const adminSection  = document.getElementById("admin-section");
+const pendingListEl = document.getElementById("pending-list");
 const playerCountEl = document.getElementById("player-count");
-const playerListEl = document.getElementById("player-list");
-const adminSection = document.getElementById("admin-section");
-const verifyBtn = document.getElementById("verify-btn");
-const verifyListEl = document.getElementById("verify-list");
+const playerListEl  = document.getElementById("player-list");
 
 let currentProfile = null;
-let playersCache = [];
-
-async function waitForSupabaseAuth() {
-  await supabase.auth.getSession();
-}
-
-async function getProfile() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  try {
-    const { data } = await supabase
-      .from("users")
-      .select("id, name, is_mod, verified")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    return data ?? null;
-  } catch (err) {
-    console.error("getProfile error", err);
-    return { id: user.id, name: user.email, is_mod: false, verified: false };
-  }
-}
 
 function escapeHtml(str) {
   return String(str ?? "")
@@ -42,126 +25,277 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
-// ----------------------------------------
-// Monthly participation
-// ----------------------------------------
+async function waitForSupabaseAuth() {
+  const { data } = await supabase.auth.getSession();
+  if (data?.session) return;
+  return new Promise((resolve) => {
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          subscription.unsubscribe();
+          resolve();
+        }
+      });
+  });
+}
 
-async function loadMonthStatus(month) {
+async function getProfile() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   const { data, error } = await supabase
-    .from("monthly_participation")
-    .select("*")
-    .eq("player_id", currentProfile.player_id)
-    .eq("month_index", month)
+    .from("users")
+    .select("id, name, email, is_mod")
+    .eq("id", user.id)
     .maybeSingle();
 
-  const box = document.getElementById("month-status");
+  if (error) {
+    console.error("bcwl getProfile error", error);
+    return null;
+  }
+
+  return {
+    id: data.id,
+    name: data.name || data.email || user.email,
+    email: data.email || user.email,
+    is_mod: !!data.is_mod,
+  };
+}
+
+async function loadSignupStatus() {
+  const { data, error } = await supabase
+    .from("league_signups")
+    .select("id, status")
+    .eq("league", LEAGUE_CODE)
+    .eq("user_id", currentProfile.id)
+    .maybeSingle();
 
   if (error) {
-    box.textContent = "Error loading month data.";
+    console.error("loadSignupStatus error", error);
+    joinStatus.textContent = "Error loading your league status.";
+    joinBtn.disabled = true;
+    leaveBtn.disabled = true;
+    return null;
+  }
+
+  joinBtn.disabled  = false;
+  leaveBtn.disabled = false;
+
+  if (!data) {
+    joinStatus.textContent = "You are not currently signed up.";
+    leaveBtn.disabled      = true;
+    joinBtn.textContent    = "Join the League ($20/month)";
+    return null;
+  }
+
+  if (data.status === "approved") {
+    joinStatus.textContent = "You are approved for the league.";
+    joinBtn.disabled       = true;
+    leaveBtn.disabled      = false;
+  } else if (data.status === "pending") {
+    joinStatus.textContent = "Your signup is pending moderator approval.";
+    leaveBtn.disabled      = false;
+  } else if (data.status === "rejected") {
+    joinStatus.textContent = "Your signup has been declined.";
+    joinBtn.disabled       = true;
+    leaveBtn.disabled      = false;
+  }
+
+  return data;
+}
+
+async function joinLeague() {
+  if (!currentProfile) {
+    joinStatus.textContent = "Please log in first.";
     return;
   }
 
-  if (data) {
-    box.innerHTML = `
-      <p>You are signed up for month ${month}.</p>
-      <button id="leave-month">Leave Month</button>
-    `;
-    document.getElementById("leave-month").onclick = () => leaveMonth(month);
-  } else {
-    box.innerHTML = `
-      <p>You are NOT signed up for month ${month}.</p>
-      <button id="join-month">Join Month</button>
-    `;
-    document.getElementById("join-month").onclick = () => joinMonth(month);
-  }
-}
+  joinStatus.textContent = "Sending signup…";
 
-async function joinMonth(month) {
-  await supabase
-    .from("monthly_participation")
+  // Prevent duplicates
+  const existing = await loadSignupStatus();
+  if (existing) {
+    joinStatus.textContent = "You already have a signup record.";
+    return;
+  }
+
+  const { error } = await supabase
+    .from("league_signups")
     .insert({
-      player_id: currentProfile.player_id,
-      league_year: 2026,
-      month_index: month
+      user_id: currentProfile.id,
+      league: LEAGUE_CODE,
+      // status stays 'pending' until a mod approves
     });
 
-  loadMonthStatus(month);
+  if (error) {
+    console.error("joinLeague error", error);
+    joinStatus.textContent = error.message || "Could not join league.";
+    return;
+  }
+
+  joinStatus.textContent = "Signup submitted for approval.";
+  await refreshAdminView();
+  await loadSignupStatus();
 }
 
-async function leaveMonth(month) {
-  await supabase
-    .from("monthly_participation")
+async function leaveLeague() {
+  if (!currentProfile) return;
+
+  joinStatus.textContent = "Removing signup…";
+
+  const { error } = await supabase
+    .from("league_signups")
     .delete()
-    .eq("player_id", currentProfile.player_id)
-    .eq("month_index", month);
-
-  loadMonthStatus(month);
-}
-
-// ----------------------------------------
-// Player list
-// ----------------------------------------
-
-async function loadPlayers(monthIndex = 1) {
-  // Load all players signed up for this month with relational join
-  const { data, error } = await supabase
-    .from("monthly_participation")
-    .select(`
-      player_id,
-      players (
-        id,
-        full_name,
-        email,
-        has_paid
-      )
-    `)
-    .eq("league_year", 2026)
-    .eq("month_index", monthIndex)
-    .order("player_id", { ascending: true });
+    .eq("league", LEAGUE_CODE)
+    .eq("user_id", currentProfile.id);
 
   if (error) {
-    console.error("loadPlayers error", error);
-    playerListEl.innerHTML = "<div class='muted'>Error loading players.</div>";
+    console.error("leaveLeague error", error);
+    joinStatus.textContent = error.message || "Error leaving league.";
     return;
   }
 
-  const mapped = data
-    .map(row => row.players)
-    .filter(p => p !== null);
+  joinStatus.textContent = "You have left the league.";
+  await refreshAdminView();
+  await loadSignupStatus();
+}
 
-  playerCountEl.textContent = mapped.length;
+// ---------- admin-only views ----------
 
-  if (!mapped.length) {
-    playerListEl.innerHTML = "<div class='muted'>No players yet.</div>";
+async function loadPendingSignups() {
+  const { data, error } = await supabase
+    .from("league_signups")
+    .select("id, created_at, users(name, email)")
+    .eq("league", LEAGUE_CODE)
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("loadPendingSignups error", error);
+    pendingListEl.innerHTML = "<div class='muted'>Error loading pending sign-ups.</div>";
     return;
   }
 
-  playerListEl.innerHTML = mapped
-    .map(
-      p => `
+  if (!data || !data.length) {
+    pendingListEl.innerHTML = "<div class='muted'>No pending sign-ups.</div>";
+    return;
+  }
+
+  pendingListEl.innerHTML = data.map(row => {
+    const u = row.users || {};
+    return `
       <div class="list-row">
-        <span>${escapeHtml(p.full_name)}</span>
-        <label>
-          Paid: <input type="checkbox" data-id="${p.id}" ${p.has_paid ? "checked" : ""}>
-        </label>
-      </div>`
-    )
-    .join("");
+        <span>
+          <strong>${escapeHtml(u.name || u.email || "Unnamed Player")}</strong><br>
+          <span class="muted">${escapeHtml(u.email || "")}</span>
+        </span>
+        <span>
+          <button class="btn" data-approve="${row.id}">Approve</button>
+          <button class="btn" data-reject="${row.id}">Reject</button>
+        </span>
+      </div>
+    `;
+  }).join("");
 
-  // Paid / unpaid toggle
-  playerListEl.querySelectorAll("input[type=checkbox]").forEach(cb => {
-    cb.onchange = async () => {
-      await supabase
-        .from("players")
-        .update({ has_paid: cb.checked })
-        .eq("id", cb.dataset.id);
+  pendingListEl.querySelectorAll("[data-approve]").forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.approve;
+      const { error: upErr } = await supabase
+        .from("league_signups")
+        .update({
+          status: "approved",
+          approved_at: new Date().toISOString(),
+          approved_by: currentProfile.id,
+        })
+        .eq("id", id);
+
+      if (upErr) {
+        console.error("approve error", upErr);
+        return;
+      }
+
+      // TODO: trigger welcome email via Edge Function / external service here.
+      await refreshAdminView();
+    };
+  });
+
+  pendingListEl.querySelectorAll("[data-reject]").forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.reject;
+      const { error: upErr } = await supabase
+        .from("league_signups")
+        .update({ status: "rejected" })
+        .eq("id", id);
+
+      if (upErr) {
+        console.error("reject error", upErr);
+        return;
+      }
+      await refreshAdminView();
     };
   });
 }
 
-// ----------------------------------------
-// Init
-// ----------------------------------------
+async function loadApprovedPlayers() {
+  const { data, error } = await supabase
+    .from("league_signups")
+    .select("id, has_paid, users(name, email)")
+    .eq("league", LEAGUE_CODE)
+    .eq("status", "approved")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("loadApprovedPlayers error", error);
+    playerListEl.innerHTML = "<div class='muted'>Error loading players.</div>";
+    playerCountEl.textContent = "0";
+    return;
+  }
+
+  const list = data || [];
+  playerCountEl.textContent = String(list.length);
+
+  if (!list.length) {
+    playerListEl.innerHTML = "<div class='muted'>No approved players yet.</div>";
+    return;
+  }
+
+  playerListEl.innerHTML = list.map(row => {
+    const u = row.users || {};
+    return `
+      <div class="list-row">
+        <span>
+          <strong>${escapeHtml(u.name || u.email || "Unnamed Player")}</strong><br>
+          <span class="muted">${escapeHtml(u.email || "")}</span>
+        </span>
+        <label>
+          <input type="checkbox" data-paid="${row.id}" ${row.has_paid ? "checked" : ""} />
+          Paid
+        </label>
+      </div>
+    `;
+  }).join("");
+
+  playerListEl.querySelectorAll("input[data-paid]").forEach(box => {
+    box.onchange = async () => {
+      const { error: upErr } = await supabase
+        .from("league_signups")
+        .update({ has_paid: box.checked })
+        .eq("id", box.dataset.paid);
+
+      if (upErr) {
+        console.error("has_paid update error", upErr);
+        box.checked = !box.checked;
+      }
+    };
+  });
+}
+
+async function refreshAdminView() {
+  if (!currentProfile?.is_mod) return;
+  await Promise.all([loadPendingSignups(), loadApprovedPlayers()]);
+}
+
+// ---------- init ----------
 
 async function init() {
   await waitForSupabaseAuth();
@@ -173,34 +307,23 @@ async function init() {
     return;
   }
 
-  // player_id lookup
-  const { data: p } = await supabase
-    .from("players")
-    .select("id")
-    .eq("user_id", currentProfile.id)
-    .maybeSingle();
-
-  currentProfile.player_id = p?.id || null;
-
   notLogged.style.display = "none";
   hub.classList.remove("hidden");
 
-  userNameEl.textContent = currentProfile.name || "";
+  userNameEl.textContent = currentProfile.name || currentProfile.email;
+
+  await loadSignupStatus();
 
   if (currentProfile.is_mod) {
     adminSection.classList.remove("hidden");
-    verifyBtn.onclick = loadUsersForVerification;
+    await refreshAdminView();
   } else {
     adminSection.classList.add("hidden");
+    // players list is effectively hidden for non-mods
   }
-
-  await loadPlayers();
-
-  document.querySelectorAll(".month-btn").forEach(btn => {
-    btn.onclick = () => loadMonthStatus(Number(btn.dataset.month));
-  });
-
-  loadMonthStatus(1);
 }
+
+joinBtn.onclick  = joinLeague;
+leaveBtn.onclick = leaveLeague;
 
 init();
