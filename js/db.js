@@ -1,5 +1,7 @@
 import { supabase } from "./config.js";
 
+export const CURRENT_SEASON = "BCWL-2026";
+
 export async function getProfile() {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) return null;
