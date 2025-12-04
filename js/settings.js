@@ -20,23 +20,6 @@ const statusEl    = document.getElementById("status");
 const displayHandleWrap = document.getElementById("display-handle-wrap");
 const displayHandle     = document.getElementById("display-handle");
 
-// generate-random button
-const randomHandleBtn = document.getElementById("random-handle-btn");
-
-/* -------------------------------------------------------
-   RANDOM HANDLE GENERATOR (short word + 2 digits)
--------------------------------------------------------- */
-function generateRandomHandle() {
-  const words = [
-    "ember","lotus","raven","maple","tidal","otter","cinder",
-    "hollow","vivid","brisk","amber","pearl","nexus","poppy",
-    "fable","mirth","gleam","swift"
-  ];
-  const word = words[Math.floor(Math.random() * words.length)];
-  const num  = Math.floor(Math.random() * 90 + 10); // 10–99
-  return `${word}${num}`; // always ≤ 10 chars
-}
-
 /* -------------------------------------------------------
    INITIAL LOAD
 -------------------------------------------------------- */
