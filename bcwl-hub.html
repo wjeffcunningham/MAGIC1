@@ -6,90 +6,61 @@
 <title>BC Winter League Hub · magic1.ca</title>
 
 <style>
-body {
-  margin:0;
-  background:#f5f5ff;
-  font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
-}
-.shell {
-  max-width:800px;
-  margin:80px auto;
-  padding:20px;
-  background:white;
-  border:2px solid black;
-  border-radius:12px;
-}
-h1 { text-align:center; margin-bottom:10px; }
-h2 { font-size:1.2rem; margin-top:24px; }
-h3 { font-size:1.05rem; margin-top:16px; }
-.btn {
-  padding:8px 12px;
-  border-radius:8px;
-  border:1px solid #111;
-  background:#eee;
-  cursor:pointer;
-}
-.btn.primary { background:black; color:white; }
-.btn.small {
-  padding:4px 8px;
-  font-size:0.85rem;
-}
-.list {
-  border:1px solid #ccc;
-  padding:10px;
-  border-radius:8px;
-  background:#fafafa;
-  margin-top:8px;
-}
-.list-row {
-  padding:4px 0;
-  display:flex;
-  justify-content:space-between;
-  gap:8px;
-}
-.muted { opacity:0.7; font-size:0.85rem; }
-.hidden { display:none; }
+  body { margin:0; background:#f4f6ff; font-family:-apple-system, BlinkMacSystemFont, sans-serif; }
+  .shell {
+    max-width:800px;
+    margin:80px auto;
+    padding:20px;
+    background:#fff;
+    border-radius:12px;
+    border:2px solid #000;
+  }
+  h1 { margin-bottom:6px; }
+  .muted { opacity:0.7; }
+  .btn {
+    display:inline-block;
+    padding:10px 16px;
+    border-radius:8px;
+    border:1px solid #111;
+    background:#000; color:#fff;
+    text-decoration:none;
+    margin-top:10px;
+  }
+  .section { margin-top:30px; }
 </style>
 </head>
-<body>
 
+<body>
 <div class="shell">
+
   <h1>BC Winter League Hub</h1>
   <p class="muted">Premodern · $20/month · January 2026</p>
-  <a href="/index.html?poster=2" class="btn small">View BCWL Poster →</a>
+  <a href="bcwl-poster.html" class="btn">View BCWL Poster →</a>
 
-  <div id="not-logged">
-    <p>Please sign in first.</p>
+  <div id="not-logged" class="section" style="display:none;">
+    <p>You must be logged in to view the league hub.</p>
   </div>
 
-  <div id="hub" class="hidden">
-
-    <h2>Your Status</h2>
-    <p><strong id="user-name"></strong></p>
-
-    <div id="league-actions">
-      <button class="btn primary" id="join-btn">Join the League ($20/month)</button>
-      <button class="btn" id="leave-btn">Leave League</button>
-      <p id="join-status" class="muted"></p>
-    </div>
-
-    <h2>Approved Players</h2>
-    <p><strong><span id="player-count">0</span> players</strong></p>
-    <div id="player-list" class="list"></div>
-
-    <div id="admin-section" class="hidden">
-      <h2>Admin Tools</h2>
-
-      <h3>Pending Sign-ups</h3>
-      <div id="pending-list" class="list"></div>
-    </div>
-
+  <div id="not-approved" class="section" style="display:none;">
+    <p>Your account is pending approval. You will gain access once approved.</p>
   </div>
+
+  <div id="not-joined" class="section" style="display:none;">
+    <p>You are not yet enrolled in the BCWL season.</p>
+    <button id="join-btn" class="btn">Join the League ($20)</button>
+  </div>
+
+  <div id="hub-main" class="section" style="display:none;">
+    <h2>Welcome to the League</h2>
+    <p>Your membership is active.</p>
+
+    <div id="payment-status"></div>
+  </div>
+
 </div>
 
 <script type="module" src="/js/db.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>
 <script type="module" src="/js/bcwl-hub.js"></script>
-
 </body>
 </html>
