@@ -73,24 +73,46 @@
 <body>
 
 <div class="shell">
+  
   <div class="avatar-wrap">
     <img id="avatar-img" src="/assets/default-avatar.png" alt="Profile photo" />
   </div>
 
   <h1>Your Settings</h1>
 
+  <!-- If user is logged out -->
   <div id="not-logged">
     <p>Please sign in first.</p>
   </div>
 
+  <!-- Settings UI -->
   <div id="settings-area" style="display:none;">
 
+    <!-- EMAIL (LOCKED) -->
     <label for="email-input">Email</label>
     <input id="email-input" type="email" readonly />
 
-    <label for="name-input">Display Name</label>
+    <!-- DISPLAY HANDLE (ADMIN OVERRIDE) -->
+    <div id="display-handle-wrap" style="margin-top:14px; display:none;">
+      <label>League Display Name</label>
+      <div id="display-handle" class="muted" style="
+        padding:8px 10px;
+        border-radius:8px;
+        border:1px solid #ccc;
+        background:#f0f0f0;
+        font-weight:600;
+        margin-top:6px;
+      "></div>
+      <p class="muted" style="margin-top:6px;">
+        Set by moderators if needed. This is the name other players will see.
+      </p>
+    </div>
+
+    <!-- USER HANDLE (EDITABLE) -->
+    <label for="name-input">Your Handle</label>
     <input id="name-input" type="text" placeholder="Your league name" />
 
+    <!-- REMOTE PREFERENCE -->
     <label for="remote-input">Remote Play Preference</label>
     <select id="remote-input">
       <option value="no_remote">In-Person Only</option>
@@ -99,17 +121,21 @@
       <option value="remote_both">Remote OK (Both)</option>
     </select>
 
+    <!-- AVATAR -->
     <label for="image-file">Profile Photo (optional)</label>
     <input id="image-file" type="file" accept="image/*" />
     <p class="muted">
       Square images look best; ~1&nbsp;MB or less is ideal.
     </p>
 
+    <!-- BIO -->
     <label for="bio-input">Bio / Notes (optional)</label>
     <textarea id="bio-input"></textarea>
 
+    <!-- SAVE BUTTON -->
     <button class="btn" id="save-btn">Save Settings</button>
     <p id="status"></p>
+
   </div>
 </div>
 

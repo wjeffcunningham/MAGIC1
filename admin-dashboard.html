@@ -31,23 +31,39 @@
     padding:10px;
   }
   .row {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:4px 0;
+    padding:8px 0;
     border-bottom:1px solid #eee;
   }
   .row:last-child { border-bottom:none; }
   .row-main {
+    display:flex;
+    align-items:center;
+    gap:10px;
     font-size:0.9rem;
+    margin-bottom:6px;
   }
-  .row-main div:first-child { font-weight:600; }
-  .tag {
+  .row-main img {
+    width:34px; height:34px;
+    border-radius:8px;
+    border:1px solid #000;
+    object-fit:cover;
+  }
+  .handle-input {
+    width:140px;
+    padding:4px 6px;
+    border-radius:6px;
+    border:1px solid #aaa;
+    font-size:0.8rem;
+  }
+  .small-muted {
+    opacity:0.6;
     font-size:0.75rem;
-    padding:1px 6px;
-    border-radius:999px;
-    border:1px solid #999;
-    margin-left:6px;
+  }
+  .controls {
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:4px;
   }
   .btn {
     padding:5px 9px;
@@ -55,32 +71,45 @@
     border:1px solid #111;
     background:#fff;
     cursor:pointer;
-    font-size:0.8rem;
+    font-size:0.75rem;
   }
-  .btn.primary {
-    background:#000;
-    color:#fff;
-  }
+  .btn.primary { background:#000; color:white; }
+  .btn.danger { background:#ffebeb; border-color:#c00; }
 </style>
 </head>
-<body>
 
+<body>
 <div class="shell">
   <h1>Admin Dashboard</h1>
-  <p class="muted">Mods can approve new site users here.</p>
+  <p class="muted">Moderators can approve new users, adjust accounts, and manage league membership.</p>
 
+  <!-- NOT LOGGED -->
   <div id="not-logged">
     <p>You need to be logged in to view this page.</p>
   </div>
 
+  <!-- NOT ADMIN -->
   <div id="not-admin" class="hidden">
     <p>You must be a moderator to view this page.</p>
   </div>
 
+  <!-- ADMIN PANEL -->
   <div id="admin-panel" class="hidden">
+    
+    <!-- PENDING USERS -->
     <h2>Pending Users</h2>
     <p class="muted" id="pending-count"></p>
     <div id="pending-list" class="list"></div>
+
+    <!-- MANAGE EXISTING USERS -->
+    <h2>Manage Users</h2>
+    <p class="muted">Override handles, adjust payment status, or view/remove league membership.</p>
+    <div id="user-list" class="list"></div>
+
+    <!-- LEAGUE MEMBERS -->
+    <h2>League Members (Current Season)</h2>
+    <div id="league-list" class="list"></div>
+
   </div>
 </div>
 

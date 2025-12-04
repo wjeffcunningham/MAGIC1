@@ -1,31 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Login / Sign Up · magic1.ca</title>
-
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding:40px; }
-  .shell { max-width: 420px; margin: 0 auto; }
+  body { font-family:-apple-system, BlinkMacSystemFont, sans-serif; padding:40px; }
+  .shell { max-width:420px; margin:0 auto; }
   input, button {
-    width:100%; padding:12px; margin:8px 0;
-    border-radius:8px; border:1px solid #000;
-    font-size:16px;
+    width:100%; padding:12px; margin:6px 0;
+    border-radius:8px; border:1px solid #000; font-size:16px;
   }
-  button { background:black; color:white; cursor:pointer; }
+  button { background:#000; color:#fff; cursor:pointer; }
+  #msg { min-height:1.5em; margin-top:10px; }
 </style>
 </head>
-<body>
 
+<body>
 <div class="shell">
   <h1>Login / Sign-Up</h1>
 
   <input id="email" placeholder="email">
   <input id="password" type="password" placeholder="password">
+  <input id="handle" placeholder="handle (league display)" />
 
-  <button id="login-btn">Log in</button>
-  <button id="signup-btn">Sign up</button>
-  <button id="forgot-btn" style="background:#444;">Forgot Password</button>
+  <button id="login-btn">Log In</button>
+  <button id="signup-btn">Sign Up</button>
 
   <p id="msg"></p>
 </div>
@@ -33,51 +32,79 @@
 <script type="module">
 import { supabase } from "/js/config.js";
 
-const email = document.getElementById("email");
-const pw = document.getElementById("password");
-const msg = document.getElementById("msg");
+const emailField = document.getElementById("email");
+const pwField    = document.getElementById("password");
+const handleFld  = document.getElementById("handle");
+const msg        = document.getElementById("msg");
 
-// ---------------------- LOGIN -----------------------
+function show(m) { msg.textContent = m; }
+function busy(x) {
+  document.getElementById("login-btn").disabled  = x;
+  document.getElementById("signup-btn").disabled = x;
+}
+
 document.getElementById("login-btn").onclick = async () => {
-  const { error } = await supabase.auth.signInWithPassword({
-    email: email.value,
-    password: pw.value
+  busy(true);
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: emailField.value.trim(),
+    password: pwField.value
   });
-  msg.textContent = error ? error.message : "Logged in!";
-  if (!error) location.href = "/user-settings.html";
+
+  if (error) { show(error.message); busy(false); return; }
+
+  const uid = data.user.id;
+
+  const { data: prof } = await supabase
+    .from("site_users")
+    .select("status")
+    .eq("id", uid)
+    .single();
+
+  if (!prof) { show("Profile missing."); busy(false); return; }
+
+  if (prof.status === "pending") {
+    show("Your account is pending approval.");
+    busy(false);
+    return;
+  }
+
+  window.location.href = "/bcwl-hub.html";  
 };
 
-// ---------------------- SIGN UP -----------------------
 document.getElementById("signup-btn").onclick = async () => {
-  msg.textContent = "Creating account…";
+  busy(true);
 
-  const { data, error } = await supabase.auth.signUp({
-    email: email.value,
-    password: pw.value
+  const email = emailField.value.trim();
+  const password = pwField.value;
+  const handle = handleFld.value.trim();
+
+  if (!email || !password || !handle) {
+    show("Fill all fields.");
+    busy(false);
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signUp({ email, password });
+
+  if (error) { show(error.message); busy(false); return; }
+
+  const user = data.user;
+
+  const { error: profileErr } = await supabase.from("site_users").insert({
+    id: user.id,
+    email,
+    handle,
+    status: "pending"
   });
 
-  if (error) { msg.textContent = error.message; return; }
+  if (profileErr) { show("Profile error: " + profileErr.message); busy(false); return; }
 
-  // Insert profile row
-  await supabase.from("users").insert({
-    id: data.user.id,
-    email: email.value,
-    name: email.value,
-    verified: false,
-    is_mod: false
-  });
-
-  msg.textContent = "Welcome!";
-  alert("Welcome to Magic1.ca! Your account is pending moderator approval. You will receive an email once approved.");
-  location.href = "/";
-};
-
-// ---------------------- FORGOT PASSWORD -----------------------
-document.getElementById("forgot-btn").onclick = async () => {
-  const { error } = await supabase.auth.resetPasswordForEmail(email.value);
-  msg.textContent = error ? error.message : "Password reset email sent!";
+  show("Signup successful. Pending approval.");
+  busy(false);
 };
 </script>
 
+<script type="module" src="/js/global-menu-loader.js"></script>
 </body>
 </html>
