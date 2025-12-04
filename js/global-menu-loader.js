@@ -90,7 +90,7 @@ async function renderMenu() {
   }
 
   // Build menu for logged-in user
-  const name = profile.handle || profile.email || "Player";
+  const name = profile.handle || profile.handle || "Player";
 
   const links = [
     btn("User Settings", "/user-settings.html"),

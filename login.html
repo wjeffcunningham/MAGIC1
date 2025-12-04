@@ -43,6 +43,9 @@ function busy(x) {
   document.getElementById("signup-btn").disabled = x;
 }
 
+/* ---------------------
+      LOGIN
+---------------------- */
 document.getElementById("login-btn").onclick = async () => {
   busy(true);
 
@@ -61,7 +64,11 @@ document.getElementById("login-btn").onclick = async () => {
     .eq("id", uid)
     .single();
 
-  if (!prof) { show("Profile missing."); busy(false); return; }
+  if (!prof) {
+    show("Profile missing.");
+    busy(false);
+    return;
+  }
 
   if (prof.status === "pending") {
     show("Your account is pending approval.");
@@ -69,36 +76,51 @@ document.getElementById("login-btn").onclick = async () => {
     return;
   }
 
-  window.location.href = "/bcwl-hub.html";  
+  window.location.href = "/bcwl-hub.html";
 };
 
+/* ---------------------
+      SIGN UP
+---------------------- */
 document.getElementById("signup-btn").onclick = async () => {
   busy(true);
 
   const email = emailField.value.trim();
-  const password = pwField.value;
+  const password = pwField.value.trim();
   const handle = handleFld.value.trim();
 
   if (!email || !password || !handle) {
-    show("Fill all fields.");
+    show("Email, password, and handle are required.");
     busy(false);
     return;
   }
 
+  // 1. Create Supabase Auth user
   const { data, error } = await supabase.auth.signUp({ email, password });
 
-  if (error) { show(error.message); busy(false); return; }
+  if (error) {
+    show(error.message);
+    busy(false);
+    return;
+  }
 
   const user = data.user;
 
-  const { error: profileErr } = await supabase.from("site_users").insert({
-    id: user.id,
-    email,
-    handle,
-    status: "pending"
-  });
+  // 2. Insert profile row with required handle
+  const { error: profileErr } = await supabase
+    .from("site_users")
+    .insert({
+      id: user.id,
+      email,
+      handle,
+      status: "pending"
+    });
 
-  if (profileErr) { show("Profile error: " + profileErr.message); busy(false); return; }
+  if (profileErr) {
+    show("Profile error: " + profileErr.message);
+    busy(false);
+    return;
+  }
 
   show("Signup successful. Pending approval.");
   busy(false);
