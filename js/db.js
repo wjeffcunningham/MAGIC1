@@ -1,6 +1,9 @@
 // /js/db.js
 import { supabase } from "./config.js";
 
+/** Single place to change the active league season */
+export const CURRENT_SEASON = "BCWL-2026";
+
 /* Fetch full profile for logged-in user */
 export async function getProfile() {
   const { data: { user } } = await supabase.auth.getUser();
@@ -88,6 +91,7 @@ export async function overrideHandle(userId, newHandle) {
     .eq("id", userId);
 }
 
+/** Payment status: stored on site_users for now (“unpaid”, “paid”, “comped”, etc.) */
 export async function setPaymentStatus(userId, status) {
   return await supabase
     .from("site_users")

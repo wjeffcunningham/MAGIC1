@@ -1,155 +1,218 @@
 // /js/bcwl-hub.js
-
 import { supabase } from "./config.js";
-import { getProfile, joinLeague, leaveLeague } from "./db.js";
+import { getProfile, joinLeague, leaveLeague, CURRENT_SEASON } from "./db.js";
 
-const notLogged     = document.getElementById("not-logged");
-const hub           = document.getElementById("hub");
-const nameLabel     = document.getElementById("user-name");
-const joinBtn       = document.getElementById("join-btn");
-const leaveBtn      = document.getElementById("leave-btn");
-const joinStatus    = document.getElementById("join-status");
-const playerList    = document.getElementById("player-list");
-const playerCountEl = document.getElementById("player-count");
-const adminSection  = document.getElementById("admin-section");
+const notLogged    = document.getElementById("not-logged");
+const hubArea      = document.getElementById("hub-area");
+const userNameEl   = document.getElementById("user-name");
+const joinBtn      = document.getElementById("join-btn");
+const leaveBtn     = document.getElementById("leave-btn");
+const statusEl     = document.getElementById("status");
+const playerCount  = document.getElementById("player-count");
+const playerList   = document.getElementById("player-list");
 
-// Season code
-const CURRENT_SEASON = "26-BCWL-01";
+const adminSection = document.getElementById("admin-section");
+const pendingCount = document.getElementById("pending-count");
+const pendingList  = document.getElementById("pending-list");
 
-async function init() {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    notLogged.style.display = "block";
-    hub.classList.add("hidden");
-    return;
-  }
-
-  const profile = await getProfile();
-  if (!profile) {
-    notLogged.style.display = "block";
-    hub.classList.add("hidden");
-    return;
-  }
-
-  notLogged.style.display = "none";
-  hub.classList.remove("hidden");
-
-  if (profile.status !== "approved") {
-    joinStatus.textContent = "Your account is pending approval.";
-    joinBtn.style.display = "none";
-    leaveBtn.style.display = "none";
-    return;
-  }
-
-  const displayHandle = profile.moderated_handle || profile.handle || profile.email;
-  nameLabel.textContent = displayHandle;
-
-  if (profile.is_mod) {
-    adminSection.classList.remove("hidden");
-  }
-
-  // Determine membership for current season
-  const member = await isCurrentSeasonMember();
-  updateMembershipUI(member);
-
-  await loadPlayers();
+function displayName(profile) {
+  return profile.moderated_handle || profile.handle || profile.email;
 }
 
-function updateMembershipUI(isMember) {
-  if (isMember) {
-    joinBtn.style.display = "none";
-    leaveBtn.style.display = "inline-block";
-    joinStatus.textContent = "You are an active league member for this season.";
-  } else {
-    joinBtn.style.display = "inline-block";
-    leaveBtn.style.display = "none";
-    joinStatus.textContent = "";
-  }
-}
-
-async function isCurrentSeasonMember() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-
+async function getMyMembership(userId) {
   const { data, error } = await supabase
     .from("league_members")
-    .select("id")
-    .eq("user_id", user.id)
+    .select("id, payment_status")
+    .eq("user_id", userId)
     .eq("season", CURRENT_SEASON)
-    .limit(1);
+    .maybeSingle();
 
-  if (error) return false;
-  return data && data.length > 0;
+  if (error && error.code !== "PGRST116") {
+    console.error("membership error", error);
+  }
+  return data || null;
 }
 
-async function loadPlayers() {
-  const { data, error } = await supabase
+function updateButtons(isInLeague) {
+  if (!joinBtn || !leaveBtn) return;
+  joinBtn.disabled  = isInLeague;
+  leaveBtn.disabled = !isInLeague;
+}
+
+async function loadLeagueMembers() {
+  if (!playerList || !playerCount) return;
+
+  playerList.innerHTML = "Loading…";
+
+  const { data: members, error } = await supabase
     .from("league_members")
-    .select(`
-      id,
-      payment_status,
-      user_id,
-      site_users (handle, moderated_handle, image)
-    `)
-    .eq("season", CURRENT_SEASON);
+    .select("id, user_id, payment_status")
+    .eq("season", CURRENT_SEASON)
+    .order("created_at", { ascending: true });
 
   if (error) {
-    playerList.innerHTML = "<p>Error loading players.</p>";
+    console.error("league_members error", error);
+    playerList.textContent = "Error loading league members.";
+    playerCount.textContent = "";
     return;
   }
 
-  playerCountEl.textContent = data.length;
-  playerList.innerHTML = "";
-
-  if (!data.length) {
-    playerList.innerHTML = "<p>No league players yet.</p>";
+  if (!members || members.length === 0) {
+    playerList.textContent = "No league members yet.";
+    playerCount.textContent = "0 players.";
     return;
   }
 
-  data.forEach(row => {
-    const u = row.site_users;
-    const displayHandle = (u && (u.moderated_handle || u.handle)) || "(unknown)";
+  const userIds = [...new Set(members.map(m => m.user_id))];
 
-    const el = document.createElement("div");
-    el.className = "list-row";
-    el.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img src="${(u && u.image) || "/assets/default-avatar.png"}"
-             style="width:34px; height:34px; border-radius:8px; border:1px solid #000; object-fit:cover;">
-        <strong>${displayHandle}</strong>
+  const { data: users, error: usersErr } = await supabase
+    .from("site_users")
+    .select("id, email, handle, moderated_handle, avatar_url, remote_preference, status")
+    .in("id", userIds)
+    .eq("status", "approved");
+
+  if (usersErr) {
+    console.error("site_users error", usersErr);
+    playerList.textContent = "Error loading player profiles.";
+    playerCount.textContent = "";
+    return;
+  }
+
+  const userById = new Map(users.map(u => [u.id, u]));
+  const rows = [];
+
+  for (const m of members) {
+    const u = userById.get(m.user_id);
+    if (!u) continue;
+
+    const name = u.moderated_handle || u.handle || u.email;
+    const avatar = u.avatar_url || "/assets/default-avatar.png";
+    let remoteLabel = "In-Person Only";
+    if (u.remote_preference === "remote_mtgo")   remoteLabel = "Remote OK (MTGO)";
+    if (u.remote_preference === "remote_webcam") remoteLabel = "Remote OK (Webcam)";
+    if (u.remote_preference === "remote_both")   remoteLabel = "Remote OK (Both)";
+
+    const row = document.createElement("div");
+    row.className = "list-row";
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;">
+        <img src="${avatar}" alt="" style="
+          width:32px;height:32px;border-radius:8px;border:1px solid #000;object-fit:cover;
+        ">
+        <div>
+          <div><strong>${name}</strong></div>
+          <div class="muted" style="font-size:0.8rem;">${remoteLabel}</div>
+        </div>
       </div>
     `;
-    playerList.appendChild(el);
+    rows.push(row);
+  }
+
+  playerList.innerHTML = "";
+  rows.forEach(r => playerList.appendChild(r));
+  playerCount.textContent = `${rows.length} player${rows.length === 1 ? "" : "s"}.`;
+}
+
+async function loadPendingForAdmin(profile) {
+  if (!adminSection || !pendingCount || !pendingList) return;
+  if (!profile.is_mod) {
+    adminSection.style.display = "none";
+    return;
+  }
+
+  adminSection.style.display = "block";
+  pendingList.innerHTML = "Loading…";
+
+  const { data, error } = await supabase
+    .from("site_users")
+    .select("email, created_at")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("pending users error", error);
+    pendingList.textContent = "Error loading pending signups.";
+    pendingCount.textContent = "";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    pendingList.textContent = "No pending sign-ups.";
+    pendingCount.textContent = "0 pending.";
+    return;
+  }
+
+  pendingCount.textContent = `${data.length} pending signup${data.length === 1 ? "" : "s"}.`;
+
+  pendingList.innerHTML = "";
+  data.forEach(u => {
+    const div = document.createElement("div");
+    div.className = "muted";
+    const created = u.created_at ? new Date(u.created_at).toLocaleString() : "";
+    div.textContent = `${u.email} (${created})`;
+    pendingList.appendChild(div);
   });
 }
 
-// JOIN
-joinBtn.onclick = async () => {
-  joinStatus.textContent = "Processing…";
+async function init() {
+  const profile = await getProfile();
 
-  const { error } = await joinLeague(CURRENT_SEASON);
-  if (error) {
-    joinStatus.textContent = "Error: " + error.message;
+  if (!profile) {
+    if (notLogged) notLogged.style.display = "block";
+    if (hubArea) hubArea.style.display = "none";
     return;
   }
 
-  updateMembershipUI(true);
-  await loadPlayers();
-};
+  if (notLogged) notLogged.style.display = "none";
+  if (hubArea) hubArea.style.display = "block";
 
-// LEAVE
-leaveBtn.onclick = async () => {
-  joinStatus.textContent = "Processing…";
+  if (userNameEl) userNameEl.textContent = displayName(profile);
 
-  const { error } = await leaveLeague(CURRENT_SEASON);
-  if (error) {
-    joinStatus.textContent = "Error: " + error.message;
-    return;
+  // Membership status
+  const membership = await getMyMembership(profile.id);
+  const inLeague = !!membership;
+
+  if (statusEl) {
+    statusEl.textContent = inLeague
+      ? `You are registered for ${CURRENT_SEASON}.`
+      : `You are currently not registered for ${CURRENT_SEASON}.`;
+  }
+  updateButtons(inLeague);
+
+  if (joinBtn) {
+    joinBtn.onclick = async () => {
+      joinBtn.disabled = true;
+      const { error } = await joinLeague(CURRENT_SEASON);
+      if (error) {
+        console.error("joinLeague error", error);
+        if (statusEl) statusEl.textContent = error.message || "Could not join league.";
+      } else {
+        if (statusEl) statusEl.textContent = `You are registered for ${CURRENT_SEASON}.`;
+        updateButtons(true);
+        await loadLeagueMembers();
+      }
+      joinBtn.disabled = false;
+    };
   }
 
-  updateMembershipUI(false);
-  await loadPlayers();
-};
+  if (leaveBtn) {
+    leaveBtn.onclick = async () => {
+      leaveBtn.disabled = true;
+      const { error } = await leaveLeague(CURRENT_SEASON);
+      if (error) {
+        console.error("leaveLeague error", error);
+        if (statusEl) statusEl.textContent = error.message || "Could not leave league.";
+      } else {
+        if (statusEl) statusEl.textContent = `You are currently not registered for ${CURRENT_SEASON}.`;
+        updateButtons(false);
+        await loadLeagueMembers();
+      }
+      leaveBtn.disabled = false;
+    };
+  }
 
-init();
+  await loadLeagueMembers();
+  await loadPendingForAdmin(profile);
+}
+
+document.addEventListener("DOMContentLoaded", init);

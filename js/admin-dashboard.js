@@ -1,149 +1,371 @@
 // /js/admin-dashboard.js
-import { supabase } from "/js/config.js";
+import { supabase } from "./config.js";
+import {
+  getProfile,
+  approveUser,
+  rejectUser,
+  overrideHandle,
+  setPaymentStatus,
+  removeLeagueMemberRow,
+  CURRENT_SEASON
+} from "./db.js";
 
-/* -------------------------------------------------------
-   DOM
--------------------------------------------------------- */
-const notLogged  = document.getElementById("not-logged");
-const notAdmin   = document.getElementById("not-admin");
-const adminPanel = document.getElementById("admin-panel");
+const notLogged     = document.getElementById("not-logged");
+const notAdmin      = document.getElementById("not-admin");
+const adminPanel    = document.getElementById("admin-panel");
 
-const pendingList = document.getElementById("pending-list");
-const pendingCount = document.getElementById("pending-count");
+const pendingCount  = document.getElementById("pending-count");
+const pendingList   = document.getElementById("pending-list");
 
-/* -------------------------------------------------------
-   INIT
--------------------------------------------------------- */
-init();
+const usersCount    = document.getElementById("users-count");
+const usersList     = document.getElementById("users-list");
 
-async function init() {
-  const {
-    data: { user },
-    error
-  } = await supabase.auth.getUser();
+const leagueCount   = document.getElementById("league-count");
+const leagueList    = document.getElementById("league-list");
 
-  if (!user) {
-    showLoggedOut();
-    return;
-  }
-
-  // load matching profile
-  const { data: profile, error: profErr } = await supabase
-    .from("site_users")
-    .select("is_mod")
-    .eq("id", user.id)
-    .single();
-
-  if (profErr || !profile) {
-    showLoggedOut();
-    return;
-  }
-
-  if (!profile.is_mod) {
-    showNotAdmin();
-    return;
-  }
-
-  showAdmin();
-  await loadPendingUsers();
+function clearNode(node) {
+  if (!node) return;
+  while (node.firstChild) node.removeChild(node.firstChild);
 }
 
-/* -------------------------------------------------------
-   STATE DISPLAY
--------------------------------------------------------- */
-function showLoggedOut() {
-  notLogged.classList.remove("hidden");
-  notAdmin.classList.add("hidden");
-  adminPanel.classList.add("hidden");
+function nameForUser(u) {
+  return u.moderated_handle || u.handle || u.email;
 }
 
-function showNotAdmin() {
-  notLogged.classList.add("hidden");
-  notAdmin.classList.remove("hidden");
-  adminPanel.classList.add("hidden");
-}
+async function loadPending() {
+  if (!pendingList || !pendingCount) return;
 
-function showAdmin() {
-  notLogged.classList.add("hidden");
-  notAdmin.classList.add("hidden");
-  adminPanel.classList.remove("hidden");
-}
-
-/* -------------------------------------------------------
-   LOAD PENDING USERS
--------------------------------------------------------- */
-async function loadPendingUsers() {
-  pendingList.innerHTML = "<p class='muted'>Loading…</p>";
+  clearNode(pendingList);
+  pendingList.textContent = "Loading…";
 
   const { data, error } = await supabase
     .from("site_users")
-    .select("id, email, handle, image, status, created_at")
+    .select("id, email, handle, created_at")
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 
   if (error) {
-    pendingList.innerHTML = `<p class='muted'>Error loading: ${error.message}</p>`;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    pendingList.innerHTML = `<p class='muted'>No pending users.</p>`;
+    console.error("pending users error", error);
+    pendingList.textContent = "Error loading pending users.";
     pendingCount.textContent = "";
     return;
   }
 
-  pendingCount.textContent = `${data.length} pending`;
+  clearNode(pendingList);
 
-  pendingList.innerHTML = data
-    .map(
-      u => `
-      <div class="row">
-        <div class="row-main">
-          <img src="${u.image || "/assets/default-avatar.png"}" 
-               style="width:34px;height:34px;border-radius:8px;border:1px solid #000;object-fit:cover;margin-right:10px;" />
-          <div>
-            <div><strong>${u.email}</strong></div>
-            <div class="small-muted">Handle: ${u.handle}</div>
-          </div>
-        </div>
-        
-        <div class="controls">
-          <button class="btn primary" onclick="approveUser('${u.id}')">Approve</button>
-          <button class="btn danger" onclick="rejectUser('${u.id}')">Reject</button>
-        </div>
+  if (!data || data.length === 0) {
+    pendingList.textContent = "No pending sign-ups.";
+    pendingCount.textContent = "0 pending.";
+    return;
+  }
+
+  pendingCount.textContent = `${data.length} pending signup${data.length === 1 ? "" : "s"}.`;
+
+  data.forEach(u => {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const main = document.createElement("div");
+    main.className = "row-main";
+    main.innerHTML = `
+      <div>
+        <strong>${u.email}</strong>
+        ${u.handle ? `<span class="small-muted">(${u.handle})</span>` : ""}
       </div>
-    `
-    )
-    .join("");
+      <div class="small-muted">${u.created_at ? new Date(u.created_at).toLocaleString() : ""}</div>
+    `;
+
+    const controls = document.createElement("div");
+    controls.className = "controls";
+
+    const approveBtn = document.createElement("button");
+    approveBtn.className = "btn primary";
+    approveBtn.textContent = "Approve";
+    approveBtn.onclick = async () => {
+      approveBtn.disabled = true;
+      const { error: err } = await approveUser(u.id);
+      if (err) console.error("approve error", err);
+      await loadPending();
+      await loadUsers();     // so status is reflected there
+      await loadLeague();    // in case someone already joined
+    };
+
+    const rejectBtn = document.createElement("button");
+    rejectBtn.className = "btn";
+    rejectBtn.textContent = "Reject";
+    rejectBtn.onclick = async () => {
+      rejectBtn.disabled = true;
+      const { error: err } = await rejectUser(u.id);
+      if (err) console.error("reject error", err);
+      await loadPending();
+      await loadUsers();
+      await loadLeague();
+    };
+
+    controls.appendChild(approveBtn);
+    controls.appendChild(rejectBtn);
+
+    row.appendChild(main);
+    row.appendChild(controls);
+    pendingList.appendChild(row);
+  });
 }
 
-/* -------------------------------------------------------
-   APPROVE / REJECT
--------------------------------------------------------- */
-window.approveUser = async function (uid) {
-  const { error } = await supabase
-    .from("site_users")
-    .update({ status: "approved" })
-    .eq("id", uid);
+async function loadUsers() {
+  if (!usersList || !usersCount) return;
 
-  if (error) {
-    alert("Error: " + error.message);
+  clearNode(usersList);
+  usersList.textContent = "Loading…";
+
+  // Pull all users
+  const { data: users, error: usersErr } = await supabase
+    .from("site_users")
+    .select("id, email, handle, moderated_handle, status, payment_status, is_mod, created_at")
+    .order("created_at", { ascending: true });
+
+  if (usersErr) {
+    console.error("users error", usersErr);
+    usersList.textContent = "Error loading users.";
+    usersCount.textContent = "";
     return;
   }
 
-  await loadPendingUsers(); // reload list
-};
+  // League membership map for current season
+  const { data: members, error: membersErr } = await supabase
+    .from("league_members")
+    .select("id, user_id, payment_status")
+    .eq("season", CURRENT_SEASON);
 
-window.rejectUser = async function (uid) {
-  const { error } = await supabase
-    .from("site_users")
-    .update({ status: "rejected" })
-    .eq("id", uid);
+  const memberByUser = new Map();
+  if (!membersErr && members) {
+    members.forEach(m => memberByUser.set(m.user_id, m));
+  }
 
-  if (error) {
-    alert("Error: " + error.message);
+  clearNode(usersList);
+
+  if (!users || users.length === 0) {
+    usersList.textContent = "No users yet.";
+    usersCount.textContent = "0 accounts.";
     return;
   }
 
-  await loadPendingUsers();
-};
+  usersCount.textContent = `${users.length} account${users.length === 1 ? "" : "s"}.`;
+
+  users.forEach(u => {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const main = document.createElement("div");
+    main.className = "row-main";
+
+    const statusTag = document.createElement("span");
+    statusTag.className = "tag";
+    statusTag.textContent = u.status || "unknown";
+
+    const modTag = document.createElement("span");
+    if (u.is_mod) {
+      modTag.className = "tag";
+      modTag.textContent = "mod";
+    }
+
+    const topLine = document.createElement("div");
+    topLine.innerHTML = `<strong>${nameForUser(u)}</strong>`;
+
+    const subLine = document.createElement("div");
+    subLine.className = "small-muted";
+    subLine.textContent = u.email;
+
+    main.appendChild(topLine);
+    main.appendChild(subLine);
+    main.appendChild(statusTag);
+    if (u.is_mod) main.appendChild(modTag);
+
+    const controls = document.createElement("div");
+    controls.className = "controls";
+
+    // Handle override input
+    const handleInput = document.createElement("input");
+    handleInput.className = "handle-input";
+    handleInput.placeholder = "override handle";
+    handleInput.value = u.moderated_handle || u.handle || "";
+
+    const saveHandleBtn = document.createElement("button");
+    saveHandleBtn.className = "btn";
+    saveHandleBtn.textContent = "Save Handle";
+    saveHandleBtn.onclick = async () => {
+      saveHandleBtn.disabled = true;
+      const newVal = handleInput.value.trim() || null;
+      const { error } = await overrideHandle(u.id, newVal);
+      if (error) console.error("overrideHandle error", error);
+      saveHandleBtn.disabled = false;
+    };
+
+    // Payment status select (site_users.payment_status)
+    const paySelect = document.createElement("select");
+    paySelect.className = "handle-input";
+    const options = ["", "unpaid", "paid", "comped"];
+    options.forEach(val => {
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = val === "" ? "(no status)" : val;
+      if ((u.payment_status || "") === val) opt.selected = true;
+      paySelect.appendChild(opt);
+    });
+
+    paySelect.onchange = async () => {
+      const val = paySelect.value || null;
+      const { error } = await setPaymentStatus(u.id, val);
+      if (error) console.error("setPaymentStatus error", error);
+    };
+
+    // League membership indicator / removal
+    const membership = memberByUser.get(u.id);
+    const leagueInfo = document.createElement("span");
+    leagueInfo.className = "small-muted";
+    if (membership) {
+      leagueInfo.textContent = `In ${CURRENT_SEASON} (league row ${membership.id})`;
+    } else {
+      leagueInfo.textContent = `Not in ${CURRENT_SEASON}`;
+    }
+
+    const removeFromLeagueBtn = document.createElement("button");
+    removeFromLeagueBtn.className = "btn danger";
+    removeFromLeagueBtn.textContent = "Remove from league";
+    removeFromLeagueBtn.disabled = !membership;
+
+    removeFromLeagueBtn.onclick = async () => {
+      if (!membership) return;
+      removeFromLeagueBtn.disabled = true;
+      const { error } = await removeLeagueMemberRow(membership.id);
+      if (error) console.error("removeLeagueMemberRow error", error);
+      await loadUsers();
+      await loadLeague();
+    };
+
+    controls.appendChild(handleInput);
+    controls.appendChild(saveHandleBtn);
+    controls.appendChild(paySelect);
+    controls.appendChild(leagueInfo);
+    controls.appendChild(removeFromLeagueBtn);
+
+    row.appendChild(main);
+    row.appendChild(controls);
+    usersList.appendChild(row);
+  });
+}
+
+async function loadLeague() {
+  if (!leagueList || !leagueCount) return;
+
+  clearNode(leagueList);
+  leagueList.textContent = "Loading…";
+
+  const { data: members, error } = await supabase
+    .from("league_members")
+    .select("id, user_id, payment_status, created_at")
+    .eq("season", CURRENT_SEASON)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("league_members error", error);
+    leagueList.textContent = "Error loading league members.";
+    leagueCount.textContent = "";
+    return;
+  }
+
+  if (!members || members.length === 0) {
+    leagueList.textContent = "No members in this season yet.";
+    leagueCount.textContent = "0 players.";
+    return;
+  }
+
+  const userIds = [...new Set(members.map(m => m.user_id))];
+
+  const { data: users, error: usersErr } = await supabase
+    .from("site_users")
+    .select("id, email, handle, moderated_handle, avatar_url")
+    .in("id", userIds);
+
+  if (usersErr) {
+    console.error("league users error", usersErr);
+    leagueList.textContent = "Error loading player profiles.";
+    leagueCount.textContent = "";
+    return;
+  }
+
+  const userById = new Map(users.map(u => [u.id, u]));
+
+  clearNode(leagueList);
+
+  members.forEach(m => {
+    const u = userById.get(m.user_id);
+    if (!u) return;
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const main = document.createElement("div");
+    main.className = "row-main";
+    const name = nameForUser(u);
+
+    main.innerHTML = `
+      <div><strong>${name}</strong></div>
+      <div class="small-muted">${u.email}</div>
+    `;
+
+    const controls = document.createElement("div");
+    controls.className = "controls";
+
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = m.payment_status || "unpaid";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "btn danger";
+    removeBtn.textContent = "Remove";
+    removeBtn.onclick = async () => {
+      removeBtn.disabled = true;
+      const { error } = await removeLeagueMemberRow(m.id);
+      if (error) console.error("removeLeagueMemberRow error", error);
+      await loadUsers();
+      await loadLeague();
+    };
+
+    controls.appendChild(tag);
+    controls.appendChild(removeBtn);
+
+    row.appendChild(main);
+    row.appendChild(controls);
+    leagueList.appendChild(row);
+  });
+
+  leagueCount.textContent = `${members.length} member${members.length === 1 ? "" : "s"} in ${CURRENT_SEASON}.`;
+}
+
+async function init() {
+  const profile = await getProfile();
+
+  if (!profile) {
+    if (notLogged) notLogged.classList.remove("hidden");
+    if (notAdmin) notAdmin.classList.add("hidden");
+    if (adminPanel) adminPanel.classList.add("hidden");
+    return;
+  }
+
+  if (!profile.is_mod) {
+    if (notLogged) notLogged.classList.add("hidden");
+    if (notAdmin) notAdmin.classList.remove("hidden");
+    if (adminPanel) adminPanel.classList.add("hidden");
+    return;
+  }
+
+  if (notLogged) notLogged.classList.add("hidden");
+  if (notAdmin) notAdmin.classList.add("hidden");
+  if (adminPanel) adminPanel.classList.remove("hidden");
+
+  await loadPending();
+  await loadUsers();
+  await loadLeague();
+}
+
+document.addEventListener("DOMContentLoaded", init);
