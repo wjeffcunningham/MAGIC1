@@ -1,49 +1,73 @@
+// /js/login.js
 import { supabase } from "/js/config.js";
 
-const email = document.getElementById("email");
-const pw = document.getElementById("password");
-const msg = document.getElementById("msg");
+const emailEl = document.getElementById("email");
+const pwEl    = document.getElementById("password");
+const msg     = document.getElementById("msg");
+
+function show(message) {
+  if (msg) msg.textContent = message;
+}
 
 document.getElementById("login-btn").onclick = async () => {
-  msg.textContent = "Signing in…";
+  show("Signing in…");
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: email.value.trim(),
-    password: pw.value.trim()
+  const email = emailEl.value.trim();
+  const password = pwEl.value.trim();
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
   });
 
   if (error) {
-    msg.textContent = error.message;
+    show(error.message);
     return;
   }
 
-  msg.textContent = "Logged in!";
-  window.location.href = "/user-settings.html";
+  show("Logged in!");
+  window.location.href = "/bcwl-hub.html";
 };
 
 document.getElementById("signup-btn").onclick = async () => {
-  msg.textContent = "Creating account…";
+  show("Creating account…");
+
+  const email = emailEl.value.trim();
+  const password = pwEl.value.trim();
 
   const { data, error } = await supabase.auth.signUp({
-    email: email.value.trim(),
-    password: pw.value.trim()
+    email,
+    password
   });
 
   if (error) {
-    msg.textContent = error.message;
+    show(error.message);
     return;
   }
 
-  // Basic profile row (only needed if users table is separate from auth)
-await supabase.from("site_users").insert({
-  id: user.id,
-  email,
-  handle,
-  status: "pending"
-});
+  const user = data.user;
+  if (!user) {
+    show("Account created. Check your email to confirm.");
+    return;
+  }
 
-  msg.textContent = "Account created!";
+  // Insert matching profile row in site_users
+  const { error: insertErr } = await supabase
+    .from("site_users")
+    .insert({
+      id: user.id,
+      email,
+      handle: null,
+      status: "pending",
+      is_mod: false
+    });
+
+  if (insertErr) {
+    console.error("site_users insert error", insertErr);
+    show("Account created, but profile row failed. Contact admin.");
+    return;
+  }
+
+  show("Account created. Pending approval.");
   window.location.href = "/user-settings.html";
 };
-
-
