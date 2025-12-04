@@ -35,14 +35,15 @@ document.getElementById("signup-btn").onclick = async () => {
   }
 
   // Basic profile row (only needed if users table is separate from auth)
-  await supabase
-    .from("users")
-    .insert({
-      id: data.user.id,
-      email: email.value.trim(),
-      name: email.value.trim()
-    });
+await supabase.from("site_users").insert({
+  id: user.id,
+  email,
+  handle,
+  status: "pending"
+});
 
   msg.textContent = "Account created!";
   window.location.href = "/user-settings.html";
 };
+
+
