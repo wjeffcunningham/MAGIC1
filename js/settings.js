@@ -79,13 +79,6 @@ fileInput.onchange = async e => {
 };
 
 /* -------------------------------------------------------
-   GENERATE RANDOM HANDLE
--------------------------------------------------------- */
-randomHandleBtn.onclick = () => {
-  nameInput.value = generateRandomHandle();
-};
-
-/* -------------------------------------------------------
    SAVE PROFILE
 -------------------------------------------------------- */
 saveBtn.onclick = async () => {
