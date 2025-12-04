@@ -1,253 +1,149 @@
 // /js/admin-dashboard.js
+import { supabase } from "/js/config.js";
 
-import { supabase } from "./config.js";
-import {
-  getProfile,
-  approveUser,
-  rejectUser,
-  overrideHandle,
-  setPaymentStatus,
-  removeLeagueMemberRow,
-} from "./db.js";
+/* -------------------------------------------------------
+   DOM
+-------------------------------------------------------- */
+const notLogged  = document.getElementById("not-logged");
+const notAdmin   = document.getElementById("not-admin");
+const adminPanel = document.getElementById("admin-panel");
 
-const notLogged   = document.getElementById("not-logged");
-const notAdmin    = document.getElementById("not-admin");
-const adminPanel  = document.getElementById("admin-panel");
+const pendingList = document.getElementById("pending-list");
+const pendingCount = document.getElementById("pending-count");
 
-const pendingCountEl = document.getElementById("pending-count");
-const pendingList    = document.getElementById("pending-list");
-const userList       = document.getElementById("user-list");
-const leagueList     = document.getElementById("league-list");
-
-// Current season code
-const CURRENT_SEASON = "26-BCWL-01";
+/* -------------------------------------------------------
+   INIT
+-------------------------------------------------------- */
+init();
 
 async function init() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    notLogged.classList.remove("hidden");
+    showLoggedOut();
     return;
   }
 
-  const profile = await getProfile();
-  if (!profile || !profile.is_mod) {
-    notLogged.classList.add("hidden");
-    notAdmin.classList.remove("hidden");
+  // load matching profile
+  const { data: profile, error: profErr } = await supabase
+    .from("site_users")
+    .select("is_mod")
+    .eq("id", user.id)
+    .single();
+
+  if (profErr || !profile) {
+    showLoggedOut();
     return;
   }
 
-  // Admin OK:
+  if (!profile.is_mod) {
+    showNotAdmin();
+    return;
+  }
+
+  showAdmin();
+  await loadPendingUsers();
+}
+
+/* -------------------------------------------------------
+   STATE DISPLAY
+-------------------------------------------------------- */
+function showLoggedOut() {
+  notLogged.classList.remove("hidden");
+  notAdmin.classList.add("hidden");
+  adminPanel.classList.add("hidden");
+}
+
+function showNotAdmin() {
+  notLogged.classList.add("hidden");
+  notAdmin.classList.remove("hidden");
+  adminPanel.classList.add("hidden");
+}
+
+function showAdmin() {
   notLogged.classList.add("hidden");
   notAdmin.classList.add("hidden");
   adminPanel.classList.remove("hidden");
-
-  await loadPending();
-  await loadUsers();
-  await loadLeagueMembers();
 }
 
-// ---------- Pending users ----------
+/* -------------------------------------------------------
+   LOAD PENDING USERS
+-------------------------------------------------------- */
+async function loadPendingUsers() {
+  pendingList.innerHTML = "<p class='muted'>Loading…</p>";
 
-async function loadPending() {
   const { data, error } = await supabase
     .from("site_users")
-    .select("id, email, handle, moderated_handle, image")
+    .select("id, email, handle, image, status, created_at")
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 
   if (error) {
-    pendingList.innerHTML = "<p>Error loading pending users.</p>";
+    pendingList.innerHTML = `<p class='muted'>Error loading: ${error.message}</p>`;
     return;
   }
 
-  pendingCountEl.textContent = `${data.length} pending`;
-  pendingList.innerHTML = "";
-
-  if (!data.length) {
-    pendingList.innerHTML = "<p>No pending users.</p>";
+  if (!data || data.length === 0) {
+    pendingList.innerHTML = `<p class='muted'>No pending users.</p>`;
+    pendingCount.textContent = "";
     return;
   }
 
-  data.forEach(u => {
-    const displayHandle = u.moderated_handle || u.handle || "(no handle)";
+  pendingCount.textContent = `${data.length} pending`;
 
-    const row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `
-      <div class="row-main">
-        <img src="${u.image || "/assets/default-avatar.png"}" alt="">
-        <div>
-          <div>${displayHandle}</div>
-          <div class="small-muted">${u.email}</div>
+  pendingList.innerHTML = data
+    .map(
+      u => `
+      <div class="row">
+        <div class="row-main">
+          <img src="${u.image || "/assets/default-avatar.png"}" 
+               style="width:34px;height:34px;border-radius:8px;border:1px solid #000;object-fit:cover;margin-right:10px;" />
+          <div>
+            <div><strong>${u.email}</strong></div>
+            <div class="small-muted">Handle: ${u.handle}</div>
+          </div>
+        </div>
+        
+        <div class="controls">
+          <button class="btn primary" onclick="approveUser('${u.id}')">Approve</button>
+          <button class="btn danger" onclick="rejectUser('${u.id}')">Reject</button>
         </div>
       </div>
-      <div class="controls">
-        <button class="btn primary" data-id="${u.id}" data-action="approve">Approve</button>
-        <button class="btn" data-id="${u.id}" data-action="reject">Reject</button>
-      </div>
-    `;
-
-    pendingList.appendChild(row);
-  });
-
-  pendingList.querySelectorAll("button").forEach(btn => {
-    btn.onclick = async () => {
-      const id = btn.dataset.id;
-      const action = btn.dataset.action;
-
-      if (action === "approve") {
-        await approveUser(id);
-      } else if (action === "reject") {
-        await rejectUser(id);
-      }
-
-      await loadPending();
-      await loadUsers();
-      await loadLeagueMembers();
-    };
-  });
+    `
+    )
+    .join("");
 }
 
-// ---------- Manage Users (approved accounts) ----------
-
-async function loadUsers() {
-  const { data, error } = await supabase
+/* -------------------------------------------------------
+   APPROVE / REJECT
+-------------------------------------------------------- */
+window.approveUser = async function (uid) {
+  const { error } = await supabase
     .from("site_users")
-    .select("id, email, handle, moderated_handle, image, payment_status")
-    .eq("status", "approved")
-    .order("created_at", { ascending: true });
+    .update({ status: "approved" })
+    .eq("id", uid);
 
   if (error) {
-    userList.innerHTML = "<p>Error loading users.</p>";
+    alert("Error: " + error.message);
     return;
   }
 
-  userList.innerHTML = "";
+  await loadPendingUsers(); // reload list
+};
 
-  if (!data.length) {
-    userList.innerHTML = "<p>No approved users yet.</p>";
-    return;
-  }
-
-  data.forEach(u => {
-    const displayHandle = u.moderated_handle || u.handle || "(no handle)";
-    const payment = u.payment_status || "unpaid";
-
-    const row = document.createElement("div");
-    row.className = "row";
-
-    row.innerHTML = `
-      <div class="row-main">
-        <img src="${u.image || "/assets/default-avatar.png"}" alt="">
-        <div>
-          <div>${displayHandle}</div>
-          <div class="small-muted">${u.email}</div>
-        </div>
-      </div>
-
-      <div class="controls">
-        <input class="handle-input" type="text"
-          placeholder="${u.handle || ""}"
-          value="${u.moderated_handle || ""}"
-          data-id="${u.id}" />
-
-        <button class="btn" data-id="${u.id}" data-action="save-handle">Save Handle</button>
-
-        <span class="small-muted">Payment:</span>
-        <button class="btn ${payment === "paid" ? "primary" : ""}"
-          data-id="${u.id}" data-pay="paid">Paid</button>
-        <button class="btn ${payment === "unpaid" ? "primary" : ""}"
-          data-id="${u.id}" data-pay="unpaid">Unpaid</button>
-        <button class="btn ${payment === "pending" ? "primary" : ""}"
-          data-id="${u.id}" data-pay="pending">Pending</button>
-      </div>
-    `;
-
-    userList.appendChild(row);
-  });
-
-  userList.querySelectorAll("[data-action='save-handle']").forEach(btn => {
-    btn.onclick = async () => {
-      const id = btn.dataset.id;
-      const input = userList.querySelector(`.handle-input[data-id='${id}']`);
-      const newHandle = input.value.trim();
-
-      if (!newHandle) return;
-
-      await overrideHandle(id, newHandle);
-      await loadUsers();
-      await loadLeagueMembers();
-    };
-  });
-
-  userList.querySelectorAll("[data-pay]").forEach(btn => {
-    btn.onclick = async () => {
-      const id = btn.dataset.id;
-      const status = btn.dataset.pay;
-
-      await setPaymentStatus(id, status);
-      await loadUsers();
-    };
-  });
-}
-
-// ---------- League Members (current season) ----------
-
-async function loadLeagueMembers() {
-  const { data, error } = await supabase
-    .from("league_members")
-    .select(`
-      id,
-      payment_status,
-      user_id,
-      site_users (handle, moderated_handle, image, email)
-    `)
-    .eq("season", CURRENT_SEASON)
-    .order("joined_at", { ascending: true });
+window.rejectUser = async function (uid) {
+  const { error } = await supabase
+    .from("site_users")
+    .update({ status: "rejected" })
+    .eq("id", uid);
 
   if (error) {
-    leagueList.innerHTML = "<p>Error loading league members.</p>";
+    alert("Error: " + error.message);
     return;
   }
 
-  leagueList.innerHTML = "";
-
-  if (!data.length) {
-    leagueList.innerHTML = "<p>No members in this season yet.</p>";
-    return;
-  }
-
-  data.forEach(row => {
-    const u = row.site_users;
-    const displayHandle = (u && (u.moderated_handle || u.handle)) || "(unknown)";
-    const payment = row.payment_status || "unpaid";
-
-    const el = document.createElement("div");
-    el.className = "row";
-    el.innerHTML = `
-      <div class="row-main">
-        <img src="${(u && u.image) || "/assets/default-avatar.png"}" alt="">
-        <div>
-          <div>${displayHandle}</div>
-          <div class="small-muted">${u ? u.email : ""}</div>
-        </div>
-      </div>
-      <div class="controls">
-        <span class="small-muted">Payment: ${payment}</span>
-        <button class="btn danger" data-row="${row.id}" data-action="remove">Remove</button>
-      </div>
-    `;
-    leagueList.appendChild(el);
-  });
-
-  leagueList.querySelectorAll("[data-action='remove']").forEach(btn => {
-    btn.onclick = async () => {
-      const id = btn.dataset.row;
-      await removeLeagueMemberRow(id);
-      await loadLeagueMembers();
-    };
-  });
-}
-
-init();
+  await loadPendingUsers();
+};

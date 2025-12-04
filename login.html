@@ -12,6 +12,7 @@
   }
   button { background:#000; color:#fff; cursor:pointer; }
   #msg { min-height:1.5em; margin-top:10px; }
+  a { display:block; margin-top:10px; font-size:0.9rem; }
 </style>
 </head>
 
@@ -21,10 +22,11 @@
 
   <input id="email" placeholder="email">
   <input id="password" type="password" placeholder="password">
-  <input id="handle" placeholder="handle (league display)" />
 
   <button id="login-btn">Log In</button>
   <button id="signup-btn">Sign Up</button>
+
+  <a href="#" id="reset-link">Forgot password?</a>
 
   <p id="msg"></p>
 </div>
@@ -32,9 +34,11 @@
 <script type="module">
 import { supabase } from "/js/config.js";
 
+/* -----------------------
+      ELEMENTS
+------------------------ */
 const emailField = document.getElementById("email");
 const pwField    = document.getElementById("password");
-const handleFld  = document.getElementById("handle");
 const msg        = document.getElementById("msg");
 
 function show(m) { msg.textContent = m; }
@@ -43,9 +47,23 @@ function busy(x) {
   document.getElementById("signup-btn").disabled = x;
 }
 
-/* ---------------------
-      LOGIN
----------------------- */
+/* -----------------------
+ RANDOM HANDLE GENERATOR
+------------------------ */
+function generateRandomHandle() {
+  const words = [
+    "ember","lotus","raven","maple","tidal","otter","cinder",
+    "hollow","vivid","brisk","amber","pearl","nexus","poppy",
+    "fable","mirth","gleam","swift"
+  ];
+  const word = words[Math.floor(Math.random() * words.length)];
+  const num  = Math.floor(Math.random() * 90 + 10); // 10–99
+  return `${word}${num}`;
+}
+
+/* -----------------------
+        LOGIN
+------------------------ */
 document.getElementById("login-btn").onclick = async () => {
   busy(true);
 
@@ -64,11 +82,7 @@ document.getElementById("login-btn").onclick = async () => {
     .eq("id", uid)
     .single();
 
-  if (!prof) {
-    show("Profile missing.");
-    busy(false);
-    return;
-  }
+  if (!prof) { show("Profile missing."); busy(false); return; }
 
   if (prof.status === "pending") {
     show("Your account is pending approval.");
@@ -79,18 +93,17 @@ document.getElementById("login-btn").onclick = async () => {
   window.location.href = "/bcwl-hub.html";
 };
 
-/* ---------------------
-      SIGN UP
----------------------- */
+/* -----------------------
+         SIGN-UP
+------------------------ */
 document.getElementById("signup-btn").onclick = async () => {
   busy(true);
 
   const email = emailField.value.trim();
   const password = pwField.value.trim();
-  const handle = handleFld.value.trim();
 
-  if (!email || !password || !handle) {
-    show("Email, password, and handle are required.");
+  if (!email || !password) {
+    show("Email and password required.");
     busy(false);
     return;
   }
@@ -98,23 +111,20 @@ document.getElementById("signup-btn").onclick = async () => {
   // 1. Create Supabase Auth user
   const { data, error } = await supabase.auth.signUp({ email, password });
 
-  if (error) {
-    show(error.message);
-    busy(false);
-    return;
-  }
+  if (error) { show(error.message); busy(false); return; }
 
   const user = data.user;
 
-  // 2. Insert profile row with required handle
-  const { error: profileErr } = await supabase
-    .from("site_users")
-    .insert({
-      id: user.id,
-      email,
-      handle,
-      status: "pending"
-    });
+  // 2. Assign random handle
+  const randomHandle = generateRandomHandle();
+
+  // 3. Create site profile
+  const { error: profileErr } = await supabase.from("site_users").insert({
+    id: user.id,
+    email,
+    handle: randomHandle,
+    status: "pending"
+  });
 
   if (profileErr) {
     show("Profile error: " + profileErr.message);
@@ -122,8 +132,25 @@ document.getElementById("signup-btn").onclick = async () => {
     return;
   }
 
-  show("Signup successful. Pending approval.");
+  show(`Signup successful. Pending approval.`);
   busy(false);
+};
+
+/* -----------------------
+   PASSWORD RESET LINK
+------------------------ */
+document.getElementById("reset-link").onclick = async () => {
+  const email = emailField.value.trim();
+  if (!email) {
+    show("Enter your email first.");
+    return;
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://magic1.ca/reset-password.html"
+  });
+
+  show(error ? error.message : "Password reset email sent.");
 };
 </script>
 
