@@ -12,7 +12,6 @@
   }
   button { background:#000; color:#fff; cursor:pointer; }
   #msg { min-height:1.5em; margin-top:10px; }
-  a { display:block; margin-top:10px; font-size:0.9rem; }
 </style>
 </head>
 
@@ -26,134 +25,13 @@
   <button id="login-btn">Log In</button>
   <button id="signup-btn">Sign Up</button>
 
-  <a href="#" id="reset-link">Forgot password?</a>
+  <p><a href="/reset-password.html">Forgot password?</a></p>
 
   <p id="msg"></p>
 </div>
 
-<script type="module">
-import { supabase } from "/js/config.js";
-
-/* -----------------------
-      ELEMENTS
------------------------- */
-const emailField = document.getElementById("email");
-const pwField    = document.getElementById("password");
-const msg        = document.getElementById("msg");
-
-function show(m) { msg.textContent = m; }
-function busy(x) {
-  document.getElementById("login-btn").disabled  = x;
-  document.getElementById("signup-btn").disabled = x;
-}
-
-/* -----------------------
- RANDOM HANDLE GENERATOR
------------------------- */
-function generateRandomHandle() {
-  const words = [
-    "ember","lotus","raven","maple","tidal","otter","cinder",
-    "hollow","vivid","brisk","amber","pearl","nexus","poppy",
-    "fable","mirth","gleam","swift"
-  ];
-  const word = words[Math.floor(Math.random() * words.length)];
-  const num  = Math.floor(Math.random() * 90 + 10); // 10–99
-  return `${word}${num}`;
-}
-
-/* -----------------------
-        LOGIN
------------------------- */
-document.getElementById("login-btn").onclick = async () => {
-  busy(true);
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: emailField.value.trim(),
-    password: pwField.value
-  });
-
-  if (error) { show(error.message); busy(false); return; }
-
-  const uid = data.user.id;
-
-  const { data: prof } = await supabase
-    .from("site_users")
-    .select("status")
-    .eq("id", uid)
-    .single();
-
-  if (!prof) { show("Profile missing."); busy(false); return; }
-
-  if (prof.status === "pending") {
-    show("Your account is pending approval.");
-    busy(false);
-    return;
-  }
-
-  window.location.href = "/bcwl-hub.html";
-};
-
-/* -----------------------
-         SIGN-UP
------------------------- */
-document.getElementById("signup-btn").onclick = async () => {
-  busy(true);
-
-  const email = emailField.value.trim();
-  const password = pwField.value.trim();
-
-  if (!email || !password) {
-    show("Email and password required.");
-    busy(false);
-    return;
-  }
-
-  // 1. Create Supabase Auth user
-  const { data, error } = await supabase.auth.signUp({ email, password });
-
-  if (error) { show(error.message); busy(false); return; }
-
-  const user = data.user;
-
-  // 2. Assign random handle
-  const randomHandle = generateRandomHandle();
-
-  // 3. Create site profile
-  const { error: profileErr } = await supabase.from("site_users").insert({
-    id: user.id,
-    email,
-    handle: randomHandle,
-    status: "pending"
-  });
-
-  if (profileErr) {
-    show("Profile error: " + profileErr.message);
-    busy(false);
-    return;
-  }
-
-  show(`Signup successful. Pending approval.`);
-  busy(false);
-};
-
-/* -----------------------
-   PASSWORD RESET LINK
------------------------- */
-document.getElementById("reset-link").onclick = async () => {
-  const email = emailField.value.trim();
-  if (!email) {
-    show("Enter your email first.");
-    return;
-  }
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: "https://magic1.ca/reset-password.html"
-  });
-
-  show(error ? error.message : "Password reset email sent.");
-};
-</script>
-
+<script type="module" src="/js/config.js"></script>
+<script type="module" src="/js/login.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>
 </body>
 </html>

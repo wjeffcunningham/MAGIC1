@@ -1,73 +1,132 @@
-// /js/login.js
-import { supabase } from "/js/config.js";
+import { supabase } from "./config.js";
 
-const emailEl = document.getElementById("email");
-const pwEl    = document.getElementById("password");
-const msg     = document.getElementById("msg");
+const emailField = document.getElementById("email");
+const pwField    = document.getElementById("password");
+const msg        = document.getElementById("msg");
 
-function show(message) {
-  if (msg) msg.textContent = message;
+function show(m) { msg.textContent = m; }
+function busy(x) {
+  document.getElementById("login-btn").disabled  = x;
+  document.getElementById("signup-btn").disabled = x;
 }
 
-document.getElementById("login-btn").onclick = async () => {
-  show("Signing in…");
+/* --------------------------------------------------------
+   EMAIL VALIDATION (prevent junk/bot signups)
+---------------------------------------------------------*/
+function isValidEmail(em) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em);
+}
 
-  const email = emailEl.value.trim();
-  const password = pwEl.value.trim();
+/* --------------------------------------------------------
+   LOGIN
+---------------------------------------------------------*/
+document.getElementById("login-btn").onclick = async () => {
+  busy(true);
+  show("");
+
+  const email = emailField.value.trim();
+  const password = pwField.value;
+
+  if (!email || !password) {
+    show("Fill all fields.");
+    busy(false);
+    return;
+  }
 
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
+    email, password
   });
 
   if (error) {
     show(error.message);
+    busy(false);
     return;
   }
 
-  show("Logged in!");
+  const uid = data.user.id;
+
+  const { data: profile, error: profErr } = await supabase
+    .from("site_users")
+    .select("*")
+    .eq("id", uid)
+    .single();
+
+  if (!profile || profErr) {
+    show("Profile missing.");
+    busy(false);
+    return;
+  }
+
+  if (profile.status === "pending") {
+    show("Your account is pending approval.");
+    busy(false);
+    return;
+  }
+
+  if (profile.status === "rejected") {
+    show("Your sign-up was rejected.");
+    busy(false);
+    return;
+  }
+
+  // Approved → enter
   window.location.href = "/bcwl-hub.html";
 };
 
+/* --------------------------------------------------------
+   SIGN-UP
+---------------------------------------------------------*/
 document.getElementById("signup-btn").onclick = async () => {
-  show("Creating account…");
+  busy(true);
+  show("");
 
-  const email = emailEl.value.trim();
-  const password = pwEl.value.trim();
+  const email = emailField.value.trim();
+  const password = pwField.value;
 
+  if (!isValidEmail(email)) {
+    show("Enter a valid email.");
+    busy(false);
+    return;
+  }
+
+  if (password.length < 6) {
+    show("Password must be at least 6 characters.");
+    busy(false);
+    return;
+  }
+
+  // Supabase sign-up
   const { data, error } = await supabase.auth.signUp({
-    email,
-    password
+    email, password
   });
 
   if (error) {
     show(error.message);
+    busy(false);
     return;
   }
 
-  const user = data.user;
-  if (!user) {
-    show("Account created. Check your email to confirm.");
-    return;
-  }
+  const uid = data.user.id;
 
-  // Insert matching profile row in site_users
-  const { error: insertErr } = await supabase
+  // Create row in site_users
+  const { error: profErr } = await supabase
     .from("site_users")
     .insert({
-      id: user.id,
+      id: uid,
       email,
-      handle: null,
       status: "pending",
-      is_mod: false
+      handle: null,
+      remote_preference: null,
+      bio: null,
+      avatar_url: null
     });
 
-  if (insertErr) {
-    console.error("site_users insert error", insertErr);
-    show("Account created, but profile row failed. Contact admin.");
+  if (profErr) {
+    show("Profile creation failed.");
+    busy(false);
     return;
   }
 
-  show("Account created. Pending approval.");
-  window.location.href = "/user-settings.html";
+  show("Sign-up successful. Awaiting admin approval.");
+  busy(false);
 };
