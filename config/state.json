@@ -1,0 +1,10 @@
+{
+  "league_open": true,
+  "season": 2026,
+  "menu": {
+    "home": true,
+    "signup": true,
+    "profile": true,
+    "league": true
+  }
+}

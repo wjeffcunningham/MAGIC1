@@ -12,6 +12,7 @@
   }
   button { background:#000; color:#fff; cursor:pointer; }
   #msg { min-height:1.5em; margin-top:10px; }
+  .turnstile-container { margin:12px 0; }
 </style>
 </head>
 
@@ -25,13 +26,24 @@
   <button id="login-btn">Log In</button>
   <button id="signup-btn">Sign Up</button>
 
-  <p><a href="/reset-password.html">Forgot password?</a></p>
+  <div class="turnstile-container">
+    <div class="cf-turnstile"
+         data-sitekey="0x4AAAAAACFFJAGSROQqWlLQ"
+         data-theme="light">
+    </div>
+  </div>
 
+  <p><a href="/reset-password.html">Forgot password?</a></p>
   <p id="msg"></p>
 </div>
 
+<!-- TURNSTILE script -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<!-- Supabase + Login Logic -->
 <script type="module" src="/js/config.js"></script>
 <script type="module" src="/js/login.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>
+
 </body>
 </html>

@@ -1,14 +1,14 @@
 // /js/admin-dashboard.js
 import { supabase } from "./config.js";
+
+import { getProfile, CURRENT_SEASON } from "./db.js";
 import {
-  getProfile,
   approveUser,
   rejectUser,
   overrideHandle,
   setPaymentStatus,
-  removeLeagueMemberRow,
-  CURRENT_SEASON
-} from "./db.js";
+  removeLeagueMemberRow
+} from "./admin-api.js";
 
 const notLogged     = document.getElementById("not-logged");
 const notAdmin      = document.getElementById("not-admin");

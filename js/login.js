@@ -11,14 +11,14 @@ function busy(x) {
 }
 
 /* --------------------------------------------------------
-   EMAIL VALIDATION (prevent junk/bot signups)
+   EMAIL VALIDATION
 ---------------------------------------------------------*/
 function isValidEmail(em) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em);
 }
 
 /* --------------------------------------------------------
-   LOGIN
+   LOGIN (unchanged)
 ---------------------------------------------------------*/
 document.getElementById("login-btn").onclick = async () => {
   busy(true);
@@ -74,7 +74,7 @@ document.getElementById("login-btn").onclick = async () => {
 };
 
 /* --------------------------------------------------------
-   SIGN-UP
+   SIGN-UP (Turnstile integrated)
 ---------------------------------------------------------*/
 document.getElementById("signup-btn").onclick = async () => {
   busy(true);
@@ -95,9 +95,57 @@ document.getElementById("signup-btn").onclick = async () => {
     return;
   }
 
-  // Supabase sign-up
+  /* --------------------------------------------------------
+     TURNSTILE TOKEN
+  ---------------------------------------------------------*/
+  let turnstileToken = "";
+  try {
+    turnstileToken = turnstile.getResponse();
+  } catch (e) {
+    show("Turnstile not ready. Try again.");
+    busy(false);
+    return;
+  }
+
+  if (!turnstileToken) {
+    show("Please complete the verification.");
+    busy(false);
+    return;
+  }
+
+  /* --------------------------------------------------------
+     Call Cloudflare to verify token (client → CF → Supabase)
+     Replace YOUR_SECRET_ENDPOINT with your Worker URL
+  ---------------------------------------------------------*/
+
+  let verified = false;
+  try {
+    const v = await fetch("https://magic1-turnstile-verify.wjeffcunningham.workers.dev", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ turnstileToken })
+    });
+    const out = await v.json();
+    verified = out.success === true;
+  } catch (err) {
+    show("Verification error.");
+    busy(false);
+    return;
+  }
+
+  if (!verified) {
+    show("Verification failed.");
+    try { turnstile.reset(); } catch (_) {}
+    busy(false);
+    return;
+  }
+
+  /* --------------------------------------------------------
+     SUPABASE SIGN-UP
+  ---------------------------------------------------------*/
   const { data, error } = await supabase.auth.signUp({
-    email, password
+    email,
+    password
   });
 
   if (error) {
@@ -121,6 +169,12 @@ document.getElementById("signup-btn").onclick = async () => {
       avatar_url: null
     });
 
+    // Add email to mailing list (ignore if already exists)
+await supabase
+  .from("mailing_list")
+  .insert({ email })
+  .catch(() => {});
+
   if (profErr) {
     show("Profile creation failed.");
     busy(false);
@@ -128,5 +182,9 @@ document.getElementById("signup-btn").onclick = async () => {
   }
 
   show("Sign-up successful. Awaiting admin approval.");
+
+  // Reset Turnstile for next attempt
+  try { turnstile.reset(); } catch (_) {}
+
   busy(false);
 };
