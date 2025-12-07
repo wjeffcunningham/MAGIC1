@@ -8,7 +8,7 @@ const notLogged   = document.getElementById("not-logged");
 const settings    = document.getElementById("settings-area");
 
 const emailInput  = document.getElementById("email-input");
-const nameInput   = document.getElementById("name-input");     // editable handle
+const nameInput   = document.getElementById("name-input");     // user handle (one-time)
 const remoteSel   = document.getElementById("remote-input");
 const bioInput    = document.getElementById("bio-input");
 const avatarImg   = document.getElementById("avatar-img");
@@ -16,92 +16,187 @@ const fileInput   = document.getElementById("image-file");
 const saveBtn     = document.getElementById("save-btn");
 const statusEl    = document.getElementById("status");
 
-// moderated handle display
 const displayHandleWrap = document.getElementById("display-handle-wrap");
 const displayHandle     = document.getElementById("display-handle");
 
 /* -------------------------------------------------------
-   INITIAL LOAD
+   LOCAL STATE
+-------------------------------------------------------- */
+let currentProfile = null;
+let handleLocked   = false;
+
+/* -------------------------------------------------------
+   HELPERS
+-------------------------------------------------------- */
+function setStatus(msg) {
+  if (!statusEl) return;
+  statusEl.textContent = msg || "";
+}
+
+function normaliseHandle(h) {
+  if (!h) return "";
+  return h.trim().toLowerCase();
+}
+
+/* -------------------------------------------------------
+   LOAD PROFILE
 -------------------------------------------------------- */
 async function init() {
+  setStatus("Loading profile…");
+
   const profile = await getProfile();
+  currentProfile = profile;
+
   if (!profile) {
-    notLogged.style.display = "block";
-    settings.style.display = "none";
+    if (notLogged)   notLogged.style.display = "block";
+    if (settings)    settings.style.display  = "none";
+    setStatus("You must be logged in to edit settings.");
     return;
   }
 
-  notLogged.style.display = "none";
-  settings.style.display = "block";
+  if (notLogged)   notLogged.style.display = "none";
+  if (settings)    settings.style.display  = "block";
 
-  // EMAIL (read-only)
-  emailInput.value = profile.email || "";
+  // Email (read-only)
+  if (emailInput) emailInput.value = profile.email || "";
 
-  // MODERATED HANDLE (admin override)
-  if (profile.moderated_handle) {
-    displayHandleWrap.style.display = "block";
-    displayHandle.textContent = profile.moderated_handle;
-  } else {
-    displayHandleWrap.style.display = "none";
+  // Display handle from moderated_handle or handle
+  const dh = profile.moderated_handle || profile.handle || "";
+  if (displayHandle)      displayHandle.textContent = dh || "(not set)";
+  if (displayHandleWrap)  displayHandleWrap.style.display = dh ? "block" : "none";
+
+  // Handle editable ONCE:
+  handleLocked = !!profile.handle;
+
+  if (nameInput) {
+    if (profile.handle) {
+      nameInput.value = profile.handle;
+      nameInput.readOnly = true;
+      nameInput.style.background = "#f0f0f0";
+      nameInput.style.cursor = "not-allowed";
+    } else {
+      nameInput.value = "";
+      nameInput.readOnly = false;
+    }
   }
 
-  // USER HANDLE (editable)
-  nameInput.value = profile.handle || "";
-
   // Remote preference
-  remoteSel.value = profile.remote_preference || "no_remote";
+  if (remoteSel) {
+    const val = profile.remote_preference || "no_remote";
+    remoteSel.value = val;
+  }
 
   // Bio
-  bioInput.value = profile.bio || "";
+  if (bioInput) {
+    bioInput.value = profile.bio || "";
+  }
 
   // Avatar
-  avatarImg.src = profile.image || "/assets/default-avatar.png";
+  if (avatarImg) {
+    if (profile.avatar_url) {
+      avatarImg.src = profile.avatar_url;
+    } else {
+      avatarImg.removeAttribute("src");
+    }
+  }
+
+  setStatus("");
 }
 
 /* -------------------------------------------------------
    AVATAR UPLOAD
 -------------------------------------------------------- */
-fileInput.onchange = async e => {
-  const file = e.target.files[0];
-  if (!file) return;
+if (fileInput) {
+  fileInput.addEventListener("change", async (evt) => {
+    const file = evt.target.files && evt.target.files[0];
+    if (!file) return;
 
-  statusEl.textContent = "Uploading image…";
+    setStatus("Uploading image…");
 
-  const { url, error } = await uploadAvatar(file);
-  if (error) {
-    statusEl.textContent = "Upload failed: " + error.message;
-    return;
-  }
+    const { url, error } = await uploadAvatar(file);
+    if (error) {
+      console.error("uploadAvatar error", error);
+      setStatus("Image upload failed.");
+      return;
+    }
 
-  await saveProfile({ image: url });
-  avatarImg.src = url;
-  statusEl.textContent = "Image updated.";
-};
+    if (avatarImg && url) {
+      avatarImg.src = url;
+    }
+
+    const { error: saveErr } = await saveProfile({ avatar_url: url });
+    if (saveErr) {
+      console.error("saveProfile avatar_url error", saveErr);
+      setStatus("Saved image, but failed to update profile.");
+      return;
+    }
+
+    setStatus("Avatar updated.");
+  });
+}
 
 /* -------------------------------------------------------
-   SAVE PROFILE
+   SAVE SETTINGS
 -------------------------------------------------------- */
-saveBtn.onclick = async () => {
-  statusEl.textContent = "";
+if (saveBtn) {
+  saveBtn.addEventListener("click", async () => {
+    setStatus("Saving…");
+    saveBtn.disabled = true;
 
-  const newHandle = nameInput.value.trim();
+    const updates = {};
 
-  if (newHandle.length > 10) {
-    statusEl.textContent = "Handle must be 10 characters or fewer.";
-    return;
-  }
+    // Handle – only if not previously set
+    if (!handleLocked && nameInput) {
+      const raw = nameInput.value || "";
+      const newHandle = normaliseHandle(raw);
 
-  const updates = {
-    handle: newHandle,
-    remote_preference: remoteSel.value,
-    bio: bioInput.value.trim(),
-  };
+      if (newHandle) {
+        // 3–20 chars, letters/digits/_ only
+        if (!/^[a-z0-9_]{3,20}$/.test(newHandle)) {
+          setStatus("Handle must be 3–20 chars, letters/numbers/underscore only.");
+          saveBtn.disabled = false;
+          return;
+        }
+        updates.handle = newHandle;
+      } else {
+        updates.handle = null;
+      }
+    }
 
-  const { error } = await saveProfile(updates);
+    // Remote preference
+    if (remoteSel) {
+      updates.remote_preference = remoteSel.value || "no_remote";
+    }
 
-  statusEl.textContent = error
-    ? "Save failed: " + error.message
-    : "Settings saved.";
-};
+    // Bio
+    if (bioInput) {
+      updates.bio = (bioInput.value || "").trim() || null;
+    }
 
+    const { error } = await saveProfile(updates);
+
+    if (error) {
+      console.error("saveProfile error", error);
+      setStatus("Save failed: " + (error.message || "unknown error"));
+    } else {
+      setStatus("Settings saved.");
+      // If handle was just set, lock it in UI
+      if (!handleLocked && updates.handle) {
+        handleLocked = true;
+        if (nameInput) {
+          nameInput.value = updates.handle;
+          nameInput.readOnly = true;
+          nameInput.style.background = "#f0f0f0";
+          nameInput.style.cursor = "not-allowed";
+        }
+      }
+    }
+
+    saveBtn.disabled = false;
+  });
+}
+
+/* -------------------------------------------------------
+   INIT
+-------------------------------------------------------- */
 init();

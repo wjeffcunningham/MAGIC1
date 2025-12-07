@@ -1,5 +1,6 @@
 // /js/login.js
 import { supabase } from "./config.js";
+import { subscribeToMailingList } from "./db.js";
 
 const emailField = document.getElementById("email");
 const pwField    = document.getElementById("password");
@@ -71,12 +72,11 @@ document.getElementById("login-btn").onclick = async () => {
     return;
   }
 
-  // Approved → send to league hub
   window.location.href = "/bcwl-hub.html";
 };
 
 /* --------------------------------------------------------
-   SIGN-UP (Turnstile + Supabase)
+   SIGN-UP (Turnstile callback version)
 ---------------------------------------------------------*/
 document.getElementById("signup-btn").onclick = async () => {
   busy(true);
@@ -97,26 +97,20 @@ document.getElementById("signup-btn").onclick = async () => {
     return;
   }
 
-  // ----- TURNSTILE TOKEN -----
-  let turnstileToken = "";
-  try {
-    turnstileToken =
-      window.turnstile && window.turnstile.getResponse
-        ? window.turnstile.getResponse()
-        : "";
-  } catch (e) {
-    show("Verification widget not ready. Try again.");
-    busy(false);
-    return;
-  }
+  /* --------------------------------------------------------
+     TURNSTILE TOKEN — from callback ONLY
+  ---------------------------------------------------------*/
+  const turnstileToken = window.turnstileToken || "";
 
   if (!turnstileToken) {
-    show("Please complete the verification.");
+    show("Verification required. Click the checkbox again.");
     busy(false);
     return;
   }
 
-  // ----- VERIFY WITH WORKER -----
+  /* --------------------------------------------------------
+     VERIFY TURNSTILE TOKEN WITH YOUR WORKER
+  ---------------------------------------------------------*/
   let verified = false;
   try {
     const resp = await fetch("https://magic1-turnstile-verify.wjeffcunningham.workers.dev/", {
@@ -136,12 +130,13 @@ document.getElementById("signup-btn").onclick = async () => {
 
   if (!verified) {
     show("Verification failed. Please try again.");
-    try { window.turnstile.reset(); } catch (_) {}
     busy(false);
     return;
   }
 
-  // ----- SUPABASE SIGN-UP -----
+  /* --------------------------------------------------------
+     SUPABASE SIGN-UP
+  ---------------------------------------------------------*/
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -177,14 +172,13 @@ document.getElementById("signup-btn").onclick = async () => {
     return;
   }
 
-  // optional mailing list hook – ignored on error
+  // Optional mailing list hook
   try {
-    await supabase
-      .from("mailing_list")
-      .insert({ email });
-  } catch (_) {}
+    await subscribeToMailingList(email);
+  } catch (e) {
+    console.warn("Mailing list subscription error (ignored):", e);
+  }
 
   show("Sign-up successful. Awaiting admin approval.");
-  try { window.turnstile.reset(); } catch (_) {}
   busy(false);
 };
