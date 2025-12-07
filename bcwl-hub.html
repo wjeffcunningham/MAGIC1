@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>BC Winter League Hub · magic1.ca</title>
 
-<!-- SIMPLE, CLEAN, SAFE STYLING -->
 <style>
   body {
     margin: 0;
@@ -13,124 +12,81 @@
     background: #f0f2ff;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   }
-
   .shell {
-    max-width: 760px;
+    max-width: 800px;
     margin: 80px auto;
-    padding: 32px 28px;
-    background: #fff;
-    border: 2px solid #000;
-    border-radius: 14px;
-  }
-
-  h1 {
-    font-size: 2.1rem;
-    margin: 0 0 6px;
-    font-weight: 700;
-  }
-
-  .subline {
-    opacity: 0.7;
-    margin-bottom: 22px;
-  }
-
-  .poster-link {
-    display: inline-block;
-    margin-bottom: 28px;
-    font-size: 1.05rem;
-    text-decoration: none;
-    color: #4a2bb3;
-    font-weight: 600;
-  }
-
-  .poster-link:hover {
-    text-decoration: underline;
-  }
-
-  .section {
-    margin-top: 32px;
     padding: 20px;
-    border: 1px solid #ddd;
+    background: #fff;
     border-radius: 12px;
-    background: #fafbff;
+    border: 2px solid #000;
   }
-
-  h2 {
-    margin: 0 0 12px;
-    font-size: 1.4rem;
+  h1 {
+    margin: 0 0 6px;
+    text-align: center;
   }
-
+  .muted {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .card {
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    padding: 12px 14px;
+    margin-top: 10px;
+    background: #fafafa;
+  }
+  .hidden {
+    display: none;
+  }
   .btn {
-    display: inline-block;
-    padding: 12px 20px;
+    padding: 8px 12px;
     border-radius: 8px;
     border: 1px solid #000;
     background: #000;
     color: #fff;
     cursor: pointer;
-    font-size: 1rem;
-    margin-top: 12px;
+    font-size: 0.9rem;
   }
-
-  .btn:hover {
-    opacity: 0.85;
-  }
-
-  .muted {
-    opacity: 0.7;
-  }
-
-  #payment-status {
-    margin-top: 14px;
-    padding: 10px 12px;
-    background: #eef3ff;
-    border-radius: 8px;
-    border: 1px solid #ccd6ff;
-    font-size: 0.95rem;
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: default;
   }
 </style>
 </head>
 
 <body>
-
 <div class="shell">
-
   <h1>BC Winter League Hub</h1>
-  <div class="subline">Premodern · $20/month · January 2026</div>
+  <p class="muted">Sign in, get approved, and join the league.</p>
 
-  <!-- DIRECT LINK TO POSTER PAGE 2 -->
-  <a href="/index.html?poster=2" class="poster-link">View BCWL Poster →</a>
-
-  <!-- NOT LOGGED IN -->
-  <div id="not-logged" class="section" style="display:none;">
-    <h2>Sign in required</h2>
+  <!-- Not logged in -->
+  <div id="not-logged" class="card hidden">
     <p>You must be logged in to view the league hub.</p>
+    <button class="btn" onclick="location.href='/login.html'">Go to Login / Sign-Up</button>
   </div>
 
-  <!-- NOT APPROVED YET -->
-  <div id="not-approved" class="section" style="display:none;">
-    <h2>Account Pending</h2>
-    <p>Your account is awaiting moderator approval.</p>
+  <!-- Logged in, not approved -->
+  <div id="not-approved" class="card hidden">
+    <p>Your account is pending approval. You’ll be emailed when approved.</p>
   </div>
 
-  <!-- NOT JOINED -->
-  <div id="not-joined" class="section" style="display:none;">
+  <!-- Approved but not yet in league -->
+  <div id="not-joined" class="card hidden">
     <h2>Join the League</h2>
-    <p>You are not yet enrolled in the BCWL season.</p>
-    <button id="join-btn" class="btn">Join the League ($20)</button>
+    <p>Click below to join the current BC Winter League season.</p>
+    <button id="join-btn" class="btn">Join the League</button>
   </div>
 
-  <!-- MAIN HUB -->
-  <div id="hub-main" class="section" style="display:none;">
+  <!-- In league -->
+  <div id="hub-main" class="card hidden">
     <h2>Welcome to the League!</h2>
     <p>Your membership is active.</p>
-
     <div id="payment-status"></div>
   </div>
-
 </div>
 
-<!-- SCRIPTS -->
 <script type="module" src="/js/db.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>
 <script type="module" src="/js/bcwl-hub.js"></script>

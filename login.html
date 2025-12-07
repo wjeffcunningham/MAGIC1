@@ -3,16 +3,56 @@
 <head>
 <meta charset="utf-8">
 <title>Login / Sign Up · magic1.ca</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  body { font-family:-apple-system, BlinkMacSystemFont, sans-serif; padding:40px; }
-  .shell { max-width:420px; margin:0 auto; }
-  input, button {
-    width:100%; padding:12px; margin:6px 0;
-    border-radius:8px; border:1px solid #000; font-size:16px;
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px;
+    margin: 0;
+    background: #f5f5ff;
   }
-  button { background:#000; color:#fff; cursor:pointer; }
-  #msg { min-height:1.5em; margin-top:10px; }
-  .turnstile-container { margin:12px 0; }
+  .shell {
+    max-width: 420px;
+    margin: 40px auto;
+    padding: 24px 20px 28px;
+    background: #fff;
+    border-radius: 12px;
+    border: 2px solid #000;
+  }
+  h1 {
+    margin: 0 0 12px;
+    text-align: center;
+  }
+  input, button {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0;
+    border-radius: 8px;
+    border: 1px solid #000;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  button {
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  #msg {
+    min-height: 1.6em;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  .turnstile-container {
+    margin: 12px 0;
+    text-align: center;
+  }
+  a {
+    color: #000;
+  }
 </style>
 </head>
 
@@ -20,11 +60,8 @@
 <div class="shell">
   <h1>Login / Sign-Up</h1>
 
-  <input id="email" placeholder="email">
-  <input id="password" type="password" placeholder="password">
-
-  <button id="login-btn">Log In</button>
-  <button id="signup-btn">Sign Up</button>
+  <input id="email" placeholder="email" type="email" autocomplete="email">
+  <input id="password" type="password" placeholder="password" autocomplete="new-password">
 
   <div class="turnstile-container">
     <div class="cf-turnstile"
@@ -33,14 +70,18 @@
     </div>
   </div>
 
+  <button id="login-btn">Log In</button>
+  <button id="signup-btn">Sign Up</button>
+
   <p><a href="/reset-password.html">Forgot password?</a></p>
+
   <p id="msg"></p>
 </div>
 
-<!-- TURNSTILE script -->
+<!-- Turnstile -->
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
-<!-- Supabase + Login Logic -->
+<!-- Supabase + App JS -->
 <script type="module" src="/js/config.js"></script>
 <script type="module" src="/js/login.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>

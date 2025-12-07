@@ -1,27 +1,26 @@
 // /js/admin-dashboard.js
 import { supabase } from "./config.js";
-
 import { getProfile, CURRENT_SEASON } from "./db.js";
 import {
   approveUser,
   rejectUser,
   overrideHandle,
   setPaymentStatus,
-  removeLeagueMemberRow
+  removeLeagueMemberRow,
 } from "./admin-api.js";
 
-const notLogged     = document.getElementById("not-logged");
-const notAdmin      = document.getElementById("not-admin");
-const adminPanel    = document.getElementById("admin-panel");
+const notLogged   = document.getElementById("not-logged");
+const notAdmin    = document.getElementById("not-admin");
+const adminPanel  = document.getElementById("admin-panel");
 
-const pendingCount  = document.getElementById("pending-count");
-const pendingList   = document.getElementById("pending-list");
+const pendingCount = document.getElementById("pending-count");
+const pendingList  = document.getElementById("pending-list");
 
-const usersCount    = document.getElementById("users-count");
-const usersList     = document.getElementById("users-list");
+const usersCount   = document.getElementById("users-count");
+const usersList    = document.getElementById("users-list");
 
-const leagueCount   = document.getElementById("league-count");
-const leagueList    = document.getElementById("league-list");
+const leagueCount  = document.getElementById("league-count");
+const leagueList   = document.getElementById("league-list");
 
 function clearNode(node) {
   if (!node) return;
@@ -32,6 +31,9 @@ function nameForUser(u) {
   return u.moderated_handle || u.handle || u.email;
 }
 
+/* -----------------------------------------
+   Pending users
+----------------------------------------- */
 async function loadPending() {
   if (!pendingList || !pendingCount) return;
 
@@ -59,9 +61,10 @@ async function loadPending() {
     return;
   }
 
-  pendingCount.textContent = `${data.length} pending signup${data.length === 1 ? "" : "s"}.`;
+  pendingCount.textContent =
+    `${data.length} pending signup${data.length === 1 ? "" : "s"}.`;
 
-  data.forEach(u => {
+  data.forEach((u) => {
     const row = document.createElement("div");
     row.className = "row";
 
@@ -72,7 +75,9 @@ async function loadPending() {
         <strong>${u.email}</strong>
         ${u.handle ? `<span class="small-muted">(${u.handle})</span>` : ""}
       </div>
-      <div class="small-muted">${u.created_at ? new Date(u.created_at).toLocaleString() : ""}</div>
+      <div class="small-muted">
+        ${u.created_at ? new Date(u.created_at).toLocaleString() : ""}
+      </div>
     `;
 
     const controls = document.createElement("div");
@@ -86,8 +91,8 @@ async function loadPending() {
       const { error: err } = await approveUser(u.id);
       if (err) console.error("approve error", err);
       await loadPending();
-      await loadUsers();     // so status is reflected there
-      await loadLeague();    // in case someone already joined
+      await loadUsers();
+      await loadLeague();
     };
 
     const rejectBtn = document.createElement("button");
@@ -111,16 +116,20 @@ async function loadPending() {
   });
 }
 
+/* -----------------------------------------
+   All users + league membership snapshot
+----------------------------------------- */
 async function loadUsers() {
   if (!usersList || !usersCount) return;
 
   clearNode(usersList);
   usersList.textContent = "Loading…";
 
-  // Pull all users
   const { data: users, error: usersErr } = await supabase
     .from("site_users")
-    .select("id, email, handle, moderated_handle, status, payment_status, is_mod, created_at")
+    .select(
+      "id, email, handle, moderated_handle, status, payment_status, is_mod, created_at"
+    )
     .order("created_at", { ascending: true });
 
   if (usersErr) {
@@ -130,7 +139,6 @@ async function loadUsers() {
     return;
   }
 
-  // League membership map for current season
   const { data: members, error: membersErr } = await supabase
     .from("league_members")
     .select("id, user_id, payment_status")
@@ -138,7 +146,7 @@ async function loadUsers() {
 
   const memberByUser = new Map();
   if (!membersErr && members) {
-    members.forEach(m => memberByUser.set(m.user_id, m));
+    members.forEach((m) => memberByUser.set(m.user_id, m));
   }
 
   clearNode(usersList);
@@ -149,9 +157,10 @@ async function loadUsers() {
     return;
   }
 
-  usersCount.textContent = `${users.length} account${users.length === 1 ? "" : "s"}.`;
+  usersCount.textContent =
+    `${users.length} account${users.length === 1 ? "" : "s"}.`;
 
-  users.forEach(u => {
+  users.forEach((u) => {
     const row = document.createElement("div");
     row.className = "row";
 
@@ -200,11 +209,11 @@ async function loadUsers() {
       saveHandleBtn.disabled = false;
     };
 
-    // Payment status select (site_users.payment_status)
+    // Payment status select
     const paySelect = document.createElement("select");
     paySelect.className = "handle-input";
     const options = ["", "unpaid", "paid", "comped"];
-    options.forEach(val => {
+    options.forEach((val) => {
       const opt = document.createElement("option");
       opt.value = val;
       opt.textContent = val === "" ? "(no status)" : val;
@@ -218,12 +227,12 @@ async function loadUsers() {
       if (error) console.error("setPaymentStatus error", error);
     };
 
-    // League membership indicator / removal
     const membership = memberByUser.get(u.id);
     const leagueInfo = document.createElement("span");
     leagueInfo.className = "small-muted";
     if (membership) {
-      leagueInfo.textContent = `In ${CURRENT_SEASON} (league row ${membership.id})`;
+      leagueInfo.textContent =
+        `In ${CURRENT_SEASON} (league row ${membership.id})`;
     } else {
       leagueInfo.textContent = `Not in ${CURRENT_SEASON}`;
     }
@@ -254,6 +263,9 @@ async function loadUsers() {
   });
 }
 
+/* -----------------------------------------
+   League members list
+----------------------------------------- */
 async function loadLeague() {
   if (!leagueList || !leagueCount) return;
 
@@ -279,7 +291,7 @@ async function loadLeague() {
     return;
   }
 
-  const userIds = [...new Set(members.map(m => m.user_id))];
+  const userIds = [...new Set(members.map((m) => m.user_id))];
 
   const { data: users, error: usersErr } = await supabase
     .from("site_users")
@@ -293,11 +305,11 @@ async function loadLeague() {
     return;
   }
 
-  const userById = new Map(users.map(u => [u.id, u]));
+  const userById = new Map(users.map((u) => [u.id, u]));
 
   clearNode(leagueList);
 
-  members.forEach(m => {
+  members.forEach((m) => {
     const u = userById.get(m.user_id);
     if (!u) return;
 
@@ -339,9 +351,13 @@ async function loadLeague() {
     leagueList.appendChild(row);
   });
 
-  leagueCount.textContent = `${members.length} member${members.length === 1 ? "" : "s"} in ${CURRENT_SEASON}.`;
+  leagueCount.textContent =
+    `${members.length} member${members.length === 1 ? "" : "s"} in ${CURRENT_SEASON}.`;
 }
 
+/* -----------------------------------------
+   INIT
+----------------------------------------- */
 async function init() {
   const profile = await getProfile();
 

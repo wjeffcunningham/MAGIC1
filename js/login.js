@@ -1,3 +1,4 @@
+// /js/login.js
 import { supabase } from "./config.js";
 
 const emailField = document.getElementById("email");
@@ -18,27 +19,28 @@ function isValidEmail(em) {
 }
 
 /* --------------------------------------------------------
-   LOGIN (unchanged)
+   LOGIN
 ---------------------------------------------------------*/
 document.getElementById("login-btn").onclick = async () => {
   busy(true);
   show("");
 
-  const email = emailField.value.trim();
-  const password = pwField.value;
+  const email    = (emailField.value || "").trim();
+  const password = pwField.value || "";
 
   if (!email || !password) {
-    show("Fill all fields.");
+    show("Fill in email and password.");
     busy(false);
     return;
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({
-    email, password
+    email,
+    password,
   });
 
   if (error) {
-    show(error.message);
+    show(error.message || "Login failed.");
     busy(false);
     return;
   }
@@ -51,8 +53,8 @@ document.getElementById("login-btn").onclick = async () => {
     .eq("id", uid)
     .single();
 
-  if (!profile || profErr) {
-    show("Profile missing.");
+  if (profErr || !profile) {
+    show("Profile missing. Contact organizer.");
     busy(false);
     return;
   }
@@ -64,27 +66,27 @@ document.getElementById("login-btn").onclick = async () => {
   }
 
   if (profile.status === "rejected") {
-    show("Your sign-up was rejected.");
+    show("Your account has been rejected.");
     busy(false);
     return;
   }
 
-  // Approved → enter
+  // Approved → send to league hub
   window.location.href = "/bcwl-hub.html";
 };
 
 /* --------------------------------------------------------
-   SIGN-UP (Turnstile integrated)
+   SIGN-UP (Turnstile + Supabase)
 ---------------------------------------------------------*/
 document.getElementById("signup-btn").onclick = async () => {
   busy(true);
   show("");
 
-  const email = emailField.value.trim();
-  const password = pwField.value;
+  const email    = (emailField.value || "").trim();
+  const password = pwField.value || "";
 
   if (!isValidEmail(email)) {
-    show("Enter a valid email.");
+    show("Enter a valid email address.");
     busy(false);
     return;
   }
@@ -95,14 +97,15 @@ document.getElementById("signup-btn").onclick = async () => {
     return;
   }
 
-  /* --------------------------------------------------------
-     TURNSTILE TOKEN
-  ---------------------------------------------------------*/
+  // ----- TURNSTILE TOKEN -----
   let turnstileToken = "";
   try {
-    turnstileToken = turnstile.getResponse();
+    turnstileToken =
+      window.turnstile && window.turnstile.getResponse
+        ? window.turnstile.getResponse()
+        : "";
   } catch (e) {
-    show("Turnstile not ready. Try again.");
+    show("Verification widget not ready. Try again.");
     busy(false);
     return;
   }
@@ -113,50 +116,45 @@ document.getElementById("signup-btn").onclick = async () => {
     return;
   }
 
-  /* --------------------------------------------------------
-     Call Cloudflare to verify token (client → CF → Supabase)
-     Replace YOUR_SECRET_ENDPOINT with your Worker URL
-  ---------------------------------------------------------*/
-
+  // ----- VERIFY WITH WORKER -----
   let verified = false;
   try {
-    const v = await fetch("https://magic1-turnstile-verify.wjeffcunningham.workers.dev", {
+    const resp = await fetch("https://magic1-turnstile-verify.wjeffcunningham.workers.dev/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ turnstileToken })
+      body: JSON.stringify({ turnstileToken }),
     });
-    const out = await v.json();
-    verified = out.success === true;
-  } catch (err) {
-    show("Verification error.");
+
+    const out = await resp.json();
+    verified = !!out.success;
+  } catch (e) {
+    console.error("Turnstile verification error:", e);
+    show("Verification error. Try again.");
     busy(false);
     return;
   }
 
   if (!verified) {
-    show("Verification failed.");
-    try { turnstile.reset(); } catch (_) {}
+    show("Verification failed. Please try again.");
+    try { window.turnstile.reset(); } catch (_) {}
     busy(false);
     return;
   }
 
-  /* --------------------------------------------------------
-     SUPABASE SIGN-UP
-  ---------------------------------------------------------*/
+  // ----- SUPABASE SIGN-UP -----
   const { data, error } = await supabase.auth.signUp({
     email,
-    password
+    password,
   });
 
   if (error) {
-    show(error.message);
+    show(error.message || "Sign-up failed.");
     busy(false);
     return;
   }
 
   const uid = data.user.id;
 
-  // Create row in site_users
   const { error: profErr } = await supabase
     .from("site_users")
     .insert({
@@ -164,27 +162,29 @@ document.getElementById("signup-btn").onclick = async () => {
       email,
       status: "pending",
       handle: null,
-      remote_preference: null,
+      moderated_handle: null,
+      avatar_url: null,
+      remote_preference: "no_remote",
       bio: null,
-      avatar_url: null
+      payment_status: null,
+      is_mod: false,
     });
 
-    // Add email to mailing list (ignore if already exists)
-await supabase
-  .from("mailing_list")
-  .insert({ email })
-  .catch(() => {});
-
   if (profErr) {
-    show("Profile creation failed.");
+    console.error("Profile creation failed:", profErr);
+    show("Profile creation failed. Contact organizer.");
     busy(false);
     return;
   }
 
+  // optional mailing list hook – ignored on error
+  try {
+    await supabase
+      .from("mailing_list")
+      .insert({ email });
+  } catch (_) {}
+
   show("Sign-up successful. Awaiting admin approval.");
-
-  // Reset Turnstile for next attempt
-  try { turnstile.reset(); } catch (_) {}
-
+  try { window.turnstile.reset(); } catch (_) {}
   busy(false);
 };

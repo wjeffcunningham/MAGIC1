@@ -1,5 +1,5 @@
 // /js/admin-api.js
-import { supabase } from "/js/config.js";
+import { supabase } from "./config.js";
 
 /* -----------------------------------------
    Approve / Reject users
@@ -31,11 +31,12 @@ export async function overrideHandle(id, newValue) {
 /* -----------------------------------------
    Set payment status on site_users
 ----------------------------------------- */
-export async function setPaymentStatus(id, status) {
+export async function setPaymentStatus(userId, status) {
+  const val = status || null;
   return await supabase
     .from("site_users")
-    .update({ payment_status: status })
-    .eq("id", id);
+    .update({ payment_status: val })
+    .eq("id", userId);
 }
 
 /* -----------------------------------------

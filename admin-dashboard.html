@@ -37,16 +37,10 @@
   .row:last-child { border-bottom:none; }
   .row-main {
     display:flex;
-    align-items:center;
-    gap:10px;
+    flex-direction:column;
+    gap:4px;
     font-size:0.9rem;
     margin-bottom:6px;
-  }
-  .row-main img {
-    width:34px; height:34px;
-    border-radius:8px;
-    border:1px solid #000;
-    object-fit:cover;
   }
   .handle-input {
     width:140px;
@@ -75,6 +69,14 @@
   }
   .btn.primary { background:#000; color:white; }
   .btn.danger { background:#ffebeb; border-color:#c00; }
+  .tag {
+    display:inline-block;
+    padding:3px 7px;
+    border-radius:999px;
+    border:1px solid #333;
+    font-size:0.7rem;
+    margin-right:4px;
+  }
 </style>
 </head>
 
@@ -95,21 +97,21 @@
 
   <!-- ADMIN PANEL -->
   <div id="admin-panel" class="hidden">
-    
+
     <!-- PENDING USERS -->
     <h2>Pending Users</h2>
     <p class="muted" id="pending-count"></p>
     <div id="pending-list" class="list"></div>
 
-<!-- MANAGE EXISTING USERS -->
-<h2>Manage Users</h2>
-<p class="muted" id="users-count"></p>
-<div id="users-list" class="list"></div>
+    <!-- MANAGE EXISTING USERS -->
+    <h2>Manage Users</h2>
+    <p class="muted" id="users-count"></p>
+    <div id="users-list" class="list"></div>
 
-<!-- LEAGUE MEMBERS -->
-<h2>League Members (Current Season)</h2>
-<p class="muted" id="league-count"></p>
-<div id="league-list" class="list"></div>
+    <!-- LEAGUE MEMBERS -->
+    <h2>League Members (Current Season)</h2>
+    <p class="muted" id="league-count"></p>
+    <div id="league-list" class="list"></div>
 
   </div>
 </div>
