@@ -1,87 +1,119 @@
 // /js/bcwl-hub.js
-import { supabase } from "./config.js";
-import { getProfile, CURRENT_SEASON } from "./db.js";
+import {
+  getProfile,
+  CURRENT_SEASON,
+  getMyLeagueMembership,
+  getLeagueRoster,
+  joinCurrentLeague
+} from "./db.js";
 
 const notLogged   = document.getElementById("not-logged");
 const notApproved = document.getElementById("not-approved");
 const notJoined   = document.getElementById("not-joined");
 const hubMain     = document.getElementById("hub-main");
-const paymentBox  = document.getElementById("payment-status");
+
 const joinBtn     = document.getElementById("join-btn");
+const paymentBox  = document.getElementById("payment-status");
+const statusBox   = document.getElementById("confirmation-status");
+const rosterList  = document.getElementById("roster-list");
 
 function hideAll() {
-  notLogged.classList.add("hidden");
-  notApproved.classList.add("hidden");
-  notJoined.classList.add("hidden");
-  hubMain.classList.add("hidden");
+  if (notLogged)   notLogged.style.display   = "none";
+  if (notApproved) notApproved.style.display = "none";
+  if (notJoined)   notJoined.style.display   = "none";
+  if (hubMain)     hubMain.style.display     = "none";
 }
 
-async function joinLeague(profile) {
-  if (!profile) return;
+function renderRoster(roster) {
+  if (!rosterList) return;
+  rosterList.innerHTML = "";
 
-  const { error } = await supabase
-    .from("league_members")
-    .insert({
-      user_id: profile.id,
-      season: CURRENT_SEASON,
-      payment_status: "unpaid",
-    });
-
-  if (error) {
-    console.error("joinLeague error:", error);
-    alert("Could not join league. Contact organizer.");
+  if (!roster || roster.length === 0) {
+    rosterList.textContent = "No players have joined yet.";
     return;
   }
 
-  await loadState();
+  roster.forEach(player => {
+    const row = document.createElement("div");
+    row.className = "roster-row";
+
+    const name = player.moderated_handle || player.handle || player.email;
+
+    const statusBits = [];
+    statusBits.push(player.payment_status || "unpaid");
+    statusBits.push(player.confirmed ? "confirmed" : "unconfirmed");
+
+    row.innerHTML = `
+      <div class="roster-name"><strong>${name}</strong></div>
+      <div class="roster-meta">${statusBits.join(" • ")}</div>
+    `;
+
+    rosterList.appendChild(row);
+  });
 }
 
-async function loadState() {
+async function init() {
   hideAll();
 
   const profile = await getProfile();
 
-  // 1. Not logged in
+  // 1) Not logged in at all
   if (!profile) {
-    notLogged.classList.remove("hidden");
+    if (notLogged) notLogged.style.display = "block";
     return;
   }
 
-  // 2. Logged in but not approved
+  // 2) Logged in but not approved
   if (profile.status !== "approved") {
-    notApproved.classList.remove("hidden");
+    if (notApproved) notApproved.style.display = "block";
     return;
   }
 
-  // 3. Approved – check membership
-  const { data: members, error } = await supabase
-    .from("league_members")
-    .select("id, payment_status")
-    .eq("user_id", profile.id)
-    .eq("season", CURRENT_SEASON)
-    .limit(1);
+  // 3) Fetch membership + roster
+  const [member, roster] = await Promise.all([
+    getMyLeagueMembership(),
+    getLeagueRoster()
+  ]);
 
-  if (error) {
-    console.error("league_members lookup error:", error);
-    alert("Error loading league status.");
-    return;
+  // Setup Join button behavior
+  if (joinBtn) {
+    joinBtn.onclick = async () => {
+      joinBtn.disabled = true;
+      joinBtn.textContent = "Joining…";
+
+      const { error } = await joinCurrentLeague();
+      if (error) {
+        console.error("joinCurrentLeague error", error);
+        joinBtn.disabled = false;
+        joinBtn.textContent = "Join the League";
+        return;
+      }
+
+      // Reload view
+      await init();
+    };
   }
 
-  const member = members && members.length ? members[0] : null;
-
-  // 3a. Not yet in league → show join button
+  // 4) If not a member yet
   if (!member) {
-    notJoined.classList.remove("hidden");
-    if (joinBtn) {
-      joinBtn.onclick = () => joinLeague(profile);
-    }
+    if (notJoined) notJoined.style.display = "block";
     return;
   }
 
-  // 4. Already in league → show main hub
-  hubMain.classList.remove("hidden");
-  paymentBox.textContent =
-    `Payment status: ${member.payment_status || "unpaid"}`;
+  // 5) User IS a member → show main hub
+  if (hubMain) hubMain.style.display = "block";
+
+  if (paymentBox) {
+    paymentBox.textContent = `Payment status: ${member.payment_status || "unpaid"}`;
+  }
+
+  if (statusBox) {
+    statusBox.textContent = member.confirmed
+      ? "Status: confirmed by organizers."
+      : "Status: awaiting confirmation.";
+  }
+
+  renderRoster(roster);
 }
 
-document.addEventListener("DOMContentLoaded", loadState);
+document.addEventListener("DOMContentLoaded", init);

@@ -12,81 +12,145 @@
     background: #f0f2ff;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   }
+
   .shell {
-    max-width: 800px;
-    margin: 80px auto;
-    padding: 20px;
-    background: #fff;
-    border-radius: 12px;
+    max-width: 780px;
+    margin: 40px auto;
+    padding: 20px 18px 28px;
+    background: #ffffff;
+    border-radius: 14px;
     border: 2px solid #000;
   }
+
   h1 {
-    margin: 0 0 6px;
+    margin: 0 0 8px;
+    font-size: 1.8rem;
     text-align: center;
   }
   .muted {
-    font-size: 0.9rem;
-    opacity: 0.7;
     text-align: center;
+    font-size: 0.9rem;
+    opacity: 0.75;
     margin-bottom: 20px;
   }
-  .card {
+
+  .section {
+    margin-top: 18px;
+    padding: 14px 12px;
     border-radius: 10px;
-    border: 1px solid #ddd;
-    padding: 12px 14px;
-    margin-top: 10px;
-    background: #fafafa;
+    background: #fafbff;
   }
-  .hidden {
-    display: none;
+
+  h2 {
+    margin: 0 0 10px;
+    font-size: 1.3rem;
   }
-  .btn {
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid #000;
+
+  .btn-big {
+    display: inline-block;
+    width: 100%;
+    padding: 14px 20px;
+    margin: 10px 0;
+    border-radius: 10px;
+    border: 2px solid #000;
     background: #000;
     color: #fff;
+    font-size: 1rem;
+    text-align: center;
     cursor: pointer;
-    font-size: 0.9rem;
   }
-  .btn:disabled {
+  .btn-big:disabled {
     opacity: 0.6;
     cursor: default;
+  }
+
+  .notice {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fff8e1;
+    border: 1px solid #f0c000;
+    font-size: 0.9rem;
+  }
+
+  .roster {
+    margin-top: 8px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #f7f8ff;
+    padding: 8px;
+  }
+  .roster-row {
+    padding: 6px 4px;
+    border-bottom: 1px solid #e1e4ff;
+  }
+  .roster-row:last-child {
+    border-bottom: none;
+  }
+  .roster-name {
+    font-size: 0.95rem;
+  }
+  .roster-meta {
+    font-size: 0.8rem;
+    opacity: 0.75;
+  }
+
+  .state-block {
+    margin: 10px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #fdfdff;
+    font-size: 0.9rem;
   }
 </style>
 </head>
 
 <body>
 <div class="shell">
-  <h1>BC Winter League Hub</h1>
-  <p class="muted">Sign in, get approved, and join the league.</p>
+  <h1>BC Winter League 2026</h1>
+  <p class="muted">Sign up for the league, check your status, and see the current roster.</p>
 
-  <!-- Not logged in -->
-  <div id="not-logged" class="card hidden">
-    <p>You must be logged in to view the league hub.</p>
-    <button class="btn" onclick="location.href='/login.html'">Go to Login / Sign-Up</button>
+  <script type="module" src="/js/bcwl-widget.js"></script>
+
+  <!-- NOT LOGGED IN -->
+  <div id="not-logged" class="section">
+    <h2>Login Required</h2>
+    <p>You need an approved account to join the league.</p>
+    <p><a href="/login.html">Go to login / sign-up page</a></p>
   </div>
 
-  <!-- Logged in, not approved -->
-  <div id="not-approved" class="card hidden">
-    <p>Your account is pending approval. You’ll be emailed when approved.</p>
+  <!-- NOT APPROVED YET -->
+  <div id="not-approved" class="section" style="display:none">
+    <h2>Account Pending</h2>
+    <div class="notice">
+      Your account is still pending approval by the organizers. Once approved,
+      you can join the league from this page.
+    </div>
   </div>
 
-  <!-- Approved but not yet in league -->
-  <div id="not-joined" class="card hidden">
+  <!-- LOGGED IN, APPROVED, BUT NOT JOINED -->
+  <div id="not-joined" class="section" style="display:none">
     <h2>Join the League</h2>
-    <p>Click below to join the current BC Winter League season.</p>
-    <button id="join-btn" class="btn">Join the League</button>
+    <p>Click below to join BC Winter League 2026.</p>
+    <button id="join-btn" class="btn-big">Join the League</button>
+    <div class="state-block">
+      After joining, you'll appear on the roster and organizers can mark your payment and confirmation status.
+    </div>
   </div>
 
-  <!-- In league -->
-  <div id="hub-main" class="card hidden">
-    <h2>Welcome to the League!</h2>
-    <p>Your membership is active.</p>
-    <div id="payment-status"></div>
+  <!-- MAIN HUB: USER IS A MEMBER -->
+  <div id="hub-main" class="section" style="display:none">
+    <h2>Your League Status</h2>
+    <div id="payment-status" class="state-block"></div>
+    <div id="confirmation-status" class="state-block"></div>
+
+    <h2 style="margin-top:18px;">League Roster</h2>
+    <div id="roster-list" class="roster"></div>
   </div>
+
 </div>
 
+<!-- SCRIPTS -->
 <script type="module" src="/js/db.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>
 <script type="module" src="/js/bcwl-hub.js"></script>

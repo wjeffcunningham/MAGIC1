@@ -33,12 +33,10 @@ export async function getProfile() {
   return data;
 }
 
-// updates: partial object for site_users, e.g. { handle, bio, remote_preference }
+// Save partial profile updates
 export async function saveProfile(updates) {
   const user = await getAuthUser();
-  if (!user) {
-    return { error: new Error("Not logged in") };
-  }
+  if (!user) return { error: new Error("Not logged in") };
 
   const { data, error } = await supabase
     .from("site_users")
@@ -47,10 +45,7 @@ export async function saveProfile(updates) {
     .select()
     .single();
 
-  if (error) {
-    console.error("saveProfile error", error);
-  }
-
+  if (error) console.error("saveProfile error", error);
   return { data, error };
 }
 
@@ -62,11 +57,11 @@ export async function uploadAvatar(file) {
   if (!user) return { error: new Error("Not logged in") };
   if (!file) return { error: new Error("No file provided") };
 
-  const fileExt = file.name && file.name.includes(".")
+  const ext = file.name && file.name.includes(".")
     ? file.name.split(".").pop()
     : "jpg";
 
-  const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+  const filePath = `${user.id}/${Date.now()}.${ext}`;
 
   const { error: uploadErr } = await supabase.storage
     .from("profile-images")
@@ -82,35 +77,140 @@ export async function uploadAvatar(file) {
     .getPublicUrl(filePath);
 
   const url = urlData && urlData.publicUrl ? urlData.publicUrl : null;
-
   return { url, error: null };
 }
 
 /* -------------------------------------------------------
-   MAILING LIST
-   (Optional table: mailing_list(email text primary key, created_at timestamptz))
+   MAILING LIST (optional table: mailing_list)
 -------------------------------------------------------- */
 export async function subscribeToMailingList(email) {
   if (!email) return { error: new Error("Email required") };
 
-  try {
-    const { error } = await supabase
-      .from("mailing_list")
-      .insert({ email });
+  const { error } = await supabase
+    .from("mailing_list")
+    .insert({ email });
 
-    // Ignore duplicate / unique errors silently – user is already on list
-    if (error) {
-      const msg = (error.message || "").toLowerCase();
-      if (msg.includes("duplicate") || msg.includes("unique")) {
-        return { error: null };
-      }
-      console.error("subscribeToMailingList error", error);
-      return { error };
+  if (error) {
+    const msg = (error.message || "").toLowerCase();
+    if (msg.includes("duplicate") || msg.includes("unique")) {
+      // already subscribed, treat as success
+      return { error: null };
     }
-
-    return { error: null };
-  } catch (e) {
-    console.error("subscribeToMailingList unexpected error", e);
-    return { error: e };
+    console.error("subscribeToMailingList error", error);
+    return { error };
   }
+
+  return { error: null };
 }
+
+/* -------------------------------------------------------
+   LEAGUE HELPERS
+-------------------------------------------------------- */
+
+// Get current season membership for logged-in user
+export async function getMyLeagueMembership() {
+  const user = await getAuthUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("league_members")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("season", CURRENT_SEASON);
+
+  if (error) {
+    console.error("getMyLeagueMembership error", error);
+    return null;
+  }
+  if (!data || data.length === 0) return null;
+  return data[0];
+}
+
+// Get full roster for current season (league_members + site_users)
+export async function getLeagueRoster() {
+  const { data: members, error } = await supabase
+    .from("league_members")
+    .select("id, user_id, payment_status, confirmed, joined_at")
+    .eq("season", CURRENT_SEASON)
+    .order("joined_at", { ascending: true });
+
+  if (error) {
+    console.error("getLeagueRoster members error", error);
+    return [];
+  }
+  if (!members || members.length === 0) return [];
+
+  const userIds = [...new Set(members.map(m => m.user_id))];
+
+  const { data: users, error: usersErr } = await supabase
+    .from("site_users")
+    .select("id, email, handle, moderated_handle")
+    .in("id", userIds);
+
+  if (usersErr) {
+    console.error("getLeagueRoster users error", usersErr);
+    return [];
+  }
+
+  const userById = new Map(users.map(u => [u.id, u]));
+
+  // join
+  return members.map(m => {
+    const u = userById.get(m.user_id) || {};
+    return {
+      id: m.id,
+      user_id: m.user_id,
+      email: u.email || "",
+      handle: u.handle || "",
+      moderated_handle: u.moderated_handle || "",
+      payment_status: m.payment_status || "unpaid",
+      confirmed: !!m.confirmed,
+      joined_at: m.joined_at
+    };
+  });
+}
+
+// Join league for current season (inserts league_members row)
+export async function joinCurrentLeague() {
+  const user = await getAuthUser();
+  if (!user) return { error: new Error("Not logged in") };
+
+  // check if already member
+  const { data: existing, error: existErr } = await supabase
+    .from("league_members")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("season", CURRENT_SEASON);
+
+  if (existErr) {
+    console.error("joinCurrentLeague check error", existErr);
+    return { error: existErr };
+  }
+  if (existing && existing.length > 0) {
+    return { error: null, already: true };
+  }
+
+  const { data, error } = await supabase
+    .from("league_members")
+    .insert({
+      user_id: user.id,
+      season: CURRENT_SEASON,
+      payment_status: "unpaid",
+      confirmed: false
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("joinCurrentLeague insert error", error);
+  }
+
+  return { data, error, already: false };
+}
+
+/* -------------------------------------------------------
+   ADMIN HELPERS (used by admin-dashboard via admin-api)
+-------------------------------------------------------- */
+
+// Note: approveUser / rejectUser / etc are implemented in /js/admin-api.js
+// This file focuses on shared auth/profile/league helpers only.

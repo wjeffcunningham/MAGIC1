@@ -5,8 +5,9 @@ import {
   approveUser,
   rejectUser,
   overrideHandle,
-  setPaymentStatus,
-  removeLeagueMemberRow,
+  setLeaguePaymentStatus,
+  setLeagueConfirmed,
+  removeLeagueMemberRow
 } from "./admin-api.js";
 
 const notLogged   = document.getElementById("not-logged");
@@ -31,9 +32,25 @@ function nameForUser(u) {
   return u.moderated_handle || u.handle || u.email;
 }
 
-/* -----------------------------------------
-   Pending users
------------------------------------------ */
+function notifyLeagueConfirmed(email, displayName) {
+  const season = CURRENT_SEASON;
+
+  fetch("https://magic1-league-confirm-email.wjeffcunningham.workers.dev/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email,
+      name: displayName || "",
+      season
+    })
+  })
+    .then(r => r.text())
+    .then(t => console.log("[email worker] OK:", t))
+    .catch(err => console.error("[email worker] ERROR:", err));
+}
+/* -------------------------------------------------------
+   PENDING USERS
+-------------------------------------------------------- */
 async function loadPending() {
   if (!pendingList || !pendingCount) return;
 
@@ -61,10 +78,9 @@ async function loadPending() {
     return;
   }
 
-  pendingCount.textContent =
-    `${data.length} pending signup${data.length === 1 ? "" : "s"}.`;
+  pendingCount.textContent = `${data.length} pending signup${data.length === 1 ? "" : "s"}.`;
 
-  data.forEach((u) => {
+  data.forEach(u => {
     const row = document.createElement("div");
     row.className = "row";
 
@@ -86,14 +102,26 @@ async function loadPending() {
     const approveBtn = document.createElement("button");
     approveBtn.className = "btn primary";
     approveBtn.textContent = "Approve";
-    approveBtn.onclick = async () => {
-      approveBtn.disabled = true;
-      const { error: err } = await approveUser(u.id);
-      if (err) console.error("approve error", err);
-      await loadPending();
-      await loadUsers();
-      await loadLeague();
-    };
+
+approveBtn.onclick = async () => {
+  approveBtn.disabled = true;
+  const { error: err } = await approveUser(u.id);
+  if (err) console.error("approve error", err);
+
+  // SEND EMAIL:
+  fetch("https://magic1-signup-approved-email.wjeffcunningham.workers.dev/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: u.email,
+      name: u.handle || ""
+    })
+  });
+
+  await loadPending();
+  await loadUsers();
+  await loadLeague();
+};
 
     const rejectBtn = document.createElement("button");
     rejectBtn.className = "btn";
@@ -116,9 +144,10 @@ async function loadPending() {
   });
 }
 
-/* -----------------------------------------
-   All users + league membership snapshot
------------------------------------------ */
+/* -------------------------------------------------------
+   MANAGE USERS (accounts overview)
+   - shows league membership, but edits only handle
+-------------------------------------------------------- */
 async function loadUsers() {
   if (!usersList || !usersCount) return;
 
@@ -127,9 +156,7 @@ async function loadUsers() {
 
   const { data: users, error: usersErr } = await supabase
     .from("site_users")
-    .select(
-      "id, email, handle, moderated_handle, status, payment_status, is_mod, created_at"
-    )
+    .select("id, email, handle, moderated_handle, status, is_mod, created_at")
     .order("created_at", { ascending: true });
 
   if (usersErr) {
@@ -139,14 +166,15 @@ async function loadUsers() {
     return;
   }
 
-  const { data: members, error: membersErr } = await supabase
+  // league membership for current season
+  const { data: members, error: memErr } = await supabase
     .from("league_members")
-    .select("id, user_id, payment_status")
+    .select("id, user_id, payment_status, confirmed")
     .eq("season", CURRENT_SEASON);
 
   const memberByUser = new Map();
-  if (!membersErr && members) {
-    members.forEach((m) => memberByUser.set(m.user_id, m));
+  if (!memErr && members) {
+    members.forEach(m => memberByUser.set(m.user_id, m));
   }
 
   clearNode(usersList);
@@ -157,10 +185,9 @@ async function loadUsers() {
     return;
   }
 
-  usersCount.textContent =
-    `${users.length} account${users.length === 1 ? "" : "s"}.`;
+  usersCount.textContent = `${users.length} account${users.length === 1 ? "" : "s"}.`;
 
-  users.forEach((u) => {
+  users.forEach(u => {
     const row = document.createElement("div");
     row.className = "row";
 
@@ -184,10 +211,25 @@ async function loadUsers() {
     subLine.className = "small-muted";
     subLine.textContent = u.email;
 
+    const leagueInfo = document.createElement("div");
+    leagueInfo.className = "small-muted";
+
+    const membership = memberByUser.get(u.id);
+    if (membership) {
+      const statusParts = [];
+      statusParts.push(`In ${CURRENT_SEASON}`);
+      statusParts.push(membership.payment_status || "unpaid");
+      statusParts.push(membership.confirmed ? "confirmed" : "unconfirmed");
+      leagueInfo.textContent = statusParts.join(" • ");
+    } else {
+      leagueInfo.textContent = `Not in ${CURRENT_SEASON}`;
+    }
+
     main.appendChild(topLine);
     main.appendChild(subLine);
     main.appendChild(statusTag);
     if (u.is_mod) main.appendChild(modTag);
+    main.appendChild(leagueInfo);
 
     const controls = document.createElement("div");
     controls.className = "controls";
@@ -209,53 +251,8 @@ async function loadUsers() {
       saveHandleBtn.disabled = false;
     };
 
-    // Payment status select
-    const paySelect = document.createElement("select");
-    paySelect.className = "handle-input";
-    const options = ["", "unpaid", "paid", "comped"];
-    options.forEach((val) => {
-      const opt = document.createElement("option");
-      opt.value = val;
-      opt.textContent = val === "" ? "(no status)" : val;
-      if ((u.payment_status || "") === val) opt.selected = true;
-      paySelect.appendChild(opt);
-    });
-
-    paySelect.onchange = async () => {
-      const val = paySelect.value || null;
-      const { error } = await setPaymentStatus(u.id, val);
-      if (error) console.error("setPaymentStatus error", error);
-    };
-
-    const membership = memberByUser.get(u.id);
-    const leagueInfo = document.createElement("span");
-    leagueInfo.className = "small-muted";
-    if (membership) {
-      leagueInfo.textContent =
-        `In ${CURRENT_SEASON} (league row ${membership.id})`;
-    } else {
-      leagueInfo.textContent = `Not in ${CURRENT_SEASON}`;
-    }
-
-    const removeFromLeagueBtn = document.createElement("button");
-    removeFromLeagueBtn.className = "btn danger";
-    removeFromLeagueBtn.textContent = "Remove from league";
-    removeFromLeagueBtn.disabled = !membership;
-
-    removeFromLeagueBtn.onclick = async () => {
-      if (!membership) return;
-      removeFromLeagueBtn.disabled = true;
-      const { error } = await removeLeagueMemberRow(membership.id);
-      if (error) console.error("removeLeagueMemberRow error", error);
-      await loadUsers();
-      await loadLeague();
-    };
-
     controls.appendChild(handleInput);
     controls.appendChild(saveHandleBtn);
-    controls.appendChild(paySelect);
-    controls.appendChild(leagueInfo);
-    controls.appendChild(removeFromLeagueBtn);
 
     row.appendChild(main);
     row.appendChild(controls);
@@ -263,9 +260,9 @@ async function loadUsers() {
   });
 }
 
-/* -----------------------------------------
-   League members list
------------------------------------------ */
+/* -------------------------------------------------------
+   LEAGUE MEMBERS (current season, full controls)
+-------------------------------------------------------- */
 async function loadLeague() {
   if (!leagueList || !leagueCount) return;
 
@@ -274,9 +271,9 @@ async function loadLeague() {
 
   const { data: members, error } = await supabase
     .from("league_members")
-    .select("id, user_id, payment_status, created_at")
+    .select("id, user_id, payment_status, confirmed, joined_at")
     .eq("season", CURRENT_SEASON)
-    .order("created_at", { ascending: true });
+    .order("joined_at", { ascending: true });
 
   if (error) {
     console.error("league_members error", error);
@@ -291,11 +288,11 @@ async function loadLeague() {
     return;
   }
 
-  const userIds = [...new Set(members.map((m) => m.user_id))];
+  const userIds = [...new Set(members.map(m => m.user_id))];
 
   const { data: users, error: usersErr } = await supabase
     .from("site_users")
-    .select("id, email, handle, moderated_handle, avatar_url")
+    .select("id, email, handle, moderated_handle")
     .in("id", userIds);
 
   if (usersErr) {
@@ -305,11 +302,11 @@ async function loadLeague() {
     return;
   }
 
-  const userById = new Map(users.map((u) => [u.id, u]));
+  const userById = new Map(users.map(u => [u.id, u]));
 
   clearNode(leagueList);
 
-  members.forEach((m) => {
+  members.forEach(m => {
     const u = userById.get(m.user_id);
     if (!u) return;
 
@@ -318,8 +315,8 @@ async function loadLeague() {
 
     const main = document.createElement("div");
     main.className = "row-main";
-    const name = nameForUser(u);
 
+    const name = nameForUser(u);
     main.innerHTML = `
       <div><strong>${name}</strong></div>
       <div class="small-muted">${u.email}</div>
@@ -328,14 +325,56 @@ async function loadLeague() {
     const controls = document.createElement("div");
     controls.className = "controls";
 
-    const tag = document.createElement("span");
-    tag.className = "tag";
-    tag.textContent = m.payment_status || "unpaid";
+    // Payment status select
+    const paySelect = document.createElement("select");
+    paySelect.className = "handle-input";
+    const options = ["unpaid", "paid", "comped"];
+    options.forEach(val => {
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = val;
+      if ((m.payment_status || "unpaid") === val) opt.selected = true;
+      paySelect.appendChild(opt);
+    });
 
+    paySelect.onchange = async () => {
+      const val = paySelect.value;
+      paySelect.disabled = true;
+      const { error } = await setLeaguePaymentStatus(m.id, val);
+      if (error) console.error("setLeaguePaymentStatus error", error);
+      paySelect.disabled = false;
+    };
+
+    // Confirmed checkbox
+    const confirmLabel = document.createElement("label");
+    confirmLabel.className = "small-muted";
+    const confirmCheckbox = document.createElement("input");
+    confirmCheckbox.type = "checkbox";
+    confirmCheckbox.checked = !!m.confirmed;
+    confirmCheckbox.style.marginRight = "4px";
+
+    confirmCheckbox.onchange = async () => {
+      const newVal = confirmCheckbox.checked;
+      confirmCheckbox.disabled = true;
+      const { error } = await setLeagueConfirmed(m.id, newVal);
+      if (error) {
+        console.error("setLeagueConfirmed error", error);
+      } else if (newVal) {
+        // Hook: fire confirmation email (currently just logs)
+        notifyLeagueConfirmed(u.email, name);
+      }
+      confirmCheckbox.disabled = false;
+    };
+
+    confirmLabel.appendChild(confirmCheckbox);
+    confirmLabel.appendChild(document.createTextNode("confirmed"));
+
+    // Remove button
     const removeBtn = document.createElement("button");
     removeBtn.className = "btn danger";
     removeBtn.textContent = "Remove";
     removeBtn.onclick = async () => {
+      if (!window.confirm("Remove this player from the league?")) return;
       removeBtn.disabled = true;
       const { error } = await removeLeagueMemberRow(m.id);
       if (error) console.error("removeLeagueMemberRow error", error);
@@ -343,7 +382,8 @@ async function loadLeague() {
       await loadLeague();
     };
 
-    controls.appendChild(tag);
+    controls.appendChild(paySelect);
+    controls.appendChild(confirmLabel);
     controls.appendChild(removeBtn);
 
     row.appendChild(main);
@@ -351,13 +391,12 @@ async function loadLeague() {
     leagueList.appendChild(row);
   });
 
-  leagueCount.textContent =
-    `${members.length} member${members.length === 1 ? "" : "s"} in ${CURRENT_SEASON}.`;
+  leagueCount.textContent = `${members.length} member${members.length === 1 ? "" : "s"} in ${CURRENT_SEASON}.`;
 }
 
-/* -----------------------------------------
+/* -------------------------------------------------------
    INIT
------------------------------------------ */
+-------------------------------------------------------- */
 async function init() {
   const profile = await getProfile();
 

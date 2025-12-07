@@ -1,4 +1,7 @@
 // /js/admin-api.js
+// Admin-only helpers that talk to Supabase.
+// Imported by /js/admin-dashboard.js
+
 import { supabase } from "./config.js";
 
 /* -----------------------------------------
@@ -29,19 +32,28 @@ export async function overrideHandle(id, newValue) {
 }
 
 /* -----------------------------------------
-   Set payment status on site_users
+   League membership admin controls
+   (canonical payment + confirmation live
+    on league_members, not site_users)
 ----------------------------------------- */
-export async function setPaymentStatus(userId, status) {
-  const val = status || null;
+
+// Update payment_status in league_members
+export async function setLeaguePaymentStatus(memberRowId, status) {
   return await supabase
-    .from("site_users")
-    .update({ payment_status: val })
-    .eq("id", userId);
+    .from("league_members")
+    .update({ payment_status: status })
+    .eq("id", memberRowId);
 }
 
-/* -----------------------------------------
-   Remove league member row
------------------------------------------ */
+// Update confirmed flag in league_members
+export async function setLeagueConfirmed(memberRowId, confirmed) {
+  return await supabase
+    .from("league_members")
+    .update({ confirmed })
+    .eq("id", memberRowId);
+}
+
+// Remove league_members row
 export async function removeLeagueMemberRow(memberRowId) {
   return await supabase
     .from("league_members")
