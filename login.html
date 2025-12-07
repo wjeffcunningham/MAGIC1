@@ -66,7 +66,8 @@
   <div class="turnstile-container">
     <div class="cf-turnstile"
          data-sitekey="0x4AAAAAACFFJAGSROQqWlLQ"
-         data-theme="light">
+         data-theme="light"
+         data-callback="onTurnstileSuccess">
     </div>
   </div>
 
@@ -77,6 +78,14 @@
 
   <p id="msg"></p>
 </div>
+
+<!-- GLOBAL TURNSTILE CALLBACK -->
+<script>
+function onTurnstileSuccess(token) {
+  console.log("TURNSTILE CALLBACK FIRED:", token);
+  window.turnstileToken = token;
+}
+</script>
 
 <!-- Turnstile -->
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
