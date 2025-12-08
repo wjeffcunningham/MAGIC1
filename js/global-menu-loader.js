@@ -3,6 +3,11 @@ import { supabase } from "./config.js";
 import { getProfile } from "./db.js";
 
 function insertMenu() {
+  // If already present, don't double-insert
+  if (document.getElementById("menu-icon") || document.getElementById("menu-panel")) {
+    return;
+  }
+
   const html = `
     <div id="menu-icon" style="
       position:fixed;
@@ -50,13 +55,21 @@ function insertMenu() {
       font-size:14px;
     "></div>
   `;
+
   document.body.insertAdjacentHTML("beforeend", html);
 }
 
 function togglePanel() {
   const panel = document.getElementById("menu-panel");
   if (!panel) return;
-  panel.style.display = panel.style.display === "none" || panel.style.display === "" ? "block" : "none";
+  panel.style.display =
+    panel.style.display === "none" || panel.style.display === "" ? "block" : "none";
+}
+
+function wireIcon() {
+  const icon = document.getElementById("menu-icon");
+  if (!icon) return;
+  icon.onclick = togglePanel;
 }
 
 async function renderMenu() {
@@ -90,7 +103,11 @@ async function renderMenu() {
   }
 
   // Build menu for logged-in user
-  const name = profile.handle || profile.handle || "Player";
+  const name =
+    profile.moderated_handle ||
+    profile.handle ||
+    profile.email ||
+    "Player";
 
   const links = [
     btn("User Settings", "/user-settings.html"),
@@ -98,7 +115,6 @@ async function renderMenu() {
     btn("BCPMM Hub", "/bcpmmsheet.html"),
   ];
 
-  // Admin link only if is_mod
   if (profile.is_mod) {
     links.push(btn("Admin Dashboard", "/admin-dashboard.html"));
   }
@@ -123,16 +139,30 @@ async function renderMenu() {
   const logoutBtn = panel.querySelector("#logout-btn");
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
-      await supabase.auth.signOut();
-      location.href = "/"; // hard refresh to clear UI state
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.error("logout error", e);
+      }
+      location.href = "/"; // hard refresh
     };
   }
 }
 
-// Inject menu and wire up once DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-  insertMenu();
-  const icon = document.getElementById("menu-icon");
-  if (icon) icon.onclick = togglePanel;
-  renderMenu();
-});
+function initMenu() {
+  try {
+    insertMenu();
+    wireIcon();
+    // Render menu asynchronously; even if this fails, icon still exists
+    renderMenu();
+  } catch (e) {
+    console.error("global-menu-loader init error", e);
+  }
+}
+
+// Run when DOM is ready (covers both cached + normal)
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initMenu);
+} else {
+  initMenu();
+}
