@@ -1,10 +1,12 @@
 // /js/login.js
 import { supabase } from "./config.js";
-import { subscribeToMailingList } from "./db.js";
 
 const emailField = document.getElementById("email");
 const pwField    = document.getElementById("password");
 const msg        = document.getElementById("msg");
+
+// Mailing list checkbox (may or may not exist depending on page)
+const mailingOpt = document.getElementById("mailing-list-opt");
 
 function show(m) { msg.textContent = m; }
 function busy(x) {
@@ -76,7 +78,7 @@ document.getElementById("login-btn").onclick = async () => {
 };
 
 /* --------------------------------------------------------
-   SIGN-UP (Turnstile callback version)
+   SIGN-UP
 ---------------------------------------------------------*/
 document.getElementById("signup-btn").onclick = async () => {
   busy(true);
@@ -98,7 +100,7 @@ document.getElementById("signup-btn").onclick = async () => {
   }
 
   /* --------------------------------------------------------
-     TURNSTILE TOKEN — from callback ONLY
+     TURNSTILE TOKEN (callback provided version)
   ---------------------------------------------------------*/
   const turnstileToken = window.turnstileToken || "";
 
@@ -109,7 +111,7 @@ document.getElementById("signup-btn").onclick = async () => {
   }
 
   /* --------------------------------------------------------
-     VERIFY TURNSTILE TOKEN WITH YOUR WORKER
+     VERIFY TURNSTILE WITH WORKER
   ---------------------------------------------------------*/
   let verified = false;
   try {
@@ -162,7 +164,7 @@ document.getElementById("signup-btn").onclick = async () => {
       remote_preference: "no_remote",
       bio: null,
       payment_status: null,
-      is_mod: false,
+      is_mod: false
     });
 
   if (profErr) {
@@ -172,11 +174,18 @@ document.getElementById("signup-btn").onclick = async () => {
     return;
   }
 
-  // Optional mailing list hook
-  try {
-    await subscribeToMailingList(email);
-  } catch (e) {
-    console.warn("Mailing list subscription error (ignored):", e);
+  /* --------------------------------------------------------
+     OPTIONAL MAILING LIST OPT-IN
+     (mails inserted only if checked)
+  ---------------------------------------------------------*/
+  if (mailingOpt && mailingOpt.checked) {
+    try {
+      await supabase
+        .from("mailing_list")
+        .upsert({ email }, { onConflict: "email" });
+    } catch (e) {
+      console.warn("Mailing list insert error (ignored):", e);
+    }
   }
 
   show("Sign-up successful. Awaiting admin approval.");
