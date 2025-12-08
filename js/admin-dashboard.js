@@ -32,22 +32,43 @@ function nameForUser(u) {
   return u.moderated_handle || u.handle || u.email;
 }
 
-function notifyLeagueConfirmed(email, displayName) {
-  const season = CURRENT_SEASON;
+/* -------------------------------------------------------
+   EMAIL HELPERS (always POST, never GET)
+-------------------------------------------------------- */
 
-  fetch("https://magic1-league-confirm-email.wjeffcunningham.workers.dev/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email,
-      name: displayName || "",
-      season
-    })
-  })
-    .then(r => r.text())
-    .then(t => console.log("[email worker] OK:", t))
-    .catch(err => console.error("[email worker] ERROR:", err));
+async function sendSignupApprovedEmail(email, name) {
+  try {
+    const resp = await fetch("https://magic1-signup-approved-email.wjeffcunningham.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        name: name || ""
+      })
+    });
+    console.log("[signup-approved email worker]", await resp.text());
+  } catch (err) {
+    console.error("[signup-approved email worker ERROR]", err);
+  }
 }
+
+async function sendLeagueConfirmedEmail(email, name) {
+  try {
+    const resp = await fetch("https://magic1-league-confirm-email.wjeffcunningham.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        name: name || "",
+        season: CURRENT_SEASON
+      })
+    });
+    console.log("[league-confirm email worker]", await resp.text());
+  } catch (err) {
+    console.error("[league-confirm email worker ERROR]", err);
+  }
+}
+
 /* -------------------------------------------------------
    PENDING USERS
 -------------------------------------------------------- */
@@ -103,25 +124,19 @@ async function loadPending() {
     approveBtn.className = "btn primary";
     approveBtn.textContent = "Approve";
 
-approveBtn.onclick = async () => {
-  approveBtn.disabled = true;
-  const { error: err } = await approveUser(u.id);
-  if (err) console.error("approve error", err);
+    approveBtn.onclick = async () => {
+      approveBtn.disabled = true;
 
-  // SEND EMAIL:
-  fetch("https://magic1-signup-approved-email.wjeffcunningham.workers.dev/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: u.email,
-      name: u.handle || ""
-    })
-  });
+      const { error: err } = await approveUser(u.id);
+      if (err) console.error("approve error", err);
 
-  await loadPending();
-  await loadUsers();
-  await loadLeague();
-};
+      // SEND APPROVAL EMAIL (POST-only)
+      await sendSignupApprovedEmail(u.email, u.handle);
+
+      await loadPending();
+      await loadUsers();
+      await loadLeague();
+    };
 
     const rejectBtn = document.createElement("button");
     rejectBtn.className = "btn";
@@ -145,8 +160,7 @@ approveBtn.onclick = async () => {
 }
 
 /* -------------------------------------------------------
-   MANAGE USERS (accounts overview)
-   - shows league membership, but edits only handle
+   MANAGE USERS
 -------------------------------------------------------- */
 async function loadUsers() {
   if (!usersList || !usersCount) return;
@@ -166,7 +180,6 @@ async function loadUsers() {
     return;
   }
 
-  // league membership for current season
   const { data: members, error: memErr } = await supabase
     .from("league_members")
     .select("id, user_id, payment_status, confirmed")
@@ -234,7 +247,7 @@ async function loadUsers() {
     const controls = document.createElement("div");
     controls.className = "controls";
 
-    // Handle override input
+    // Handle override
     const handleInput = document.createElement("input");
     handleInput.className = "handle-input";
     handleInput.placeholder = "override handle";
@@ -243,6 +256,7 @@ async function loadUsers() {
     const saveHandleBtn = document.createElement("button");
     saveHandleBtn.className = "btn";
     saveHandleBtn.textContent = "Save Handle";
+
     saveHandleBtn.onclick = async () => {
       saveHandleBtn.disabled = true;
       const newVal = handleInput.value.trim() || null;
@@ -261,7 +275,7 @@ async function loadUsers() {
 }
 
 /* -------------------------------------------------------
-   LEAGUE MEMBERS (current season, full controls)
+   LEAGUE MEMBERS
 -------------------------------------------------------- */
 async function loadLeague() {
   if (!leagueList || !leagueCount) return;
@@ -325,11 +339,11 @@ async function loadLeague() {
     const controls = document.createElement("div");
     controls.className = "controls";
 
-    // Payment status select
+    // Payment status widget
     const paySelect = document.createElement("select");
     paySelect.className = "handle-input";
-    const options = ["unpaid", "paid", "comped"];
-    options.forEach(val => {
+
+    ["unpaid", "paid", "comped"].forEach(val => {
       const opt = document.createElement("option");
       opt.value = val;
       opt.textContent = val;
@@ -345,9 +359,10 @@ async function loadLeague() {
       paySelect.disabled = false;
     };
 
-    // Confirmed checkbox
+    // Confirmation checkbox
     const confirmLabel = document.createElement("label");
     confirmLabel.className = "small-muted";
+
     const confirmCheckbox = document.createElement("input");
     confirmCheckbox.type = "checkbox";
     confirmCheckbox.checked = !!m.confirmed;
@@ -356,20 +371,22 @@ async function loadLeague() {
     confirmCheckbox.onchange = async () => {
       const newVal = confirmCheckbox.checked;
       confirmCheckbox.disabled = true;
+
       const { error } = await setLeagueConfirmed(m.id, newVal);
       if (error) {
         console.error("setLeagueConfirmed error", error);
       } else if (newVal) {
-        // Hook: fire confirmation email (currently just logs)
-        notifyLeagueConfirmed(u.email, name);
+        // FIRE CONFIRMATION EMAIL
+        await sendLeagueConfirmedEmail(u.email, name);
       }
+
       confirmCheckbox.disabled = false;
     };
 
     confirmLabel.appendChild(confirmCheckbox);
     confirmLabel.appendChild(document.createTextNode("confirmed"));
 
-    // Remove button
+    // Remove member
     const removeBtn = document.createElement("button");
     removeBtn.className = "btn danger";
     removeBtn.textContent = "Remove";
