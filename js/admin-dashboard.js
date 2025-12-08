@@ -33,19 +33,23 @@ function nameForUser(u) {
 }
 
 /* -------------------------------------------------------
-   EMAIL HELPERS (always POST, never GET)
+   EMAIL HELPERS (POST-only — no Authorization header)
 -------------------------------------------------------- */
 
 async function sendSignupApprovedEmail(email, name) {
   try {
-    const resp = await fetch("https://magic1-signup-approved-email.wjeffcunningham.workers.dev/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        name: name || ""
-      })
-    });
+    const resp = await fetch(
+      "https://magic1-signup-approved-email.wjeffcunningham.workers.dev/",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name: name || ""
+        })
+      }
+    );
+
     console.log("[signup-approved email worker]", await resp.text());
   } catch (err) {
     console.error("[signup-approved email worker ERROR]", err);
@@ -54,15 +58,19 @@ async function sendSignupApprovedEmail(email, name) {
 
 async function sendLeagueConfirmedEmail(email, name) {
   try {
-    const resp = await fetch("https://magic1-league-confirm-email.wjeffcunningham.workers.dev/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        name: name || "",
-        season: CURRENT_SEASON
-      })
-    });
+    const resp = await fetch(
+      "https://magic1-league-confirm-email.wjeffcunningham.workers.dev/",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name: name || "",
+          season: CURRENT_SEASON
+        })
+      }
+    );
+
     console.log("[league-confirm email worker]", await resp.text());
   } catch (err) {
     console.error("[league-confirm email worker ERROR]", err);
@@ -141,10 +149,13 @@ async function loadPending() {
     const rejectBtn = document.createElement("button");
     rejectBtn.className = "btn";
     rejectBtn.textContent = "Reject";
+
     rejectBtn.onclick = async () => {
       rejectBtn.disabled = true;
+
       const { error: err } = await rejectUser(u.id);
       if (err) console.error("reject error", err);
+
       await loadPending();
       await loadUsers();
       await loadLeague();
@@ -339,7 +350,7 @@ async function loadLeague() {
     const controls = document.createElement("div");
     controls.className = "controls";
 
-    // Payment status widget
+    // Payment status
     const paySelect = document.createElement("select");
     paySelect.className = "handle-input";
 
@@ -359,7 +370,7 @@ async function loadLeague() {
       paySelect.disabled = false;
     };
 
-    // Confirmation checkbox
+    // Confirm checkbox
     const confirmLabel = document.createElement("label");
     confirmLabel.className = "small-muted";
 
@@ -376,7 +387,7 @@ async function loadLeague() {
       if (error) {
         console.error("setLeagueConfirmed error", error);
       } else if (newVal) {
-        // FIRE CONFIRMATION EMAIL
+        // SEND CONFIRM EMAIL VIA WORKER
         await sendLeagueConfirmedEmail(u.email, name);
       }
 
@@ -390,11 +401,14 @@ async function loadLeague() {
     const removeBtn = document.createElement("button");
     removeBtn.className = "btn danger";
     removeBtn.textContent = "Remove";
+
     removeBtn.onclick = async () => {
       if (!window.confirm("Remove this player from the league?")) return;
       removeBtn.disabled = true;
+
       const { error } = await removeLeagueMemberRow(m.id);
       if (error) console.error("removeLeagueMemberRow error", error);
+
       await loadUsers();
       await loadLeague();
     };
