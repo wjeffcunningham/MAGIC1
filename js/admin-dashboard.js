@@ -23,17 +23,59 @@ const usersList    = document.getElementById("users-list");
 const leagueCount  = document.getElementById("league-count");
 const leagueList   = document.getElementById("league-list");
 
-function clearNode(node) {
-  if (!node) return;
-  while (node.firstChild) node.removeChild(node.firstChild);
+/* -------------------------------------------------------
+   VISUAL FEEDBACK HELPERS
+-------------------------------------------------------- */
+
+function markButtonSending(btn, text = "Sending…") {
+  btn.classList.add("sending");
+  btn.textContent = text;
 }
 
-function nameForUser(u) {
-  return u.moderated_handle || u.handle || u.email;
+function markButtonResult(btn, ok, okText = "✔ Sent", errText = "✖ Error") {
+  btn.classList.remove("sending");
+
+  if (ok) {
+    btn.classList.add("success");
+    btn.textContent = okText;
+    setTimeout(() => {
+      btn.classList.remove("success");
+      btn.textContent = btn.dataset.originalText || "Done";
+    }, 1200);
+  } else {
+    btn.classList.add("error");
+    btn.textContent = errText;
+    setTimeout(() => {
+      btn.classList.remove("error");
+      btn.textContent = btn.dataset.originalText || "Error";
+    }, 1500);
+  }
+}
+
+function flashRow(row) {
+  if (!row) return;
+  row.classList.add("flash-success");
+  setTimeout(() => row.classList.remove("flash-success"), 700);
 }
 
 /* -------------------------------------------------------
-   EMAIL HELPERS (POST-only — no Authorization header)
+   EMAIL LOGGING
+-------------------------------------------------------- */
+
+async function logEmail(type, to_email, payload = {}) {
+  const { error } = await supabase
+    .from("email_log")
+    .insert({ type, to_email, payload });
+
+  if (error) {
+    console.error("email_log insert error", error);
+    return false;
+  }
+  return true;
+}
+
+/* -------------------------------------------------------
+   EMAIL HELPERS (POST-only Workers)
 -------------------------------------------------------- */
 
 async function sendSignupApprovedEmail(email, name) {
@@ -43,16 +85,17 @@ async function sendSignupApprovedEmail(email, name) {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          name: name || ""
-        })
+        body: JSON.stringify({ email, name: name || "" })
       }
     );
 
-    console.log("[signup-approved email worker]", await resp.text());
+    const txt = await resp.text();
+    console.log("[signup-approved worker]", txt);
+
+    return resp.ok;
   } catch (err) {
     console.error("[signup-approved email worker ERROR]", err);
+    return false;
   }
 }
 
@@ -71,15 +114,33 @@ async function sendLeagueConfirmedEmail(email, name) {
       }
     );
 
-    console.log("[league-confirm email worker]", await resp.text());
+    const txt = await resp.text();
+    console.log("[league-confirm worker]", txt);
+
+    return resp.ok;
   } catch (err) {
     console.error("[league-confirm email worker ERROR]", err);
+    return false;
   }
+}
+
+/* -------------------------------------------------------
+   UTILS
+-------------------------------------------------------- */
+
+function clearNode(node) {
+  if (!node) return;
+  while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function nameForUser(u) {
+  return u.moderated_handle || u.handle || u.email;
 }
 
 /* -------------------------------------------------------
    PENDING USERS
 -------------------------------------------------------- */
+
 async function loadPending() {
   if (!pendingList || !pendingCount) return;
 
@@ -120,9 +181,7 @@ async function loadPending() {
         <strong>${u.email}</strong>
         ${u.handle ? `<span class="small-muted">(${u.handle})</span>` : ""}
       </div>
-      <div class="small-muted">
-        ${u.created_at ? new Date(u.created_at).toLocaleString() : ""}
-      </div>
+      <div class="small-muted">${u.created_at ? new Date(u.created_at).toLocaleString() : ""}</div>
     `;
 
     const controls = document.createElement("div");
@@ -131,15 +190,23 @@ async function loadPending() {
     const approveBtn = document.createElement("button");
     approveBtn.className = "btn primary";
     approveBtn.textContent = "Approve";
+    approveBtn.dataset.originalText = "Approve";
 
     approveBtn.onclick = async () => {
-      approveBtn.disabled = true;
+      markButtonSending(approveBtn);
 
       const { error: err } = await approveUser(u.id);
-      if (err) console.error("approve error", err);
+      const ok1 = !err;
 
-      // SEND APPROVAL EMAIL (POST-only)
-      await sendSignupApprovedEmail(u.email, u.handle);
+      const ok2 = await sendSignupApprovedEmail(u.email, u.handle);
+
+      if (ok2) {
+        await logEmail("signup_approved", u.email, { name: u.handle });
+      }
+
+      const allGood = ok1 && ok2;
+      markButtonResult(approveBtn, allGood);
+      flashRow(row);
 
       await loadPending();
       await loadUsers();
@@ -149,13 +216,10 @@ async function loadPending() {
     const rejectBtn = document.createElement("button");
     rejectBtn.className = "btn";
     rejectBtn.textContent = "Reject";
-
     rejectBtn.onclick = async () => {
       rejectBtn.disabled = true;
-
       const { error: err } = await rejectUser(u.id);
       if (err) console.error("reject error", err);
-
       await loadPending();
       await loadUsers();
       await loadLeague();
@@ -173,6 +237,7 @@ async function loadPending() {
 /* -------------------------------------------------------
    MANAGE USERS
 -------------------------------------------------------- */
+
 async function loadUsers() {
   if (!usersList || !usersCount) return;
 
@@ -191,15 +256,13 @@ async function loadUsers() {
     return;
   }
 
-  const { data: members, error: memErr } = await supabase
+  const { data: members } = await supabase
     .from("league_members")
     .select("id, user_id, payment_status, confirmed")
     .eq("season", CURRENT_SEASON);
 
   const memberByUser = new Map();
-  if (!memErr && members) {
-    members.forEach(m => memberByUser.set(m.user_id, m));
-  }
+  if (members) members.forEach(m => memberByUser.set(m.user_id, m));
 
   clearNode(usersList);
 
@@ -240,11 +303,9 @@ async function loadUsers() {
 
     const membership = memberByUser.get(u.id);
     if (membership) {
-      const statusParts = [];
-      statusParts.push(`In ${CURRENT_SEASON}`);
-      statusParts.push(membership.payment_status || "unpaid");
-      statusParts.push(membership.confirmed ? "confirmed" : "unconfirmed");
-      leagueInfo.textContent = statusParts.join(" • ");
+      leagueInfo.textContent =
+        `In ${CURRENT_SEASON} • ${membership.payment_status || "unpaid"} • ` +
+        (membership.confirmed ? "confirmed" : "unconfirmed");
     } else {
       leagueInfo.textContent = `Not in ${CURRENT_SEASON}`;
     }
@@ -288,6 +349,7 @@ async function loadUsers() {
 /* -------------------------------------------------------
    LEAGUE MEMBERS
 -------------------------------------------------------- */
+
 async function loadLeague() {
   if (!leagueList || !leagueCount) return;
 
@@ -353,7 +415,6 @@ async function loadLeague() {
     // Payment status
     const paySelect = document.createElement("select");
     paySelect.className = "handle-input";
-
     ["unpaid", "paid", "comped"].forEach(val => {
       const opt = document.createElement("option");
       opt.value = val;
@@ -363,14 +424,13 @@ async function loadLeague() {
     });
 
     paySelect.onchange = async () => {
-      const val = paySelect.value;
       paySelect.disabled = true;
-      const { error } = await setLeaguePaymentStatus(m.id, val);
+      const { error } = await setLeaguePaymentStatus(m.id, paySelect.value);
       if (error) console.error("setLeaguePaymentStatus error", error);
       paySelect.disabled = false;
     };
 
-    // Confirm checkbox
+    // Confirmation
     const confirmLabel = document.createElement("label");
     confirmLabel.className = "small-muted";
 
@@ -387,8 +447,13 @@ async function loadLeague() {
       if (error) {
         console.error("setLeagueConfirmed error", error);
       } else if (newVal) {
-        // SEND CONFIRM EMAIL VIA WORKER
-        await sendLeagueConfirmedEmail(u.email, name);
+        const ok = await sendLeagueConfirmedEmail(u.email, name);
+        if (ok) {
+          await logEmail("league_confirmed", u.email, {
+            name,
+            season: CURRENT_SEASON
+          });
+        }
       }
 
       confirmCheckbox.disabled = false;
@@ -397,18 +462,15 @@ async function loadLeague() {
     confirmLabel.appendChild(confirmCheckbox);
     confirmLabel.appendChild(document.createTextNode("confirmed"));
 
-    // Remove member
+    // Remove
     const removeBtn = document.createElement("button");
     removeBtn.className = "btn danger";
     removeBtn.textContent = "Remove";
-
     removeBtn.onclick = async () => {
       if (!window.confirm("Remove this player from the league?")) return;
       removeBtn.disabled = true;
-
       const { error } = await removeLeagueMemberRow(m.id);
       if (error) console.error("removeLeagueMemberRow error", error);
-
       await loadUsers();
       await loadLeague();
     };
@@ -428,6 +490,7 @@ async function loadLeague() {
 /* -------------------------------------------------------
    INIT
 -------------------------------------------------------- */
+
 async function init() {
   const profile = await getProfile();
 
