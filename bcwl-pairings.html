@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BC Winter League · Pairings</title>
+
+<style>
+  body {
+    margin: 0;
+    background: #f4f6ff;
+    font-family: -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+  }
+
+  .shell {
+    max-width: 900px;
+    margin: 80px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    border: 2px solid #000;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .muted {
+    text-align: center;
+    opacity: 0.7;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+
+  .month {
+    margin-top: 30px;
+  }
+
+  .round {
+    margin-top: 16px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+    padding: 10px;
+  }
+
+  .round h3 {
+    margin: 0 0 8px 0;
+    font-size: 0.95rem;
+  }
+
+  .pairing {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+  }
+
+  .pairing:last-child {
+    border-bottom: none;
+  }
+
+  .vs {
+    font-weight: bold;
+    margin: 0 6px;
+  }
+
+  .loading,
+  .empty {
+    text-align: center;
+    padding: 30px;
+    opacity: 0.6;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="shell">
+  <h1>BC Winter League</h1>
+  <p class="muted">Official pairings · Finalized rounds only</p>
+
+  <div id="pairings-root">
+    <div class="loading">Loading pairings…</div>
+  </div>
+</div>
+
+<script type="module" src="/js/bcwl-pairings.js"></script>
+</body>
+</html>

@@ -71,12 +71,13 @@
 </style>
 </head>
 <body>
-
 <div class="shell">
   
   <div class="avatar-wrap">
     <img id="avatar-img" src="/assets/default-avatar.png" alt="Profile photo" />
   </div>
+
+    <div id="account-state-banner" style="display:none;"></div>
 
   <h1>Your Settings</h1>
 
@@ -142,6 +143,14 @@
 <script type="module" src="/js/db.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>
 <script type="module" src="/js/settings.js"></script>
+
+<script type="module">
+  import { renderAccountStateBanner } from "/js/account-state.js";
+  renderAccountStateBanner({ page: "hub" });
+</script>
+
+</body>
+</html>
 
 </body>
 </html>

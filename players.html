@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Players · BC Winter League</title>
+
+<style>
+  body {
+    margin:0;
+    background:#f4f6ff;
+    font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+  }
+  .shell {
+    max-width:960px;
+    margin:80px auto;
+    padding:20px;
+    background:#fff;
+    border-radius:12px;
+    border:2px solid #000;
+  }
+  h1 { text-align:center; }
+  .search {
+    text-align:center;
+    margin:16px 0;
+  }
+  input {
+    padding:6px 8px;
+    font-size:0.9rem;
+    width:240px;
+  }
+  table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.9rem;
+  }
+  th, td {
+    padding:8px 6px;
+    border-bottom:1px solid #eee;
+  }
+  th { border-bottom:2px solid #000; }
+  .num { text-align:right; }
+  .empty { text-align:center; opacity:0.6; padding:30px; }
+</style>
+</head>
+
+<body>
+
+<div class="shell">
+  <div id="account-state-banner" style="display:none;"></div>
+  <h1>Players</h1>
+  <p class="muted" style="text-align:center;">BC Winter League & Premodern events</p>
+
+  <div class="search">
+    <input id="search" placeholder="Search players…" />
+  </div>
+
+  <div id="players-root">
+    <div class="empty">Loading players…</div>
+  </div>
+</div>
+
+<script type="module" src="/js/db.js"></script>
+<script type="module" src="/js/global-menu-loader.js"></script>
+<script type="module" src="/js/players.js"></script>
+</body>
+</html>

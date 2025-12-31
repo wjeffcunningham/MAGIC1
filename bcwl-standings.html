@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BC Winter League · Standings</title>
+
+<style>
+  body {
+    margin: 0;
+    background: #f4f6ff;
+    font-family: -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+  }
+
+  .shell {
+    max-width: 960px;
+    margin: 80px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    border: 2px solid #000;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .muted {
+    text-align: center;
+    opacity: 0.7;
+    font-size: 0.85rem;
+    margin-bottom: 18px;
+  }
+
+  .controls {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  select {
+    font-size: 0.9rem;
+    padding: 4px 6px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+  }
+
+  th {
+    border-bottom: 2px solid #000;
+  }
+
+  td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .loading,
+  .empty {
+    text-align: center;
+    padding: 30px;
+    opacity: 0.6;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="shell">
+  <h1>BC Winter League</h1>
+  <p class="muted">Official standings · Elo active · External events included</p>
+
+  <div class="controls">
+    Month:
+    <select id="month-select"></select>
+    <p class="muted">Past months are archived and do not change.</p>
+  </div>
+
+  <div id="standings-root">
+    <div class="loading">Loading standings…</div>
+  </div>
+</div>
+
+<script type="module" src="/js/bcwl-standings.js"></script>
+</body>
+</html>

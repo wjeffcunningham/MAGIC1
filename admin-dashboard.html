@@ -21,6 +21,7 @@
   }
   h1 { text-align:center; margin-bottom:8px; }
   h2 { font-size:1.1rem; margin-top:20px; }
+  h3 { font-size:1rem; margin-top:16px; }
   .muted { opacity:0.7; font-size:0.85rem; }
   .hidden { display:none; }
   .list {
@@ -43,7 +44,7 @@
     margin-bottom:6px;
   }
   .handle-input {
-    width:140px;
+    width:160px;
     padding:4px 6px;
     border-radius:6px;
     border:1px solid #aaa;
@@ -57,10 +58,10 @@
     display:flex;
     gap:6px;
     flex-wrap:wrap;
-    margin-top:4px;
+    margin-top:6px;
   }
   .btn {
-    padding:5px 9px;
+    padding:6px 10px;
     border-radius:8px;
     border:1px solid #111;
     background:#fff;
@@ -77,13 +78,14 @@
     font-size:0.7rem;
     margin-right:4px;
   }
+  hr { margin:20px 0; }
 </style>
 </head>
 
 <body>
 <div class="shell">
   <h1>Admin Dashboard</h1>
-  <p class="muted">Moderators can approve new users, adjust accounts, and manage league membership.</p>
+  <p class="muted">Moderators can approve users, manage league membership, and run the league.</p>
 
   <!-- NOT LOGGED -->
   <div id="not-logged">
@@ -98,17 +100,81 @@
   <!-- ADMIN PANEL -->
   <div id="admin-panel" class="hidden">
 
-    <!-- PENDING USERS -->
+    <!-- ========================= -->
+    <!-- LEAGUE ADMIN CONTROLS -->
+    <!-- ========================= -->
+
+    <h2>League Operations</h2>
+
+    <div class="list">
+      <div class="controls">
+        <button id="btn-sync-players" class="btn">Sync Players from League Members</button>
+        <span id="sync-status" class="small-muted"></span>
+      </div>
+    </div>
+
+    <div class="list">
+      <h3>Import League Round</h3>
+      <div class="controls">
+        <label>Round #
+          <input id="round-number" type="number" min="1" class="handle-input" />
+        </label>
+        <input id="round-csv" type="file" accept=".csv" />
+        <label class="small-muted">
+          <input id="round-overwrite" type="checkbox" /> overwrite
+        </label>
+        <button id="btn-import-round" class="btn primary">Import</button>
+      </div>
+      <div id="round-status" class="small-muted"></div>
+    </div>
+
+    <div class="list">
+      <h3>Import Monthly Standings</h3>
+      <div class="controls">
+        <label>Year
+          <input id="standings-year" type="number" value="2026" class="handle-input" />
+        </label>
+        <label>Month
+          <input id="standings-month" type="number" min="1" max="12" class="handle-input" />
+        </label>
+        <input id="standings-csv" type="file" accept=".csv" />
+        <button id="btn-import-standings" class="btn primary">Import</button>
+      </div>
+      <div id="standings-status" class="small-muted"></div>
+    </div>
+
+    <div class="list">
+      <h3>Generate Pairings</h3>
+      <div class="controls">
+        <label>Year
+          <input id="pairings-year" type="number" value="2026" class="handle-input" />
+        </label>
+        <label>Month
+          <input id="pairings-month" type="number" min="1" max="12" class="handle-input" />
+        </label>
+        <label class="small-muted">
+          <input id="pairings-use-pools" type="checkbox" checked /> use pools
+        </label>
+        <button id="btn-generate-pairings" class="btn">Generate Draft</button>
+        <button id="btn-finalize-pairings" class="btn primary">Finalize</button>
+      </div>
+      <div id="pairings-status" class="small-muted"></div>
+    </div>
+
+    <hr />
+
+    <!-- ========================= -->
+    <!-- EXISTING USER / LEAGUE UI -->
+    <!-- ========================= -->
+
     <h2>Pending Users</h2>
     <p class="muted" id="pending-count"></p>
     <div id="pending-list" class="list"></div>
 
-    <!-- MANAGE EXISTING USERS -->
     <h2>Manage Users</h2>
     <p class="muted" id="users-count"></p>
     <div id="users-list" class="list"></div>
 
-    <!-- LEAGUE MEMBERS -->
     <h2>League Members (Current Season)</h2>
     <p class="muted" id="league-count"></p>
     <div id="league-list" class="list"></div>
@@ -116,9 +182,17 @@
   </div>
 </div>
 
+<h3>External Tournament (Elo)</h3>
+
+<input id="ext-event-name" placeholder="Event name" />
+<input id="ext-k" type="number" value="24" />
+<input id="ext-csv" type="file" accept=".csv" />
+<button id="btn-import-external">Import</button>
+
+<div id="ext-status" class="muted"></div>
+
 <script type="module" src="/js/db.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>
 <script type="module" src="/js/admin-dashboard.js"></script>
-
 </body>
 </html>
