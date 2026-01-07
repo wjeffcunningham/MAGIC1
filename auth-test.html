@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Auth Test</title>
+</head>
+<body>
+  <h1>Auth Test</h1>
+
+  <input id="email" placeholder="email"><br><br>
+  <input id="password" type="password" placeholder="password"><br><br>
+
+  <button id="login">Login</button>
+  <button id="logout">Logout</button>
+
+  <pre id="out"></pre>
+
+  <script type="module">
+    import { supabase } from "./js/config.js";
+
+    const out = document.getElementById("out");
+    const log = m => out.textContent += m + "\n";
+
+    document.getElementById("login").onclick = async () => {
+      out.textContent = "";
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const { data, error } =
+        await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) log("LOGIN ERROR: " + error.message);
+      else log("LOGIN OK:\n" + JSON.stringify(data.user, null, 2));
+    };
+
+    document.getElementById("logout").onclick = async () => {
+      await supabase.auth.signOut();
+      log("LOGGED OUT");
+    };
+
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      log("SESSION EXISTS:\n" +
+          JSON.stringify(data.session.user, null, 2));
+    } else {
+      log("NO SESSION");
+    }
+  </script>
+</body>
+</html>
