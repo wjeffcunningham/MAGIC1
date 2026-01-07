@@ -8,7 +8,7 @@ import {
 } from "./db.js";
 
 const notLogged   = document.getElementById("not-logged");
-const notApproved = document.getElementById("not-approved");
+// const notApproved = document.getElementById("not-approved"); // no longer used
 const notJoined   = document.getElementById("not-joined");
 const hubMain     = document.getElementById("hub-main");
 
@@ -19,7 +19,6 @@ const rosterList  = document.getElementById("roster-list");
 
 function hideAll() {
   if (notLogged)   notLogged.style.display   = "none";
-  if (notApproved) notApproved.style.display = "none";
   if (notJoined)   notJoined.style.display   = "none";
   if (hubMain)     hubMain.style.display     = "none";
 }
@@ -57,25 +56,19 @@ async function init() {
 
   const profile = await getProfile();
 
-  // 1) Not logged in at all
+  // 1) Not logged in
   if (!profile) {
     if (notLogged) notLogged.style.display = "block";
     return;
   }
 
-  // 2) Logged in but not approved
-  if (profile.status !== "approved") {
-    if (notApproved) notApproved.style.display = "block";
-    return;
-  }
-
-  // 3) Fetch membership + roster
+  // 2) Fetch membership + roster (no approval gate)
   const [member, roster] = await Promise.all([
     getMyLeagueMembership(),
     getLeagueRoster()
   ]);
 
-  // Setup Join button behavior
+  // Setup Join button
   if (joinBtn) {
     joinBtn.onclick = async () => {
       joinBtn.disabled = true;
@@ -89,18 +82,18 @@ async function init() {
         return;
       }
 
-      // Reload view
+      // Reload state after successful join
       await init();
     };
   }
 
-  // 4) If not a member yet
+  // 3) Logged in but not joined yet
   if (!member) {
     if (notJoined) notJoined.style.display = "block";
     return;
   }
 
-  // 5) User IS a member → show main hub
+  // 4) User IS a member → show main hub
   if (hubMain) hubMain.style.display = "block";
 
   if (paymentBox) {

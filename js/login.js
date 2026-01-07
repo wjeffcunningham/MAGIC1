@@ -48,32 +48,7 @@ document.getElementById("login-btn").onclick = async () => {
     return;
   }
 
-  const uid = data.user.id;
-
-  const { data: profile, error: profErr } = await supabase
-    .from("site_users")
-    .select("*")
-    .eq("id", uid)
-    .single();
-
-  if (profErr || !profile) {
-    show("Profile missing. Contact organizer.");
-    busy(false);
-    return;
-  }
-
-  if (profile.status === "pending") {
-    show("Your account is pending approval.");
-    busy(false);
-    return;
-  }
-
-  if (profile.status === "rejected") {
-    show("Your account has been rejected.");
-    busy(false);
-    return;
-  }
-
+  // 🔑 AUTH SUCCESS = ACCESS GRANTED
   window.location.href = "/bcwl-hub.html";
 };
 
@@ -157,7 +132,7 @@ document.getElementById("signup-btn").onclick = async () => {
     .insert({
       id: uid,
       email,
-      status: "pending",
+      status: "pending",          // informational only
       handle: null,
       moderated_handle: null,
       avatar_url: null,
@@ -176,7 +151,6 @@ document.getElementById("signup-btn").onclick = async () => {
 
   /* --------------------------------------------------------
      OPTIONAL MAILING LIST OPT-IN
-     (mails inserted only if checked)
   ---------------------------------------------------------*/
   if (mailingOpt && mailingOpt.checked) {
     try {
@@ -188,6 +162,7 @@ document.getElementById("signup-btn").onclick = async () => {
     }
   }
 
-  show("Sign-up successful. Awaiting admin approval.");
+  // ✅ SIGN-UP SUCCESS → USER CAN PROCEED
+  show("Sign-up successful. You can now log in.");
   busy(false);
 };
