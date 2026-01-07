@@ -13,53 +13,41 @@ export async function renderAccountStateBanner({ page }) {
     if (page === "hub" || page === "players") {
       show(banner, `
         <strong>Not logged in.</strong>
-        <a href="/login.html">Sign in or create an account</a> to join the league.
+        <a href="./login.html">Sign in or create an account</a>.
       `);
     }
     return;
   }
 
+  // Profile is optional; don’t block if missing
   const profile = await getProfile();
-  if (!profile) return;
-
-  if (profile.status === "pending") {
-    show(banner, `
-      <strong>Account pending approval.</strong>
-      You’ll be able to join once a moderator approves your signup.
-    `);
-    return;
-  }
 
   const membership = await getMyLeagueMembership();
-
   if (!membership) {
     if (page === "hub") {
       show(banner, `
-        <strong>Approved account.</strong>
-        You can now join the league below.
+        <strong>Signed in.</strong>
+        You can join the league below.
       `);
     }
     return;
   }
 
-  // Member states
   const parts = [];
   parts.push(`<strong>BC Winter League 2026</strong>`);
 
-  if (!membership.confirmed) {
-    parts.push(`awaiting confirmation`);
-  } else {
-    parts.push(`confirmed`);
+  parts.push(membership.confirmed ? `confirmed` : `awaiting confirmation`);
+
+  if ((membership.payment_status || "unpaid") !== "paid") {
+    parts.push(`payment: ${membership.payment_status || "unpaid"}`);
   }
 
-  if (membership.payment_status !== "paid") {
-    parts.push(`payment: ${membership.payment_status}`);
-  }
+  // Optional: display email/handle if you want
+  const label = profile?.moderated_handle || profile?.handle || profile?.email || user.email;
+  if (label) parts.unshift(label);
 
   show(banner, parts.join(" · "));
 }
-
-/* ------------------------------ */
 
 function show(el, html) {
   el.innerHTML = html;

@@ -1,14 +1,14 @@
 // /js/bcwl-hub.js
 import {
+  getAuthUser,
   getProfile,
-  CURRENT_SEASON,
+  ensureProfile,
   getMyLeagueMembership,
   getLeagueRoster,
   joinCurrentLeague
 } from "./db.js";
 
 const notLogged   = document.getElementById("not-logged");
-// const notApproved = document.getElementById("not-approved"); // no longer used
 const notJoined   = document.getElementById("not-joined");
 const hubMain     = document.getElementById("hub-main");
 
@@ -18,9 +18,9 @@ const statusBox   = document.getElementById("confirmation-status");
 const rosterList  = document.getElementById("roster-list");
 
 function hideAll() {
-  if (notLogged)   notLogged.style.display   = "none";
-  if (notJoined)   notJoined.style.display   = "none";
-  if (hubMain)     hubMain.style.display     = "none";
+  if (notLogged) notLogged.style.display = "none";
+  if (notJoined) notJoined.style.display = "none";
+  if (hubMain)   hubMain.style.display   = "none";
 }
 
 function renderRoster(roster) {
@@ -54,21 +54,33 @@ function renderRoster(roster) {
 async function init() {
   hideAll();
 
-  const profile = await getProfile();
-
-  // 1) Not logged in
-  if (!profile) {
+  // 1) Auth check (session)
+  const user = await getAuthUser();
+  if (!user) {
     if (notLogged) notLogged.style.display = "block";
     return;
   }
 
-  // 2) Fetch membership + roster (no approval gate)
+  // 2) Make sure profile exists (auto-create if missing)
+  let profile = await getProfile();
+  if (!profile) {
+    const { error: ensureErr } = await ensureProfile();
+    if (ensureErr) {
+      console.error("ensureProfile failed:", ensureErr);
+      // Still allow them to continue “logged in”, but they may not be able to join.
+      // Show "notJoined" with a warning by leaving it visible.
+    } else {
+      profile = await getProfile();
+    }
+  }
+
+  // 3) Fetch membership + roster
   const [member, roster] = await Promise.all([
     getMyLeagueMembership(),
     getLeagueRoster()
   ]);
 
-  // Setup Join button
+  // Setup Join button behavior
   if (joinBtn) {
     joinBtn.onclick = async () => {
       joinBtn.disabled = true;
@@ -82,18 +94,18 @@ async function init() {
         return;
       }
 
-      // Reload state after successful join
       await init();
     };
   }
 
-  // 3) Logged in but not joined yet
+  // 4) Not a member yet
   if (!member) {
     if (notJoined) notJoined.style.display = "block";
+    renderRoster(roster);
     return;
   }
 
-  // 4) User IS a member → show main hub
+  // 5) Member view
   if (hubMain) hubMain.style.display = "block";
 
   if (paymentBox) {
