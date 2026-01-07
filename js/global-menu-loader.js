@@ -1,9 +1,7 @@
 // /js/global-menu-loader.js
 import { supabase } from "./config.js";
-import { getProfile } from "./db.js";
 
 function insertMenu() {
-  // If already present, don't double-insert
   if (document.getElementById("menu-icon") || document.getElementById("menu-panel")) {
     return;
   }
@@ -24,18 +22,9 @@ function insertMenu() {
       border:2px solid black;
       border-radius:8px;
     ">
-      <div style="
-        width:20px;
-        height:2px;
-        background:black;
-        position:relative;
-      ">
-        <div style="
-          width:20px; height:2px; background:black;
-          position:absolute; top:-6px; left:0;"></div>
-        <div style="
-          width:20px; height:2px; background:black;
-          position:absolute; top:6px; left:0;"></div>
+      <div style="width:20px;height:2px;background:black;position:relative;">
+        <div style="width:20px;height:2px;background:black;position:absolute;top:-6px;"></div>
+        <div style="width:20px;height:2px;background:black;position:absolute;top:6px;"></div>
       </div>
     </div>
 
@@ -72,58 +61,50 @@ function wireIcon() {
   icon.onclick = togglePanel;
 }
 
+const btn = (label, href) =>
+  `<button onclick="location.href='${href}'"
+    style="
+      width:100%;
+      padding:8px 10px;
+      margin:4px 0;
+      text-align:left;
+      border:1px solid black;
+      border-radius:6px;
+      background:#f5f5f5;
+      cursor:pointer;
+    ">${label}</button>`;
+
 async function renderMenu() {
   const panel = document.getElementById("menu-panel");
   if (!panel) return;
 
-  let profile = null;
-  try {
-    profile = await getProfile();
-  } catch (err) {
-    console.error("menu getProfile error", err);
-  }
+  const { data } = await supabase.auth.getUser();
+  const user = data?.user || null;
 
-  const btn = (label, href) =>
-    `<button onclick="location.href='${href}'"
-      style="
-        width:100%;
-        padding:8px 10px;
-        margin:4px 0;
-        text-align:left;
-        border:1px solid black;
-        border-radius:6px;
-        background:#f5f5f5;
-        cursor:pointer;
-      ">${label}</button>`;
-
-  // Logged OUT
-  if (!profile) {
+  // 🔓 LOGGED OUT (AUTH ONLY)
+  if (!user) {
     panel.innerHTML = btn("Login / Sign-Up", "/login.html");
     return;
   }
 
-  // Build menu for logged-in user
-  const name =
-    profile.moderated_handle ||
-    profile.handle ||
-    profile.email ||
-    "Player";
-
-  const links = [
-    btn("User Settings", "/user-settings.html"),
-    btn("BCWL Hub", "/bcwl-hub.html"),
-    btn("BCPMM Hub", "/bcpmmsheet.html"),
-  ];
-
-  if (profile.is_mod) {
-    links.push(btn("Admin Dashboard", "/admin-dashboard.html"));
-  }
+  // 🔐 LOGGED IN
+  const email = user.email || "User";
 
   panel.innerHTML = `
-    <div style="padding-bottom:6px; font-weight:600; border-bottom:1px solid #ddd; margin-bottom:6px;">
-      ${name}
+    <div style="
+      padding-bottom:6px;
+      font-weight:600;
+      border-bottom:1px solid #ddd;
+      margin-bottom:6px;
+      word-break:break-all;
+    ">
+      ${email}
     </div>
-    ${links.join("")}
+
+    ${btn("User Settings", "/user-settings.html")}
+    ${btn("BCWL Hub", "/bcwl-hub.html")}
+    ${btn("BCPMM Hub", "/bcpmmsheet.html")}
+
     <button id="logout-btn" style="
       width:100%;
       padding:8px 10px;
@@ -139,28 +120,18 @@ async function renderMenu() {
   const logoutBtn = panel.querySelector("#logout-btn");
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {
-        console.error("logout error", e);
-      }
-      location.href = "/"; // hard refresh
+      await supabase.auth.signOut();
+      location.href = "/";
     };
   }
 }
 
 function initMenu() {
-  try {
-    insertMenu();
-    wireIcon();
-    // Render menu asynchronously; even if this fails, icon still exists
-    renderMenu();
-  } catch (e) {
-    console.error("global-menu-loader init error", e);
-  }
+  insertMenu();
+  wireIcon();
+  renderMenu();
 }
 
-// Run when DOM is ready (covers both cached + normal)
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initMenu);
 } else {
