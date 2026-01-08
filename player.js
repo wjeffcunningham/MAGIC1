@@ -1,11 +1,17 @@
 import { supabase } from "./config.js";
 
-const nameEl     = document.getElementById("player-name");
-const ratingEl  = document.getElementById("player-rating");
+/* -------------------------------------
+   DOM
+------------------------------------- */
+const nameEl    = document.getElementById("player-name");
+const ratingEl = document.getElementById("player-rating");
 
-const emptyEl   = document.getElementById("standings-empty");
-const tableEl   = document.getElementById("standings-table");
-const tbodyEl   = tableEl.querySelector("tbody");
+// Optional avatar (safe if element doesn’t exist)
+const avatarEl = document.getElementById("player-avatar");
+
+const standingsEmptyEl = document.getElementById("standings-empty");
+const standingsTableEl = document.getElementById("standings-table");
+const standingsTbodyEl = standingsTableEl.querySelector("tbody");
 
 /* -------------------------------------
    Helpers
@@ -16,6 +22,14 @@ function qs(name) {
 
 function clear(el) {
   while (el.firstChild) el.removeChild(el.firstChild);
+}
+
+function playerLink(id, name) {
+  if (!id) return document.createTextNode(name || "—");
+  const a = document.createElement("a");
+  a.href = `/player.html?id=${id}`;
+  a.textContent = name || "—";
+  return a;
 }
 
 /* -------------------------------------
@@ -30,7 +44,7 @@ async function loadPlayer() {
 
   const { data: player, error } = await supabase
     .from("players")
-    .select("id, full_name, rating")
+    .select("id, full_name, rating, avatar_url")
     .eq("id", playerId)
     .single();
 
@@ -41,6 +55,12 @@ async function loadPlayer() {
 
   nameEl.textContent = player.full_name || "Unnamed Player";
   ratingEl.textContent = `Elo rating: ${player.rating ?? "—"}`;
+
+  // Avatar (optional)
+  if (avatarEl && player.avatar_url) {
+    avatarEl.src = player.avatar_url;
+    avatarEl.alt = `${player.full_name || "Player"} avatar`;
+  }
 
   await loadStandings(player.id);
   await loadMatches(player.id);
@@ -57,23 +77,25 @@ async function loadStandings(playerId) {
     .order("month_index", { ascending: true });
 
   if (error || !data || data.length === 0) {
-    emptyEl.style.display = "block";
-    tableEl.style.display = "none";
+    standingsEmptyEl.style.display = "block";
+    standingsTableEl.style.display = "none";
     return;
   }
 
-  emptyEl.style.display = "none";
-  tableEl.style.display = "table";
-  clear(tbodyEl);
+  standingsEmptyEl.style.display = "none";
+  standingsTableEl.style.display = "table";
+  clear(standingsTbodyEl);
 
   data.forEach(row => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>Month ${row.month_index}</td>
       <td class="center">${row.points}</td>
-      <td class="center">${row.ow_pct != null ? (row.ow_pct * 100).toFixed(1) + "%" : "—"}</td>
+      <td class="center">${
+        row.ow_pct != null ? (row.ow_pct * 100).toFixed(1) + "%" : "—"
+      }</td>
     `;
-    tbodyEl.appendChild(tr);
+    standingsTbodyEl.appendChild(tr);
   });
 }
 
@@ -87,7 +109,7 @@ async function loadMatches(playerId) {
 
   const { data, error } = await supabase
     .from("match_history")
-    .select("*")
+    .select("created_at, event_name, opponent_id, opponent_name, result, elo_delta")
     .eq("player_id", playerId)
     .order("created_at", { ascending: false });
 
@@ -99,17 +121,25 @@ async function loadMatches(playerId) {
 
   emptyEl.style.display = "none";
   tableEl.style.display = "table";
-  tbody.innerHTML = "";
+  clear(tbody);
 
   data.forEach(m => {
     const tr = document.createElement("tr");
+
+    const opponentCell = document.createElement("td");
+    opponentCell.appendChild(
+      playerLink(m.opponent_id, m.opponent_name || "—")
+    );
+
     tr.innerHTML = `
       <td>${new Date(m.created_at).toLocaleDateString()}</td>
-      <td>${m.event_name}</td>
-      <td>${m.opponent_name || "—"}</td>
-      <td>${m.result}</td>
+      <td>${m.event_name || "—"}</td>
+      <td></td>
+      <td>${m.result || "—"}</td>
       <td class="center">${m.elo_delta ?? "—"}</td>
     `;
+
+    tr.children[2].replaceWith(opponentCell);
     tbody.appendChild(tr);
   });
 }
