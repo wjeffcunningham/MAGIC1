@@ -2,12 +2,6 @@
 
 import { supabase } from "./config.js";
 import { getProfile, CURRENT_SEASON } from "./db.js";
-import {
-  syncPlayersFromLeagueMembers,
-  importLeagueRoundFromCSVText,
-  generateAndSaveMonthPairingsDraft,
-  finalizeMonthPairings
-} from "./admin-league-tools.js";
 
 /* -------------------------------------------------------
    DOM
@@ -36,16 +30,21 @@ function displayName(u) {
 }
 
 /* -------------------------------------------------------
-   USERS (global, magic1)
+   USERS (site_users)
 -------------------------------------------------------- */
 
 async function loadUsers() {
   clearNode(usersList);
 
-  const { data: users } = await supabase
+  const { data: users, error } = await supabase
     .from("site_users")
     .select("id,email,handle,moderated_handle")
     .order("created_at");
+
+  if (error) {
+    usersList.textContent = "Failed to load users.";
+    return;
+  }
 
   usersCount.textContent = `${users.length} accounts.`;
 
@@ -84,16 +83,21 @@ async function loadUsers() {
 }
 
 /* -------------------------------------------------------
-   LEAGUE MEMBERS (current season)
+   LEAGUE MEMBERS (league_members)
 -------------------------------------------------------- */
 
 async function loadLeague() {
   clearNode(leagueList);
 
-  const { data: members } = await supabase
+  const { data: members, error } = await supabase
     .from("league_members")
-    .select("id,user_id,payment_status,confirmed,banned")
+    .select("id,user_id,payment_status,banned")
     .eq("season", CURRENT_SEASON);
+
+  if (error) {
+    leagueList.textContent = "Failed to load league members.";
+    return;
+  }
 
   leagueCount.textContent = `${members.length} members.`;
 
@@ -103,6 +107,8 @@ async function loadLeague() {
       .select("email,handle,moderated_handle")
       .eq("id", m.user_id)
       .single();
+
+    if (!u) continue;
 
     const row = document.createElement("div");
     row.className = "row";
@@ -115,22 +121,27 @@ async function loadLeague() {
     `;
 
     const payment = document.createElement("select");
-    ["unpaid","paid","comped"].forEach(v=>{
-      const o=document.createElement("option");
-      o.value=v; o.textContent=v;
-      if ((m.payment_status||"unpaid") === v) o.selected=true;
+    ["unpaid", "paid", "comped"].forEach(v => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = v;
+      if ((m.payment_status || "unpaid") === v) o.selected = true;
       payment.appendChild(o);
     });
+
     payment.onchange = () =>
-      supabase.from("league_members")
+      supabase
+        .from("league_members")
         .update({ payment_status: payment.value })
         .eq("id", m.id);
 
     const banned = document.createElement("input");
     banned.type = "checkbox";
     banned.checked = !!m.banned;
+
     banned.onchange = () =>
-      supabase.from("league_members")
+      supabase
+        .from("league_members")
         .update({ banned: banned.checked })
         .eq("id", m.id);
 
@@ -139,7 +150,10 @@ async function loadLeague() {
     remove.textContent = "Remove";
     remove.onclick = async () => {
       if (confirm("Remove from league?")) {
-        await supabase.from("league_members").delete().eq("id", m.id);
+        await supabase
+          .from("league_members")
+          .delete()
+          .eq("id", m.id);
         loadLeague();
       }
     };
@@ -154,58 +168,25 @@ async function loadLeague() {
 }
 
 /* -------------------------------------------------------
-   OPS
--------------------------------------------------------- */
-
-function wireOps() {
-  document.getElementById("btn-sync-players").onclick = async () => {
-    const s=document.getElementById("sync-status");
-    s.textContent="Syncing…";
-    const r=await syncPlayersFromLeagueMembers();
-    s.textContent=`Created ${r.created}, skipped ${r.skipped}`;
-  };
-
-  document.getElementById("btn-import-round").onclick = async () => {
-    const s=document.getElementById("round-status");
-    s.textContent="Importing…";
-    const round=+document.getElementById("round-number").value;
-    const f=document.getElementById("round-csv").files[0];
-    const csv=await f.text();
-    await importLeagueRoundFromCSVText({ round, csvText: csv });
-    s.textContent="Imported.";
-  };
-
-  document.getElementById("btn-generate-pairings").onclick = async () => {
-    const s=document.getElementById("pairings-status");
-    s.textContent="Generating…";
-    const y=+document.getElementById("pairings-year").value;
-    const m=+document.getElementById("pairings-month").value;
-    const p=document.getElementById("pairings-use-pools").checked;
-    await generateAndSaveMonthPairingsDraft({ leagueYear:y, monthIndex:m, usePools:p });
-    s.textContent="Draft generated.";
-  };
-
-  document.getElementById("btn-finalize-pairings").onclick = async () => {
-    const s=document.getElementById("pairings-status");
-    const m=+document.getElementById("pairings-month").value;
-    await finalizeMonthPairings({ monthIndex:m });
-    s.textContent="Finalized.";
-  };
-}
-
-/* -------------------------------------------------------
    INIT
 -------------------------------------------------------- */
 
 async function init() {
-  const p = await getProfile();
-  if (!p) { notLogged.classList.remove("hidden"); return; }
-  if (!p.is_mod) { notAdmin.classList.remove("hidden"); return; }
+  const profile = await getProfile();
+
+  if (!profile) {
+    notLogged.classList.remove("hidden");
+    return;
+  }
+
+  if (!profile.is_mod) {
+    notAdmin.classList.remove("hidden");
+    return;
+  }
 
   adminPanel.classList.remove("hidden");
   await loadUsers();
   await loadLeague();
-  wireOps();
 }
 
 document.addEventListener("DOMContentLoaded", init);

@@ -21,7 +21,6 @@
   }
   h1 { text-align:center; margin-bottom:8px; }
   h2 { font-size:1.1rem; margin-top:28px; }
-  h3 { font-size:1rem; margin-top:16px; }
   .muted { opacity:0.7; font-size:0.85rem; }
   .hidden { display:none; }
 
@@ -69,7 +68,6 @@
     cursor:pointer;
     font-size:0.75rem;
   }
-  .btn.primary { background:#000; color:white; }
   .btn.danger { background:#ffebeb; border-color:#c00; }
 
   hr { margin:28px 0; }
@@ -79,79 +77,23 @@
 <body>
 <div class="shell">
   <h1>Admin Dashboard</h1>
-  <p class="muted">magic1 moderation, league operations, and data tools.</p>
+  <p class="muted">magic1 moderation</p>
 
-  <!-- NOT LOGGED -->
   <div id="not-logged">
     <p>You need to be logged in to view this page.</p>
   </div>
 
-  <!-- NOT ADMIN -->
   <div id="not-admin" class="hidden">
     <p>You must be a moderator to view this page.</p>
   </div>
 
-  <!-- ADMIN PANEL -->
   <div id="admin-panel" class="hidden">
 
-    <!-- ========================= -->
-    <!-- LEAGUE OPERATIONS -->
-    <!-- ========================= -->
-
-    <h2>League Operations</h2>
-
-    <div class="list">
-      <div class="controls">
-        <button id="btn-sync-players" class="btn">Sync Players from League Members</button>
-        <span id="sync-status" class="muted"></span>
-      </div>
-    </div>
-
-    <div class="list">
-      <h3>Import League Round</h3>
-      <div class="controls">
-        <label>Round #
-          <input id="round-number" type="number" min="1" class="handle-input" />
-        </label>
-        <input id="round-csv" type="file" accept=".csv" />
-        <button id="btn-import-round" class="btn primary">Import</button>
-      </div>
-      <div id="round-status" class="muted"></div>
-    </div>
-
-    <div class="list">
-      <h3>Generate Pairings</h3>
-      <div class="controls">
-        <label>Year
-          <input id="pairings-year" type="number" value="2026" class="handle-input" />
-        </label>
-        <label>Month
-          <input id="pairings-month" type="number" min="1" max="12" class="handle-input" />
-        </label>
-        <label class="muted">
-          <input id="pairings-use-pools" type="checkbox" checked /> use pools
-        </label>
-        <button id="btn-generate-pairings" class="btn">Generate Draft</button>
-        <button id="btn-finalize-pairings" class="btn primary">Finalize</button>
-      </div>
-      <div id="pairings-status" class="muted"></div>
-    </div>
-
-    <hr />
-
-    <!-- ========================= -->
-    <!-- USER MODERATION -->
-    <!-- ========================= -->
-
-    <h2>Users (magic1)</h2>
+    <h2>Users</h2>
     <p class="muted" id="users-count"></p>
     <div id="users-list" class="list"></div>
 
     <hr />
-
-    <!-- ========================= -->
-    <!-- LEAGUE MEMBERS -->
-    <!-- ========================= -->
 
     <h2>League Members (Current Season)</h2>
     <p class="muted" id="league-count"></p>
