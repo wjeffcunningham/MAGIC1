@@ -2,6 +2,11 @@
 import { supabase } from "./config.js";
 
 /* -------------------------------------------------------
+   CONSTANTS
+-------------------------------------------------------- */
+export const CURRENT_SEASON = "BCWL-2026";
+
+/* -------------------------------------------------------
    AUTH
 -------------------------------------------------------- */
 export async function getAuthUser() {
@@ -52,14 +57,41 @@ export async function getProfile() {
   return data;
 }
 
+export async function ensureProfile() {
+  const user = await getAuthUser();
+  if (!user) return { error: new Error("Not logged in") };
+
+  const { data, error } = await supabase
+    .from("site_users")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) return { error };
+  if (data) return { error: null };
+
+  const { error: insertErr } = await supabase
+    .from("site_users")
+    .insert({
+      id: user.id,
+      email: user.email,
+      status: "active",
+      is_mod: false
+    });
+
+  return { error: insertErr || null };
+}
+
 export async function saveProfile(updates) {
   const user = await getAuthUser();
   if (!user) return { error: new Error("Not logged in") };
 
-  return await supabase
+  const { error } = await supabase
     .from("site_users")
     .update(updates)
     .eq("id", user.id);
+
+  return { error };
 }
 
 /* -------------------------------------------------------
@@ -86,9 +118,9 @@ export async function uploadAvatar(file) {
 }
 
 /* -------------------------------------------------------
-   LEAGUE
+   LEAGUE MEMBERSHIP
 -------------------------------------------------------- */
-export async function getMyLeagueMembership(season = "BCWL-2026") {
+export async function getMyLeagueMembership() {
   const user = await getAuthUser();
   if (!user) return null;
 
@@ -96,7 +128,7 @@ export async function getMyLeagueMembership(season = "BCWL-2026") {
     .from("league_members")
     .select("*")
     .eq("user_id", user.id)
-    .eq("season", season)
+    .eq("season", CURRENT_SEASON)
     .maybeSingle();
 
   if (error) {
@@ -105,4 +137,75 @@ export async function getMyLeagueMembership(season = "BCWL-2026") {
   }
 
   return data;
+}
+
+export async function joinCurrentLeague() {
+  const user = await getAuthUser();
+  if (!user) return { error: new Error("Not logged in") };
+
+  const { data: existing, error: checkErr } = await supabase
+    .from("league_members")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("season", CURRENT_SEASON)
+    .maybeSingle();
+
+  if (checkErr) return { error: checkErr };
+  if (existing) return { error: null, already: true };
+
+  const { error } = await supabase
+    .from("league_members")
+    .insert({
+      user_id: user.id,
+      season: CURRENT_SEASON,
+      payment_status: "unpaid",
+      confirmed: false
+    });
+
+  return { error };
+}
+
+/* -------------------------------------------------------
+   LEAGUE ROSTER
+-------------------------------------------------------- */
+export async function getLeagueRoster() {
+  const { data: members, error } = await supabase
+    .from("league_members")
+    .select("user_id, payment_status, confirmed, joined_at")
+    .eq("season", CURRENT_SEASON)
+    .order("joined_at", { ascending: true });
+
+  if (error || !members) {
+    console.error("getLeagueRoster error", error);
+    return [];
+  }
+
+  if (members.length === 0) return [];
+
+  const userIds = members.map(m => m.user_id);
+
+  const { data: users, error: usersErr } = await supabase
+    .from("site_users")
+    .select("id, email, handle, moderated_handle")
+    .in("id", userIds);
+
+  if (usersErr || !users) {
+    console.error("getLeagueRoster users error", usersErr);
+    return [];
+  }
+
+  const byId = Object.fromEntries(users.map(u => [u.id, u]));
+
+  return members.map(m => {
+    const u = byId[m.user_id] || {};
+    return {
+      user_id: m.user_id,
+      email: u.email || "",
+      handle: u.handle || "",
+      moderated_handle: u.moderated_handle || "",
+      payment_status: m.payment_status || "unpaid",
+      confirmed: !!m.confirmed,
+      joined_at: m.joined_at
+    };
+  });
 }
