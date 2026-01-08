@@ -38,6 +38,10 @@
     color: #fff;
     cursor: pointer;
   }
+  button.secondary {
+    background: #fff;
+    color: #000;
+  }
   button:disabled {
     opacity: 0.5;
     cursor: default;
@@ -46,13 +50,11 @@
     min-height: 1.6em;
     margin-top: 10px;
     font-size: 14px;
+    text-align:center;
   }
   .turnstile-container {
     margin: 12px 0;
     text-align: center;
-  }
-  a {
-    color: #000;
   }
 </style>
 </head>
@@ -61,28 +63,19 @@
 <div class="shell">
   <h1>Login / Sign-Up</h1>
 
-  <input
-    id="email"
-    type="email"
-    placeholder="email"
-    autocomplete="email">
-
-  <input
-    id="password"
-    type="password"
-    placeholder="password"
-    autocomplete="current-password">
+  <input id="email" type="email" placeholder="email" autocomplete="email">
+  <input id="password" type="password" placeholder="password" autocomplete="current-password">
 
   <div class="turnstile-container">
     <div class="cf-turnstile"
          data-sitekey="0x4AAAAAACFFJAGSROQqWlLQ"
          data-theme="light"
-         data-callback="onTurnstileSuccess">
-    </div>
+         data-callback="onTurnstileSuccess"></div>
   </div>
 
   <button id="login-btn">Log In</button>
   <button id="signup-btn">Sign Up</button>
+  <button id="forgot-btn" class="secondary">Forgot password?</button>
 
   <p id="msg"></p>
 </div>

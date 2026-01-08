@@ -5,13 +5,21 @@ const emailField = document.getElementById("email");
 const pwField    = document.getElementById("password");
 const msg        = document.getElementById("msg");
 
-// Mailing list checkbox (may or may not exist depending on page)
+const loginBtn   = document.getElementById("login-btn");
+const signupBtn  = document.getElementById("signup-btn");
+const forgotBtn  = document.getElementById("forgot-btn");
+
+// Mailing list checkbox (optional)
 const mailingOpt = document.getElementById("mailing-list-opt");
 
-function show(m) { msg.textContent = m; }
+function show(m) {
+  msg.textContent = m || "";
+}
+
 function busy(x) {
-  document.getElementById("login-btn").disabled  = x;
-  document.getElementById("signup-btn").disabled = x;
+  loginBtn.disabled  = x;
+  signupBtn.disabled = x;
+  if (forgotBtn) forgotBtn.disabled = x;
 }
 
 /* --------------------------------------------------------
@@ -24,7 +32,7 @@ function isValidEmail(em) {
 /* --------------------------------------------------------
    LOGIN
 ---------------------------------------------------------*/
-document.getElementById("login-btn").onclick = async () => {
+loginBtn.onclick = async () => {
   busy(true);
   show("");
 
@@ -37,9 +45,9 @@ document.getElementById("login-btn").onclick = async () => {
     return;
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email,
-    password,
+    password
   });
 
   if (error) {
@@ -48,14 +56,40 @@ document.getElementById("login-btn").onclick = async () => {
     return;
   }
 
-  // 🔑 AUTH SUCCESS = ACCESS GRANTED
+  // AUTH SUCCESS
   window.location.href = "/bcwl-hub.html";
 };
 
 /* --------------------------------------------------------
+   PASSWORD RESET
+---------------------------------------------------------*/
+if (forgotBtn) {
+  forgotBtn.onclick = async () => {
+    show("");
+
+    const email = (emailField.value || "").trim();
+    if (!isValidEmail(email)) {
+      show("Enter your email above, then click reset.");
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://magic1.ca/reset-password.html"
+    });
+
+    if (error) {
+      show(error.message || "Reset failed.");
+      return;
+    }
+
+    show("Password reset email sent. Check your inbox.");
+  };
+}
+
+/* --------------------------------------------------------
    SIGN-UP
 ---------------------------------------------------------*/
-document.getElementById("signup-btn").onclick = async () => {
+signupBtn.onclick = async () => {
   busy(true);
   show("");
 
@@ -74,49 +108,40 @@ document.getElementById("signup-btn").onclick = async () => {
     return;
   }
 
-  /* --------------------------------------------------------
-     TURNSTILE TOKEN (callback provided version)
-  ---------------------------------------------------------*/
   const turnstileToken = window.turnstileToken || "";
-
   if (!turnstileToken) {
-    show("Verification required. Click the checkbox again.");
+    show("Verification required.");
     busy(false);
     return;
   }
 
-  /* --------------------------------------------------------
-     VERIFY TURNSTILE WITH WORKER
-  ---------------------------------------------------------*/
   let verified = false;
   try {
-    const resp = await fetch("https://magic1-turnstile-verify.wjeffcunningham.workers.dev/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ turnstileToken }),
-    });
-
+    const resp = await fetch(
+      "https://magic1-turnstile-verify.wjeffcunningham.workers.dev/",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ turnstileToken })
+      }
+    );
     const out = await resp.json();
     verified = !!out.success;
-  } catch (e) {
-    console.error("Turnstile verification error:", e);
-    show("Verification error. Try again.");
+  } catch {
+    show("Verification error.");
     busy(false);
     return;
   }
 
   if (!verified) {
-    show("Verification failed. Please try again.");
+    show("Verification failed.");
     busy(false);
     return;
   }
 
-  /* --------------------------------------------------------
-     SUPABASE SIGN-UP
-  ---------------------------------------------------------*/
   const { data, error } = await supabase.auth.signUp({
     email,
-    password,
+    password
   });
 
   if (error) {
@@ -132,37 +157,24 @@ document.getElementById("signup-btn").onclick = async () => {
     .insert({
       id: uid,
       email,
-      status: "pending",          // informational only
-      handle: null,
-      moderated_handle: null,
-      avatar_url: null,
-      remote_preference: "no_remote",
-      bio: null,
-      payment_status: null,
+      status: "pending",
       is_mod: false
     });
 
   if (profErr) {
-    console.error("Profile creation failed:", profErr);
-    show("Profile creation failed. Contact organizer.");
+    show("Profile creation failed.");
     busy(false);
     return;
   }
 
-  /* --------------------------------------------------------
-     OPTIONAL MAILING LIST OPT-IN
-  ---------------------------------------------------------*/
   if (mailingOpt && mailingOpt.checked) {
     try {
       await supabase
         .from("mailing_list")
         .upsert({ email }, { onConflict: "email" });
-    } catch (e) {
-      console.warn("Mailing list insert error (ignored):", e);
-    }
+    } catch {}
   }
 
-  // ✅ SIGN-UP SUCCESS → USER CAN PROCEED
   show("Sign-up successful. You can now log in.");
   busy(false);
 };
