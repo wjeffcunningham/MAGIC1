@@ -97,7 +97,7 @@
   <h1>BC Winter League 2026</h1>
   <p class="muted">Join the league, check your status, and see the roster.</p>
 
-  <!-- NOT LOGGED IN (HIDDEN BY DEFAULT; JS will show if needed) -->
+  <!-- NOT LOGGED IN -->
   <div id="not-logged" class="section" style="display:none">
     <h2>Login Required</h2>
     <p>You need to be signed in to join the league.</p>
@@ -111,7 +111,7 @@
     <button id="join-btn" class="btn-big">Join the League</button>
 
     <h2 style="margin-top:18px;">League Roster</h2>
-    <div id="roster-list" class="roster"></div>
+    <div id="roster-list-not-joined" class="roster"></div>
   </div>
 
   <!-- MAIN HUB: USER IS A MEMBER -->
@@ -121,12 +121,10 @@
     <div id="confirmation-status" class="state-block"></div>
 
     <h2 style="margin-top:18px;">League Roster</h2>
-    <div id="roster-list" class="roster"></div>
+    <div id="roster-list-main" class="roster"></div>
   </div>
 </div>
 
-<!-- SCRIPTS (RELATIVE PATHS) -->
-<script type="module" src="./js/db.js"></script>
 <script type="module" src="./js/global-menu-loader.js"></script>
 <script type="module" src="./js/bcwl-hub.js"></script>
 

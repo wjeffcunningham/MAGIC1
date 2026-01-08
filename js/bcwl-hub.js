@@ -16,7 +16,10 @@ const hubMain    = document.getElementById("hub-main");
 const joinBtn    = document.getElementById("join-btn");
 const paymentBox = document.getElementById("payment-status");
 const statusBox  = document.getElementById("confirmation-status");
-const rosterList = document.getElementById("roster-list");
+
+const rosterList =
+  document.getElementById("roster-list-main") ||
+  document.getElementById("roster-list-not-joined");
 
 /* -------------------------------------------------------
    HELPERS
@@ -47,14 +50,11 @@ function renderRoster(roster) {
       player.email ||
       "Player";
 
-    const statusBits = [
-      player.payment_status || "unpaid",
-      player.confirmed ? "confirmed" : "unconfirmed"
-    ];
-
     row.innerHTML = `
       <div class="roster-name"><strong>${name}</strong></div>
-      <div class="roster-meta">${statusBits.join(" • ")}</div>
+      <div class="roster-meta">
+        ${player.payment_status || "unpaid"}
+      </div>
     `;
 
     rosterList.appendChild(row);
@@ -80,7 +80,7 @@ async function init() {
     getLeagueRoster()
   ]);
 
-  // Wire Join button once
+  // Wire Join button
   if (joinBtn) {
     joinBtn.onclick = async () => {
       joinBtn.disabled = true;
@@ -94,7 +94,6 @@ async function init() {
         return;
       }
 
-      // Re-render state after join
       init();
     };
   }
@@ -115,9 +114,7 @@ async function init() {
   }
 
   if (statusBox) {
-    statusBox.textContent = member.confirmed
-      ? "Status: confirmed by organizers."
-      : "Status: awaiting confirmation.";
+    statusBox.textContent = "Status: active league member.";
   }
 
   renderRoster(roster);
