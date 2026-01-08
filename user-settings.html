@@ -85,7 +85,6 @@
 
 <div class="shell">
 
-  <!-- Avatar (display only for now) -->
   <div class="avatar-wrap">
     <img
       id="avatar-img"
@@ -98,19 +97,19 @@
 
   <h1>Your Settings</h1>
 
-  <!-- Logged out message -->
+  <!-- Logged out -->
   <div id="not-logged">
     <p>Please sign in first.</p>
   </div>
 
-  <!-- Settings UI -->
+  <!-- Settings -->
   <div id="settings-area" style="display:none;">
 
     <!-- EMAIL -->
     <label for="email-input">Email</label>
     <input id="email-input" type="email" readonly />
 
-    <!-- DISPLAY HANDLE (MOD OVERRIDE) -->
+    <!-- MODERATED DISPLAY HANDLE -->
     <div id="display-handle-wrap" style="margin-top:14px; display:none;">
       <label>League Display Name</label>
       <div
@@ -126,7 +125,7 @@
         "
       ></div>
       <p class="muted" style="margin-top:6px;">
-        Set by moderators if needed. This is the name other players will see.
+        This name is set by moderators and is what other players will see.
       </p>
     </div>
 
@@ -135,10 +134,13 @@
     <input
       id="name-input"
       type="text"
-      placeholder="Your league name"
+      placeholder="3–20 chars, letters / numbers / underscore"
     />
+    <p class="muted">
+      You can change this at any time. If a moderator override exists, your handle is saved but not shown publicly.
+    </p>
 
-    <!-- REMOTE PREFERENCE -->
+    <!-- REMOTE -->
     <label for="remote-input">Remote Play Preference</label>
     <select id="remote-input">
       <option value="no_remote">In-Person Only</option>

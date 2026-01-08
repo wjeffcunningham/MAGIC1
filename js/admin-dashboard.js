@@ -3,21 +3,10 @@
 import { supabase } from "./config.js";
 import { getProfile, CURRENT_SEASON } from "./db.js";
 import {
-  approveUser,
-  rejectUser,
-  overrideHandle,
-  setLeaguePaymentStatus,
-  setLeagueConfirmed,
-  removeLeagueMemberRow
-} from "./admin-api.js";
-
-import {
   syncPlayersFromLeagueMembers,
   importLeagueRoundFromCSVText,
-  importMonthStandingsFromCSVText,
   generateAndSaveMonthPairingsDraft,
-  finalizeMonthPairings,
-  importExternalTournament
+  finalizeMonthPairings
 } from "./admin-league-tools.js";
 
 /* -------------------------------------------------------
@@ -27,9 +16,6 @@ import {
 const notLogged  = document.getElementById("not-logged");
 const notAdmin   = document.getElementById("not-admin");
 const adminPanel = document.getElementById("admin-panel");
-
-const pendingCount = document.getElementById("pending-count");
-const pendingList  = document.getElementById("pending-list");
 
 const usersCount = document.getElementById("users-count");
 const usersList  = document.getElementById("users-list");
@@ -41,86 +27,21 @@ const leagueList  = document.getElementById("league-list");
    Helpers
 -------------------------------------------------------- */
 
-function clearNode(n) { while (n?.firstChild) n.removeChild(n.firstChild); }
+function clearNode(n) {
+  while (n?.firstChild) n.removeChild(n.firstChild);
+}
 
-function nameForUser(u) {
+function displayName(u) {
   return u.moderated_handle || u.handle || u.email;
 }
 
-function readFileAsText(input) {
-  return new Promise((resolve, reject) => {
-    const f = input?.files?.[0];
-    if (!f) return reject(new Error("No file selected."));
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = () => reject(new Error("Read failed."));
-    r.readAsText(f);
-  });
-}
-
 /* -------------------------------------------------------
-   Pending Users
--------------------------------------------------------- */
-
-async function loadPending() {
-  clearNode(pendingList);
-  pendingList.textContent = "Loading…";
-
-  const { data } = await supabase
-    .from("site_users")
-    .select("id,email,handle,created_at")
-    .eq("status","pending")
-    .order("created_at");
-
-  if (!data?.length) {
-    pendingList.textContent = "No pending sign-ups.";
-    pendingCount.textContent = "0 pending.";
-    return;
-  }
-
-  pendingCount.textContent = `${data.length} pending.`;
-
-  data.forEach(u => {
-    const row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `
-      <div class="row-main">
-        <strong>${u.email}</strong>
-        <div class="small-muted">${new Date(u.created_at).toLocaleString()}</div>
-      </div>
-    `;
-
-    const controls = document.createElement("div");
-    controls.className = "controls";
-
-    const approve = document.createElement("button");
-    approve.className = "btn primary";
-    approve.textContent = "Approve";
-    approve.onclick = async () => {
-      await approveUser(u.id);
-      await loadPending(); await loadUsers(); await loadLeague();
-    };
-
-    const reject = document.createElement("button");
-    reject.className = "btn";
-    reject.textContent = "Reject";
-    reject.onclick = async () => {
-      await rejectUser(u.id);
-      await loadPending();
-    };
-
-    controls.append(approve, reject);
-    row.appendChild(controls);
-    pendingList.appendChild(row);
-  });
-}
-
-/* -------------------------------------------------------
-   Users
+   USERS (global, magic1)
 -------------------------------------------------------- */
 
 async function loadUsers() {
   clearNode(usersList);
+
   const { data: users } = await supabase
     .from("site_users")
     .select("id,email,handle,moderated_handle")
@@ -131,10 +52,11 @@ async function loadUsers() {
   users.forEach(u => {
     const row = document.createElement("div");
     row.className = "row";
+
     row.innerHTML = `
       <div class="row-main">
-        <strong>${nameForUser(u)}</strong>
-        <div class="small-muted">${u.email}</div>
+        <strong>${displayName(u)}</strong>
+        <div class="muted">${u.email}</div>
       </div>
     `;
 
@@ -144,20 +66,25 @@ async function loadUsers() {
 
     const save = document.createElement("button");
     save.className = "btn";
-    save.textContent = "Save";
-    save.onclick = () => overrideHandle(u.id, input.value.trim() || null);
+    save.textContent = "Override name";
+    save.onclick = async () => {
+      await supabase
+        .from("site_users")
+        .update({ moderated_handle: input.value.trim() || null })
+        .eq("id", u.id);
+    };
 
-    const c = document.createElement("div");
-    c.className = "controls";
-    c.append(input, save);
+    const controls = document.createElement("div");
+    controls.className = "controls";
+    controls.append(input, save);
 
-    row.appendChild(c);
+    row.appendChild(controls);
     usersList.appendChild(row);
   });
 }
 
 /* -------------------------------------------------------
-   League Members
+   LEAGUE MEMBERS (current season)
 -------------------------------------------------------- */
 
 async function loadLeague() {
@@ -165,7 +92,7 @@ async function loadLeague() {
 
   const { data: members } = await supabase
     .from("league_members")
-    .select("id,user_id,payment_status,confirmed")
+    .select("id,user_id,payment_status,confirmed,banned")
     .eq("season", CURRENT_SEASON);
 
   leagueCount.textContent = `${members.length} members.`;
@@ -179,129 +106,105 @@ async function loadLeague() {
 
     const row = document.createElement("div");
     row.className = "row";
+
     row.innerHTML = `
       <div class="row-main">
-        <strong>${nameForUser(u)}</strong>
-        <div class="small-muted">${u.email}</div>
+        <strong>${displayName(u)}</strong>
+        <div class="muted">${u.email}</div>
       </div>
     `;
 
-    const pay = document.createElement("select");
+    const payment = document.createElement("select");
     ["unpaid","paid","comped"].forEach(v=>{
       const o=document.createElement("option");
-      o.value=v;o.textContent=v;
-      if((m.payment_status||"unpaid")===v)o.selected=true;
-      pay.appendChild(o);
+      o.value=v; o.textContent=v;
+      if ((m.payment_status||"unpaid") === v) o.selected=true;
+      payment.appendChild(o);
     });
-    pay.onchange=()=>setLeaguePaymentStatus(m.id,pay.value);
+    payment.onchange = () =>
+      supabase.from("league_members")
+        .update({ payment_status: payment.value })
+        .eq("id", m.id);
 
-    const conf = document.createElement("input");
-    conf.type="checkbox";
-    conf.checked=!!m.confirmed;
-    conf.onchange=()=>setLeagueConfirmed(m.id,conf.checked);
+    const banned = document.createElement("input");
+    banned.type = "checkbox";
+    banned.checked = !!m.banned;
+    banned.onchange = () =>
+      supabase.from("league_members")
+        .update({ banned: banned.checked })
+        .eq("id", m.id);
 
-    const rem=document.createElement("button");
-    rem.className="btn danger";
-    rem.textContent="Remove";
-    rem.onclick=async()=>{
-      if(confirm("Remove?")){
-        await removeLeagueMemberRow(m.id);
+    const remove = document.createElement("button");
+    remove.className = "btn danger";
+    remove.textContent = "Remove";
+    remove.onclick = async () => {
+      if (confirm("Remove from league?")) {
+        await supabase.from("league_members").delete().eq("id", m.id);
         loadLeague();
       }
     };
 
-    const c=document.createElement("div");
-    c.className="controls";
-    c.append(pay,conf,rem);
+    const controls = document.createElement("div");
+    controls.className = "controls";
+    controls.append(payment, banned, remove);
 
-    row.appendChild(c);
+    row.appendChild(controls);
     leagueList.appendChild(row);
   }
 }
 
 /* -------------------------------------------------------
-   League Ops + External
+   OPS
 -------------------------------------------------------- */
 
 function wireOps() {
-
   document.getElementById("btn-sync-players").onclick = async () => {
     const s=document.getElementById("sync-status");
     s.textContent="Syncing…";
-    try {
-      const r=await syncPlayersFromLeagueMembers();
-      s.textContent=`Created ${r.created}, skipped ${r.skipped}`;
-    } catch(e){ s.textContent=e.message; }
+    const r=await syncPlayersFromLeagueMembers();
+    s.textContent=`Created ${r.created}, skipped ${r.skipped}`;
   };
 
   document.getElementById("btn-import-round").onclick = async () => {
     const s=document.getElementById("round-status");
     s.textContent="Importing…";
-    try {
-      const round=+document.getElementById("round-number").value;
-      const csv=await readFileAsText(document.getElementById("round-csv"));
-      await importLeagueRoundFromCSVText({ round, csvText:csv });
-      s.textContent="Imported.";
-    } catch(e){ s.textContent=e.message; }
-  };
-
-  document.getElementById("btn-import-standings").onclick = async () => {
-    const s=document.getElementById("standings-status");
-    s.textContent="Importing…";
-    try {
-      const y=+document.getElementById("standings-year").value;
-      const m=+document.getElementById("standings-month").value;
-      const csv=await readFileAsText(document.getElementById("standings-csv"));
-      await importMonthStandingsFromCSVText({ leagueYear:y, monthIndex:m, csvText:csv });
-      s.textContent="Imported.";
-    } catch(e){ s.textContent=e.message; }
+    const round=+document.getElementById("round-number").value;
+    const f=document.getElementById("round-csv").files[0];
+    const csv=await f.text();
+    await importLeagueRoundFromCSVText({ round, csvText: csv });
+    s.textContent="Imported.";
   };
 
   document.getElementById("btn-generate-pairings").onclick = async () => {
     const s=document.getElementById("pairings-status");
     s.textContent="Generating…";
-    try {
-      const y=+document.getElementById("pairings-year").value;
-      const m=+document.getElementById("pairings-month").value;
-      const p=document.getElementById("pairings-use-pools").checked;
-      await generateAndSaveMonthPairingsDraft({ leagueYear:y, monthIndex:m, usePools:p });
-      s.textContent="Draft generated.";
-    } catch(e){ s.textContent=e.message; }
+    const y=+document.getElementById("pairings-year").value;
+    const m=+document.getElementById("pairings-month").value;
+    const p=document.getElementById("pairings-use-pools").checked;
+    await generateAndSaveMonthPairingsDraft({ leagueYear:y, monthIndex:m, usePools:p });
+    s.textContent="Draft generated.";
   };
 
   document.getElementById("btn-finalize-pairings").onclick = async () => {
     const s=document.getElementById("pairings-status");
-    try {
-      const m=+document.getElementById("pairings-month").value;
-      await finalizeMonthPairings({ monthIndex:m });
-      s.textContent="Finalized.";
-    } catch(e){ s.textContent=e.message; }
-  };
-
-  document.getElementById("btn-import-external").onclick = async () => {
-    const s=document.getElementById("ext-status");
-    s.textContent="Importing…";
-    try {
-      const name=document.getElementById("ext-event-name").value;
-      const k=+document.getElementById("ext-k").value;
-      const csv=await readFileAsText(document.getElementById("ext-csv"));
-      await importExternalTournament({ eventName:name, kValue:k, csvText:csv });
-      s.textContent="External imported.";
-    } catch(e){ s.textContent=e.message; }
+    const m=+document.getElementById("pairings-month").value;
+    await finalizeMonthPairings({ monthIndex:m });
+    s.textContent="Finalized.";
   };
 }
 
 /* -------------------------------------------------------
-   Init
+   INIT
 -------------------------------------------------------- */
 
 async function init() {
-  const p=await getProfile();
-  if(!p){notLogged.classList.remove("hidden");return;}
-  if(!p.is_mod){notAdmin.classList.remove("hidden");return;}
+  const p = await getProfile();
+  if (!p) { notLogged.classList.remove("hidden"); return; }
+  if (!p.is_mod) { notAdmin.classList.remove("hidden"); return; }
 
   adminPanel.classList.remove("hidden");
-  await loadPending(); await loadUsers(); await loadLeague();
+  await loadUsers();
+  await loadLeague();
   wireOps();
 }
 

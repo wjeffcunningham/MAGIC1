@@ -12,7 +12,7 @@
     font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
   }
   .shell {
-    max-width:800px;
+    max-width:900px;
     margin:80px auto;
     padding:20px;
     background:#fff;
@@ -20,10 +20,11 @@
     border:2px solid #000;
   }
   h1 { text-align:center; margin-bottom:8px; }
-  h2 { font-size:1.1rem; margin-top:20px; }
+  h2 { font-size:1.1rem; margin-top:28px; }
   h3 { font-size:1rem; margin-top:16px; }
   .muted { opacity:0.7; font-size:0.85rem; }
   .hidden { display:none; }
+
   .list {
     margin-top:10px;
     border-radius:10px;
@@ -32,17 +33,26 @@
     padding:10px;
   }
   .row {
-    padding:8px 0;
+    padding:10px 0;
     border-bottom:1px solid #eee;
   }
   .row:last-child { border-bottom:none; }
+
   .row-main {
     display:flex;
     flex-direction:column;
     gap:4px;
     font-size:0.9rem;
-    margin-bottom:6px;
   }
+
+  .controls {
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:6px;
+    align-items:center;
+  }
+
   .handle-input {
     width:160px;
     padding:4px 6px;
@@ -50,16 +60,7 @@
     border:1px solid #aaa;
     font-size:0.8rem;
   }
-  .small-muted {
-    opacity:0.6;
-    font-size:0.75rem;
-  }
-  .controls {
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-    margin-top:6px;
-  }
+
   .btn {
     padding:6px 10px;
     border-radius:8px;
@@ -70,22 +71,15 @@
   }
   .btn.primary { background:#000; color:white; }
   .btn.danger { background:#ffebeb; border-color:#c00; }
-  .tag {
-    display:inline-block;
-    padding:3px 7px;
-    border-radius:999px;
-    border:1px solid #333;
-    font-size:0.7rem;
-    margin-right:4px;
-  }
-  hr { margin:20px 0; }
+
+  hr { margin:28px 0; }
 </style>
 </head>
 
 <body>
 <div class="shell">
   <h1>Admin Dashboard</h1>
-  <p class="muted">Moderators can approve users, manage league membership, and run the league.</p>
+  <p class="muted">magic1 moderation, league operations, and data tools.</p>
 
   <!-- NOT LOGGED -->
   <div id="not-logged">
@@ -101,7 +95,7 @@
   <div id="admin-panel" class="hidden">
 
     <!-- ========================= -->
-    <!-- LEAGUE ADMIN CONTROLS -->
+    <!-- LEAGUE OPERATIONS -->
     <!-- ========================= -->
 
     <h2>League Operations</h2>
@@ -109,7 +103,7 @@
     <div class="list">
       <div class="controls">
         <button id="btn-sync-players" class="btn">Sync Players from League Members</button>
-        <span id="sync-status" class="small-muted"></span>
+        <span id="sync-status" class="muted"></span>
       </div>
     </div>
 
@@ -120,27 +114,9 @@
           <input id="round-number" type="number" min="1" class="handle-input" />
         </label>
         <input id="round-csv" type="file" accept=".csv" />
-        <label class="small-muted">
-          <input id="round-overwrite" type="checkbox" /> overwrite
-        </label>
         <button id="btn-import-round" class="btn primary">Import</button>
       </div>
-      <div id="round-status" class="small-muted"></div>
-    </div>
-
-    <div class="list">
-      <h3>Import Monthly Standings</h3>
-      <div class="controls">
-        <label>Year
-          <input id="standings-year" type="number" value="2026" class="handle-input" />
-        </label>
-        <label>Month
-          <input id="standings-month" type="number" min="1" max="12" class="handle-input" />
-        </label>
-        <input id="standings-csv" type="file" accept=".csv" />
-        <button id="btn-import-standings" class="btn primary">Import</button>
-      </div>
-      <div id="standings-status" class="small-muted"></div>
+      <div id="round-status" class="muted"></div>
     </div>
 
     <div class="list">
@@ -152,28 +128,30 @@
         <label>Month
           <input id="pairings-month" type="number" min="1" max="12" class="handle-input" />
         </label>
-        <label class="small-muted">
+        <label class="muted">
           <input id="pairings-use-pools" type="checkbox" checked /> use pools
         </label>
         <button id="btn-generate-pairings" class="btn">Generate Draft</button>
         <button id="btn-finalize-pairings" class="btn primary">Finalize</button>
       </div>
-      <div id="pairings-status" class="small-muted"></div>
+      <div id="pairings-status" class="muted"></div>
     </div>
 
     <hr />
 
     <!-- ========================= -->
-    <!-- EXISTING USER / LEAGUE UI -->
+    <!-- USER MODERATION -->
     <!-- ========================= -->
 
-    <h2>Pending Users</h2>
-    <p class="muted" id="pending-count"></p>
-    <div id="pending-list" class="list"></div>
-
-    <h2>Manage Users</h2>
+    <h2>Users (magic1)</h2>
     <p class="muted" id="users-count"></p>
     <div id="users-list" class="list"></div>
+
+    <hr />
+
+    <!-- ========================= -->
+    <!-- LEAGUE MEMBERS -->
+    <!-- ========================= -->
 
     <h2>League Members (Current Season)</h2>
     <p class="muted" id="league-count"></p>
@@ -181,15 +159,6 @@
 
   </div>
 </div>
-
-<h3>External Tournament (Elo)</h3>
-
-<input id="ext-event-name" placeholder="Event name" />
-<input id="ext-k" type="number" value="24" />
-<input id="ext-csv" type="file" accept=".csv" />
-<button id="btn-import-external">Import</button>
-
-<div id="ext-status" class="muted"></div>
 
 <script type="module" src="/js/db.js"></script>
 <script type="module" src="/js/global-menu-loader.js"></script>

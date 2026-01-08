@@ -1,27 +1,23 @@
 // /js/settings.js
-import { supabase } from "./config.js";
-import { saveProfile } from "./db.js";
+import { getProfile, saveProfile, uploadAvatar } from "./db.js";
 
 /* -------------------------------------------------------
    DOM ELEMENTS
 -------------------------------------------------------- */
 const notLogged   = document.getElementById("not-logged");
-const settings   = document.getElementById("settings-area");
+const settings    = document.getElementById("settings-area");
 
-const emailInput = document.getElementById("email-input");
-const nameInput  = document.getElementById("name-input");
-const remoteSel  = document.getElementById("remote-input");
-const bioInput   = document.getElementById("bio-input");
-const saveBtn    = document.getElementById("save-btn");
-const statusEl   = document.getElementById("status");
+const emailInput  = document.getElementById("email-input");
+const nameInput   = document.getElementById("name-input");
+const remoteSel   = document.getElementById("remote-input");
+const bioInput    = document.getElementById("bio-input");
+const avatarImg   = document.getElementById("avatar-img");
+const fileInput   = document.getElementById("image-file");
+const saveBtn     = document.getElementById("save-btn");
+const statusEl    = document.getElementById("status");
 
 const displayHandleWrap = document.getElementById("display-handle-wrap");
 const displayHandle     = document.getElementById("display-handle");
-
-/* -------------------------------------------------------
-   STATE
--------------------------------------------------------- */
-let handleLocked = false;
 
 /* -------------------------------------------------------
    HELPERS
@@ -34,100 +30,146 @@ function normaliseHandle(h) {
   return (h || "").trim().toLowerCase();
 }
 
+function validHandle(h) {
+  return /^[a-z0-9_]{3,20}$/.test(h);
+}
+
 /* -------------------------------------------------------
-   INIT (AUTH FIRST)
+   LOAD PROFILE
 -------------------------------------------------------- */
 async function init() {
-  setStatus("Checking login…");
+  setStatus("Loading profile…");
 
-  const { data } = await supabase.auth.getUser();
-  const user = data?.user || null;
+  const profile = await getProfile();
 
-  if (!user) {
-    notLogged.style.display = "block";
-    settings.style.display  = "none";
-    setStatus("Please sign in to edit your settings.");
+  if (!profile) {
+    if (notLogged) notLogged.style.display = "block";
+    if (settings)  settings.style.display  = "none";
+    setStatus("You must be logged in to edit settings.");
     return;
   }
 
-  notLogged.style.display = "none";
-  settings.style.display  = "block";
+  if (notLogged) notLogged.style.display = "none";
+  if (settings)  settings.style.display  = "block";
 
-  // Email always from auth
-  emailInput.value = user.email || "";
+  // Email (read-only)
+  if (emailInput) emailInput.value = profile.email || "";
 
-  setStatus("Loading profile…");
-
-  const { data: profile } = await supabase
-    .from("site_users")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const p = profile || {};
-
-  const dh = p.moderated_handle || p.handle || "";
-  displayHandle.textContent = dh || "(not set)";
-  displayHandleWrap.style.display = dh ? "block" : "none";
-
-  handleLocked = !!p.handle;
-
-  if (handleLocked) {
-    nameInput.value = p.handle;
-    nameInput.readOnly = true;
-    nameInput.style.background = "#f0f0f0";
+  // Moderated display handle (authoritative if present)
+  if (profile.moderated_handle) {
+    if (displayHandle) displayHandle.textContent = profile.moderated_handle;
+    if (displayHandleWrap) displayHandleWrap.style.display = "block";
   } else {
-    nameInput.value = "";
-    nameInput.readOnly = false;
+    if (displayHandleWrap) displayHandleWrap.style.display = "none";
   }
 
-  remoteSel.value = p.remote_preference || "no_remote";
-  bioInput.value  = p.bio || "";
+  // User handle (always editable, even if overridden)
+  if (nameInput) {
+    nameInput.readOnly = false;
+    nameInput.value = profile.handle || "";
+  }
+
+  // Remote preference
+  if (remoteSel) {
+    remoteSel.value = profile.remote_preference || "no_remote";
+  }
+
+  // Bio
+  if (bioInput) {
+    bioInput.value = profile.bio || "";
+  }
+
+  // Avatar
+  if (avatarImg) {
+    if (profile.avatar_url) {
+      avatarImg.src = profile.avatar_url;
+    } else {
+      avatarImg.src = "/assets/default-avatar.png";
+    }
+  }
 
   setStatus("");
 }
 
 /* -------------------------------------------------------
-   SAVE SETTINGS
+   AVATAR UPLOAD (OPTIONAL / FUTURE)
 -------------------------------------------------------- */
-saveBtn.addEventListener("click", async () => {
-  setStatus("Saving…");
-  saveBtn.disabled = true;
+if (fileInput) {
+  fileInput.addEventListener("change", async (evt) => {
+    const file = evt.target.files?.[0];
+    if (!file) return;
 
-  const updates = {};
+    setStatus("Uploading image…");
 
-  if (!handleLocked) {
-    const h = normaliseHandle(nameInput.value);
-    if (h) {
-      if (!/^[a-z0-9_]{3,20}$/.test(h)) {
-        setStatus("Handle must be 3–20 chars (letters, numbers, underscore).");
-        saveBtn.disabled = false;
-        return;
-      }
-      updates.handle = h;
+    const { url, error } = await uploadAvatar(file);
+    if (error) {
+      console.error(error);
+      setStatus("Image upload failed.");
+      return;
     }
-  }
 
-  updates.remote_preference = remoteSel.value;
-  updates.bio = bioInput.value.trim() || null;
+    if (avatarImg && url) avatarImg.src = url;
 
-  const { error } = await saveProfile(updates);
-
-  if (error) {
-    setStatus("Save failed.");
-  } else {
-    setStatus("Settings saved.");
-    if (updates.handle) {
-      handleLocked = true;
-      nameInput.readOnly = true;
-      nameInput.style.background = "#f0f0f0";
+    const { error: saveErr } = await saveProfile({ avatar_url: url });
+    if (saveErr) {
+      console.error(saveErr);
+      setStatus("Saved image, but failed to update profile.");
+      return;
     }
-  }
 
-  saveBtn.disabled = false;
-});
+    setStatus("Avatar updated.");
+  });
+}
 
 /* -------------------------------------------------------
-   START
+   SAVE SETTINGS
+-------------------------------------------------------- */
+if (saveBtn) {
+  saveBtn.addEventListener("click", async () => {
+    setStatus("Saving…");
+    saveBtn.disabled = true;
+
+    const updates = {};
+
+    // Handle (self-rename always allowed)
+    if (nameInput) {
+      const newHandle = normaliseHandle(nameInput.value);
+
+      if (!newHandle) {
+        updates.handle = null;
+      } else if (!validHandle(newHandle)) {
+        setStatus("Handle must be 3–20 characters: a–z, 0–9, underscore.");
+        saveBtn.disabled = false;
+        return;
+      } else {
+        updates.handle = newHandle;
+      }
+    }
+
+    // Remote preference
+    if (remoteSel) {
+      updates.remote_preference = remoteSel.value || "no_remote";
+    }
+
+    // Bio
+    if (bioInput) {
+      updates.bio = bioInput.value.trim() || null;
+    }
+
+    const { error } = await saveProfile(updates);
+
+    if (error) {
+      console.error(error);
+      setStatus("Save failed.");
+    } else {
+      setStatus("Settings saved.");
+    }
+
+    saveBtn.disabled = false;
+  });
+}
+
+/* -------------------------------------------------------
+   INIT
 -------------------------------------------------------- */
 init();
