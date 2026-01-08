@@ -16,23 +16,20 @@ const hubMain    = document.getElementById("hub-main");
 const joinBtn    = document.getElementById("join-btn");
 const paymentBox = document.getElementById("payment-status");
 const statusBox  = document.getElementById("confirmation-status");
-
-const rosterList =
-  document.getElementById("roster-list-main") ||
-  document.getElementById("roster-list-not-joined");
+const rosterList = document.getElementById("roster-list");
 
 /* -------------------------------------------------------
    HELPERS
 -------------------------------------------------------- */
-function hideAll() {
-  if (notLogged) notLogged.style.display = "none";
-  if (notJoined) notJoined.style.display = "none";
-  if (hubMain)   hubMain.style.display   = "none";
+function hide(el) {
+  if (el) el.style.display = "none";
+}
+function show(el) {
+  if (el) el.style.display = "block";
 }
 
 function renderRoster(roster) {
   if (!rosterList) return;
-
   rosterList.innerHTML = "";
 
   if (!roster || roster.length === 0) {
@@ -50,11 +47,14 @@ function renderRoster(roster) {
       player.email ||
       "Player";
 
+    const statusBits = [
+      player.payment_status || "unpaid",
+      player.confirmed ? "confirmed" : "unconfirmed"
+    ];
+
     row.innerHTML = `
       <div class="roster-name"><strong>${name}</strong></div>
-      <div class="roster-meta">
-        ${player.payment_status || "unpaid"}
-      </div>
+      <div class="roster-meta">${statusBits.join(" • ")}</div>
     `;
 
     rosterList.appendChild(row);
@@ -65,59 +65,63 @@ function renderRoster(roster) {
    INIT
 -------------------------------------------------------- */
 async function init() {
-  hideAll();
+  hide(notLogged);
+  hide(notJoined);
+  hide(hubMain);
 
-  // 1) Auth check
+  // Auth
   const user = await getAuthUser();
   if (!user) {
-    if (notLogged) notLogged.style.display = "block";
+    show(notLogged);
     return;
   }
 
-  // 2) Fetch league data
+  // Fetch league data
   const [member, roster] = await Promise.all([
     getMyLeagueMembership(),
     getLeagueRoster()
   ]);
 
-  // Wire Join button
-  if (joinBtn) {
-    joinBtn.onclick = async () => {
-      joinBtn.disabled = true;
-      joinBtn.textContent = "Joining…";
+  // Roster is ALWAYS visible
+  show(hubMain);
+  renderRoster(roster);
 
-      const { error } = await joinCurrentLeague();
-      if (error) {
-        console.error("joinCurrentLeague error", error);
-        joinBtn.disabled = false;
-        joinBtn.textContent = "Join the League";
-        return;
-      }
-
-      init();
-    };
-  }
-
-  // 3) Logged in, not joined
+  // Join logic
   if (!member) {
-    if (notJoined) notJoined.style.display = "block";
-    renderRoster(roster);
+    show(notJoined);
+
+    if (joinBtn) {
+      joinBtn.onclick = async () => {
+        joinBtn.disabled = true;
+        joinBtn.textContent = "Joining…";
+
+        const { error } = await joinCurrentLeague();
+        if (error) {
+          console.error("joinCurrentLeague error", error);
+          joinBtn.disabled = false;
+          joinBtn.textContent = "Join the League";
+          return;
+        }
+
+        init();
+      };
+    }
+
     return;
   }
 
-  // 4) Member view
-  if (hubMain) hubMain.style.display = "block";
-
+  // Member status (informational only)
   if (paymentBox) {
     paymentBox.textContent =
       `Payment status: ${member.payment_status || "unpaid"}`;
   }
 
   if (statusBox) {
-    statusBox.textContent = "Status: active league member.";
+    statusBox.textContent =
+      member.confirmed
+        ? "Status: confirmed."
+        : "Status: awaiting organizer review.";
   }
-
-  renderRoster(roster);
 }
 
 document.addEventListener("DOMContentLoaded", init);
