@@ -1,5 +1,7 @@
 import { supabase } from "./config.js";
 
+const SEASON = "BCWL-2026";
+
 /* -------------------------------------------------------
    Helpers
 -------------------------------------------------------- */
@@ -11,10 +13,16 @@ function el(tag, text, className) {
   return e;
 }
 
+function displayName(u) {
+  return (
+    u.moderated_handle ||
+    u.handle ||
+    (u.email ? u.email.replace(/@.*/, "") : "Player")
+  );
+}
+
 function playerLink(id, name) {
-  if (!id) {
-    return document.createTextNode(name || "Unknown");
-  }
+  if (!id) return document.createTextNode(name || "Unknown");
   const a = document.createElement("a");
   a.href = `/player.html?id=${id}`;
   a.textContent = name || "Unknown";
@@ -22,7 +30,52 @@ function playerLink(id, name) {
 }
 
 /* -------------------------------------------------------
-   Load & Render
+   Load Roster (PUBLIC)
+-------------------------------------------------------- */
+
+async function loadRoster() {
+  const root = document.getElementById("roster-root");
+  root.innerHTML = "";
+
+  const { data, error } = await supabase
+    .from("league_members")
+    .select(`
+      payment_status,
+      site_users (
+        email,
+        handle,
+        moderated_handle
+      )
+    `)
+    .eq("season", SEASON)
+    .order("joined_at", { ascending: true });
+
+  if (error) {
+    console.error("roster load error", error);
+    root.textContent = "Failed to load roster.";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    root.textContent = "No players have joined yet.";
+    return;
+  }
+
+  data.forEach(m => {
+    const u = m.site_users || {};
+    const row = el("div", null, "roster-row");
+
+    row.innerHTML = `
+      <div class="roster-name">${displayName(u)}</div>
+      <div class="roster-meta">payment: ${m.payment_status || "unpaid"}</div>
+    `;
+
+    root.appendChild(row);
+  });
+}
+
+/* -------------------------------------------------------
+   Load Pairings (FINALIZED)
 -------------------------------------------------------- */
 
 async function loadPairings() {
@@ -51,18 +104,14 @@ async function loadPairings() {
     return;
   }
 
-  // Group by inferred month (creation batches)
-  let currentMonth = 1;
-  let lastCreated = null;
+  let month = 1;
   let monthBlock = null;
 
   data.forEach(row => {
-    if (!lastCreated || new Date(row.created_at) > new Date(lastCreated)) {
-      if (!monthBlock) {
-        monthBlock = el("div", null, "month");
-        monthBlock.appendChild(el("h2", `Month ${currentMonth}`));
-        root.appendChild(monthBlock);
-      }
+    if (!monthBlock) {
+      monthBlock = el("div", null, "month");
+      monthBlock.appendChild(el("h2", `Month ${month}`));
+      root.appendChild(monthBlock);
     }
 
     const roundBlock = el("div", null, "round");
@@ -71,29 +120,14 @@ async function loadPairings() {
     (row.data || []).forEach(match => {
       const p = el("div", null, "pairing");
 
-      // Player 1
-      p.appendChild(
-        playerLink(
-          match.p1_id,
-          match.p1_name || "Player A"
-        )
-      );
-
+      p.appendChild(playerLink(match.p1_id, match.p1_name));
       p.appendChild(el("span", " vs ", "vs"));
-
-      // Player 2
-      p.appendChild(
-        playerLink(
-          match.p2_id,
-          match.p2_name || "Player B"
-        )
-      );
+      p.appendChild(playerLink(match.p2_id, match.p2_name));
 
       roundBlock.appendChild(p);
     });
 
     monthBlock.appendChild(roundBlock);
-    lastCreated = row.created_at;
   });
 }
 
@@ -101,4 +135,7 @@ async function loadPairings() {
    Init
 -------------------------------------------------------- */
 
-document.addEventListener("DOMContentLoaded", loadPairings);
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadRoster();
+  await loadPairings();
+});

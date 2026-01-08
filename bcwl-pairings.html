@@ -33,6 +33,37 @@
     margin-bottom: 20px;
   }
 
+  /* ---------- ROSTER ---------- */
+
+  .roster {
+    margin-bottom: 40px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+    padding: 12px;
+  }
+
+  .roster-row {
+    padding: 6px 4px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+  }
+
+  .roster-row:last-child {
+    border-bottom: none;
+  }
+
+  .roster-name {
+    font-weight: 600;
+  }
+
+  .roster-meta {
+    font-size: 0.8rem;
+    opacity: 0.65;
+  }
+
+  /* ---------- PAIRINGS ---------- */
+
   .month {
     margin-top: 30px;
   }
@@ -78,8 +109,14 @@
 
 <div class="shell">
   <h1>BC Winter League</h1>
-  <p class="muted">Official pairings · Finalized rounds only</p>
+  <p class="muted">Public roster and finalized pairings</p>
 
+  <!-- ROSTER -->
+  <div id="roster-root" class="roster">
+    <div class="loading">Loading roster…</div>
+  </div>
+
+  <!-- PAIRINGS -->
   <div id="pairings-root">
     <div class="loading">Loading pairings…</div>
   </div>
