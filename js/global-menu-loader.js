@@ -1,6 +1,10 @@
 // /js/global-menu-loader.js
 import { supabase } from "./config.js";
+import { getProfile } from "./db.js";
 
+/* -------------------------------------------------------
+   INSERT MENU SHELL
+-------------------------------------------------------- */
 function insertMenu() {
   if (document.getElementById("menu-icon") || document.getElementById("menu-panel")) {
     return;
@@ -48,6 +52,9 @@ function insertMenu() {
   document.body.insertAdjacentHTML("beforeend", html);
 }
 
+/* -------------------------------------------------------
+   UI HELPERS
+-------------------------------------------------------- */
 function togglePanel() {
   const panel = document.getElementById("menu-panel");
   if (!panel) return;
@@ -57,12 +64,11 @@ function togglePanel() {
 
 function wireIcon() {
   const icon = document.getElementById("menu-icon");
-  if (!icon) return;
-  icon.onclick = togglePanel;
+  if (icon) icon.onclick = togglePanel;
 }
 
-const btn = (label, href) =>
-  `<button onclick="location.href='${href}'"
+const btn = (label, href) => `
+  <button onclick="location.href='${href}'"
     style="
       width:100%;
       padding:8px 10px;
@@ -72,39 +78,66 @@ const btn = (label, href) =>
       border-radius:6px;
       background:#f5f5f5;
       cursor:pointer;
-    ">${label}</button>`;
+    ">${label}</button>
+`;
 
+/* -------------------------------------------------------
+   RENDER MENU (AUTH + PROFILE SAFE)
+-------------------------------------------------------- */
 async function renderMenu() {
   const panel = document.getElementById("menu-panel");
   if (!panel) return;
 
-  const { data } = await supabase.auth.getUser();
-  const user = data?.user || null;
+  let user = null;
+  let profile = null;
 
-  // 🔓 LOGGED OUT (AUTH ONLY)
+  try {
+    // Always resolve auth first
+    const { data: auth } = await supabase.auth.getUser();
+    user = auth?.user || null;
+
+    if (user) {
+      // Always fetch fresh profile (no caching)
+      profile = await getProfile();
+    }
+  } catch (err) {
+    console.error("menu auth/profile error", err);
+  }
+
+  /* ---------- LOGGED OUT ---------- */
   if (!user) {
     panel.innerHTML = btn("Login / Sign-Up", "/login.html");
     return;
   }
 
-  // 🔐 LOGGED IN
-  const email = user.email || "User";
+  /* ---------- LOGGED IN ---------- */
+  const displayName =
+    profile?.moderated_handle ||
+    profile?.handle ||
+    user.email ||
+    "User";
 
-  panel.innerHTML = `
+  let links = `
     <div style="
       padding-bottom:6px;
       font-weight:600;
       border-bottom:1px solid #ddd;
       margin-bottom:6px;
       word-break:break-all;
-    ">
-      ${email}
-    </div>
+    ">${displayName}</div>
 
     ${btn("User Settings", "/user-settings.html")}
     ${btn("BCWL Hub", "/bcwl-hub.html")}
     ${btn("BCPMM Hub", "/bcpmmsheet.html")}
+  `;
 
+  // 🔑 ADMIN LINK (LIVE)
+  if (profile?.is_mod === true) {
+    links += btn("Admin Dashboard", "/admin-dashboard.html");
+  }
+
+  panel.innerHTML = `
+    ${links}
     <button id="logout-btn" style="
       width:100%;
       padding:8px 10px;
@@ -126,6 +159,9 @@ async function renderMenu() {
   }
 }
 
+/* -------------------------------------------------------
+   INIT
+-------------------------------------------------------- */
 function initMenu() {
   insertMenu();
   wireIcon();
