@@ -25,8 +25,9 @@
       margin:0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       color: var(--ink);
-      background: radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.18), transparent 60%),
-                  linear-gradient(var(--bg), #ffffff 65%);
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.18), transparent 60%),
+        linear-gradient(var(--bg), #ffffff 65%);
     }
 
     a{ color: inherit; text-decoration: none; }
@@ -55,7 +56,7 @@
     }
 
     .head-inner{
-      padding: 18px 18px 16px;
+      padding: 18px;
     }
 
     h1{
@@ -74,17 +75,11 @@
     main{
       margin-top: 16px;
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-
-    .grid{
-      display:grid;
       gap: 16px;
     }
 
     @media (min-width: 860px){
-      .grid{
+      main{
         grid-template-columns: 1fr 1fr;
       }
     }
@@ -122,81 +117,52 @@
       background: #fbfdff;
     }
 
-    .item strong{
-      font-weight: 700;
-    }
-
     .pill{
-      display:inline-flex;
-      align-items:center;
-      gap: 6px;
       font-size: .82rem;
       padding: 6px 10px;
       border-radius: 999px;
       border: 1px solid var(--border);
-      color: var(--muted);
-      background: #ffffff;
-      white-space: nowrap;
-    }
-
-    .pill.live{
-      color: #0b3b12;
-      background: #e8f7ec;
-      border-color: rgba(16,185,129,.25);
-    }
-
-    .pill.soon{
       color: #5b3a00;
       background: #fff4e5;
-      border-color: rgba(245,158,11,.35);
     }
 
     .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
       padding: 8px 12px;
       border-radius: 10px;
       border: 1px solid var(--border);
       background: #ffffff;
       font-weight: 650;
-      text-decoration: none;
       white-space: nowrap;
     }
+
     .btn:hover{
       text-decoration:none;
       border-color: rgba(31,111,235,.35);
       box-shadow: 0 8px 18px rgba(31,111,235,.12);
     }
 
-    .footer{
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: .92rem;
-      line-height: 1.45;
-      text-align: center;
-    }
-
     .meta{
-      display:flex;
-      flex-wrap: wrap;
-      gap: 10px;
       margin-top: 12px;
     }
 
     .meta a{
       color: var(--accent);
       font-weight: 650;
-      text-decoration: none;
     }
-    .meta a:hover{ text-decoration: underline; }
+
+    .footer{
+      grid-column: 1 / -1;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: .92rem;
+      text-align: center;
+    }
   </style>
 </head>
 
 <body>
   <div class="shell">
     <header>
-      <!-- SPLASH IMAGE: replace src with your image path -->
       <img
         class="hero"
         src="coverage-splash.jpg"
@@ -210,141 +176,67 @@
           Round-by-round standings and feature matches for the B.C. Premodern Masters.
         </p>
 
-        <div class="meta" aria-label="Quick links">
-          <!-- optional: change/remove -->
+        <div class="meta">
           <a href="../">magic1.ca</a>
         </div>
       </div>
     </header>
 
-    <main class="grid">
+    <main>
       <!-- STANDINGS -->
-      <section class="card" aria-labelledby="standings">
-        <h2 id="standings">Standings (Rounds 1–5)</h2>
+      <section class="card">
+        <h2>Standings (@Topdeck.gg)</h2>
         <ul class="list">
           <li class="item">
-            <span><strong>Round 1</strong> Standings</span>
-            <span>
-              <span class="pill soon" title="Add a link to publish">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Open</a>
-            </span>
-          </li>
-          <li class="item">
-            <span><strong>Round 2</strong> Standings</span>
-            <span>
-              <span class="pill soon">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Open</a>
-            </span>
-          </li>
-          <li class="item">
-            <span><strong>Round 3</strong> Standings</span>
-            <span>
-              <span class="pill soon">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Open</a>
-            </span>
-          </li>
-          <li class="item">
-            <span><strong>Round 4</strong> Standings</span>
-            <span>
-              <span class="pill soon">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Open</a>
-            </span>
-          </li>
-          <li class="item">
-            <span><strong>Round 5</strong> Standings</span>
-            <span>
-              <span class="pill soon">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Open</a>
-            </span>
+            <span>Standings</span>
+            <a class="btn"
+               href="https://topdeck.gg/bracket/bc-secret-masters-legends-series"
+               target="_blank" rel="noopener">
+              Open
+            </a>
           </li>
         </ul>
       </section>
 
       <!-- FEATURE MATCHES -->
-      <section class="card" aria-labelledby="features">
-        <h2 id="features">Feature Matches (Rounds 1–5)</h2>
+      <section class="card">
+        <h2>Feature Matches (Rounds 1–5)</h2>
         <ul class="list">
           <li class="item">
-            <span><strong>Round 1</strong> Feature Match</span>
-            <span>
-              <span class="pill soon">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Watch</a>
-            </span>
+            <span>Round 1 Feature Match</span>
+            <span class="pill">Coming soon</span>
           </li>
           <li class="item">
-            <span><strong>Round 2</strong> Feature Match</span>
-            <span>
-              <span class="pill soon">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Watch</a>
-            </span>
+            <span>Round 2 Feature Match</span>
+            <span class="pill">Coming soon</span>
           </li>
           <li class="item">
-            <span><strong>Round 3</strong> Feature Match</span>
-            <span>
-              <span class="pill soon">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Watch</a>
-            </span>
+            <span>Round 3 Feature Match</span>
+            <span class="pill">Coming soon</span>
           </li>
           <li class="item">
-            <span><strong>Round 4</strong> Feature Match</span>
-            <span>
-              <span class="pill soon">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Watch</a>
-            </span>
+            <span>Round 4 Feature Match</span>
+            <span class="pill">Coming soon</span>
           </li>
           <li class="item">
-            <span><strong>Round 5</strong> Feature Match</span>
-            <span>
-              <span class="pill soon">Coming soon</span>
-              <a class="btn" href="#" data-href="" aria-disabled="true">Watch</a>
-            </span>
+            <span>Round 5 Feature Match</span>
+            <span class="pill">Coming soon</span>
           </li>
         </ul>
       </section>
 
-      <!-- OPTIONAL: NOTES / ARCHIVE BOX -->
-      <section class="card" aria-labelledby="notes" style="grid-column: 1 / -1;">
-        <h2 id="notes">Notes</h2>
-        <p class="sub" style="margin:0;">
-          Links will go live as results and match coverage are posted. If you’re looking for a specific decklist,
-          standings snapshot, or video timestamp, check back later or follow the BCPMM updates channel.
+      <!-- NOTES -->
+      <section class="card" style="grid-column:1/-1;">
+        <h2>Notes</h2>
+        <p class="sub">
+          Links will go live as coverage is posted. Check back after the event for match videos and deck spotlights.
         </p>
       </section>
 
-      <div class="footer" style="grid-column: 1 / -1;">
+      <div class="footer">
         © B.C. Premodern Masters · Built for magic1.ca
       </div>
     </main>
   </div>
-
-  <script>
-    // Tiny helper:
-    // If an <a> has data-href="", it becomes disabled.
-    // If you set data-href="https://...", it becomes a live link and the pill switches to "Live".
-    (function () {
-      const links = document.querySelectorAll('a[data-href]');
-      links.forEach(a => {
-        const url = (a.getAttribute('data-href') || '').trim();
-        const pill = a.parentElement && a.parentElement.querySelector('.pill');
-
-        if (!url) {
-          a.setAttribute('aria-disabled', 'true');
-          a.addEventListener('click', (e) => e.preventDefault());
-          a.style.opacity = '0.55';
-          a.style.pointerEvents = 'none';
-          return;
-        }
-
-        a.href = url;
-        a.removeAttribute('aria-disabled');
-
-        if (pill) {
-          pill.textContent = 'Live';
-          pill.classList.remove('soon');
-          pill.classList.add('live');
-        }
-      });
-    })();
-  </script>
 </body>
 </html>
