@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BCPMM Photo & Video Gallery · B.C. Premodern Masters</title>
+
+  <style>
+    :root{
+      --bg:#f3f6ff;
+      --card:#ffffff;
+      --ink:#0f172a;
+      --muted:#475569;
+      --border:rgba(15,23,42,.12);
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:16px;
+      --max:980px;
+      --pad:18px;
+      --accent:#1f6feb;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--ink);
+      background:linear-gradient(var(--bg),#ffffff 65%);
+    }
+
+    .shell{
+      max-width:var(--max);
+      margin:28px auto 56px;
+      padding:0 var(--pad);
+    }
+
+    header{
+      background:var(--card);
+      border:1px solid var(--border);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
+      padding:18px;
+    }
+
+    h1{
+      margin:0 0 6px;
+      font-size:clamp(1.4rem,2.8vw,2rem);
+      letter-spacing:-.02em;
+    }
+
+    .sub{
+      margin:0;
+      color:var(--muted);
+      line-height:1.45;
+    }
+
+    .meta{
+      margin-top:10px;
+      display:flex;
+      gap:12px;
+    }
+
+    .meta a{
+      color:var(--accent);
+      font-weight:650;
+      text-decoration:none;
+    }
+
+    main{
+      margin-top:16px;
+      display:grid;
+      gap:24px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
+      padding:16px;
+    }
+
+    .round{
+      font-size:.85rem;
+      font-weight:700;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+      color:#334155;
+      margin-bottom:12px;
+    }
+
+    /* Photo frame */
+    figure.photo-frame{
+      max-width:720px;
+      margin:0 auto;
+      display:grid;
+      gap:10px;
+    }
+
+    figure.photo-frame img{
+      width:100%;
+      height:auto;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:#e5e7eb;
+    }
+
+    figure.photo-frame figcaption{
+      font-size:.95rem;
+      line-height:1.45;
+      color:var(--muted);
+    }
+
+    .photo-meta{
+      font-size:.8rem;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      color:#64748b;
+      margin-bottom:4px;
+    }
+
+    .footer{
+      margin-top:24px;
+      text-align:center;
+      font-size:.9rem;
+      color:var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <header>
+      <h1>BCPMM Photo & Video Gallery</h1>
+      <p class="sub">
+        On-the-ground photos, short captions, and occasional full feature matches
+        from the B.C. Premodern Masters.
+      </p>
+      <div class="meta">
+        <a href="./">← Tournament Coverage</a>
+        <a href="../">magic1.ca</a>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- ROUND 2 -->
+      <section class="card">
+        <div class="round">Round 2</div>
+
+        <figure class="photo-frame">
+          <img
+            src="photos/r2-table1.jpg"
+            alt="Round 2 feature match, table 1"
+            loading="lazy"
+          />
+          <figcaption>
+            <div class="photo-meta">Round 2 · Table 1</div>
+            Curran Delehanty (Elves) vs Brendan McBaine (Dreadnought).
+            <br>
+            <a href="feature-round2.html">Read full feature →</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <!-- ADD MORE ROUNDS / PHOTOS AS NEEDED -->
+
+      <div class="footer">
+        © B.C. Premodern Masters
+      </div>
+    </main>
+  </div>
+</body>
+</html>
