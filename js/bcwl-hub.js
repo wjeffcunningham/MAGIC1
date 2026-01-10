@@ -48,8 +48,7 @@ function renderRoster(roster) {
       "Player";
 
     const statusBits = [
-      player.payment_status || "unpaid",
-      player.confirmed ? "confirmed" : "unconfirmed"
+      player.payment_status || "unpaid"
     ];
 
     row.innerHTML = `
@@ -69,24 +68,20 @@ async function init() {
   hide(notJoined);
   hide(hubMain);
 
-  // Auth
   const user = await getAuthUser();
   if (!user) {
     show(notLogged);
     return;
   }
 
-  // Fetch league data
   const [member, roster] = await Promise.all([
     getMyLeagueMembership(),
     getLeagueRoster()
   ]);
 
-  // Roster is ALWAYS visible
   show(hubMain);
   renderRoster(roster);
 
-  // Join logic
   if (!member) {
     show(notJoined);
 
@@ -110,17 +105,13 @@ async function init() {
     return;
   }
 
-  // Member status (informational only)
   if (paymentBox) {
     paymentBox.textContent =
       `Payment status: ${member.payment_status || "unpaid"}`;
   }
 
   if (statusBox) {
-    statusBox.textContent =
-      member.confirmed
-        ? "Status: confirmed."
-        : "Status: awaiting organizer review.";
+    statusBox.textContent = "Status: active member";
   }
 }
 
