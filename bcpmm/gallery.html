@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BCPMM Photo & Video Gallery · B.C. Premodern Masters</title>
+  <title>BCPMM Photo Gallery · B.C. Premodern Masters</title>
 
   <style>
     :root{
@@ -11,10 +11,10 @@
       --card:#ffffff;
       --ink:#0f172a;
       --muted:#475569;
-      --border:rgba(15,23,42,.12);
+      --border:rgba(15,23,42,.14);
       --shadow:0 10px 30px rgba(15,23,42,.08);
       --radius:16px;
-      --max:980px;
+      --max:1100px;
       --pad:18px;
       --accent:#1f6feb;
     }
@@ -67,60 +67,42 @@
     }
 
     main{
-      margin-top:16px;
-      display:grid;
-      gap:24px;
+      margin-top:22px;
     }
 
-    .card{
+    /* === Gallery grid === */
+    .gallery{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:16px;
+    }
+
+    figure.frame{
       background:var(--card);
       border:1px solid var(--border);
+      border-radius:14px;
+      padding:10px;
       box-shadow:var(--shadow);
-      border-radius:var(--radius);
-      padding:16px;
-    }
-
-    .round{
-      font-size:.85rem;
-      font-weight:700;
-      letter-spacing:.05em;
-      text-transform:uppercase;
-      color:#334155;
-      margin-bottom:12px;
-    }
-
-    /* Photo frame */
-    figure.photo-frame{
-      max-width:720px;
-      margin:0 auto;
       display:grid;
-      gap:10px;
+      gap:8px;
     }
 
-    figure.photo-frame img{
+    figure.frame img{
       width:100%;
       height:auto;
-      border-radius:14px;
-      border:1px solid var(--border);
+      border-radius:10px;
       background:#e5e7eb;
+      display:block;
     }
 
-    figure.photo-frame figcaption{
-      font-size:.95rem;
-      line-height:1.45;
+    figcaption{
+      font-size:.85rem;
       color:var(--muted);
-    }
-
-    .photo-meta{
-      font-size:.8rem;
-      letter-spacing:.04em;
-      text-transform:uppercase;
-      color:#64748b;
-      margin-bottom:4px;
+      text-align:center;
     }
 
     .footer{
-      margin-top:24px;
+      margin-top:32px;
       text-align:center;
       font-size:.9rem;
       color:var(--muted);
@@ -131,44 +113,63 @@
 <body>
   <div class="shell">
     <header>
-      <h1>BCPMM Photo & Video Gallery</h1>
+      <h1>BCPMM Photo Gallery</h1>
       <p class="sub">
-        On-the-ground photos, short captions, and occasional full feature matches
-        from the B.C. Premodern Masters.
+        On-the-ground photos from the B.C. Premodern Masters.
       </p>
       <div class="meta">
-        <a href="./">← Tournament Coverage</a>
+        <a href="BCPMM_coverage.html">← Tournament Coverage</a>
         <a href="../">magic1.ca</a>
       </div>
     </header>
 
     <main>
-
-      <!-- ROUND 2 -->
-      <section class="card">
-        <div class="round">Round 2</div>
-
-        <figure class="photo-frame">
-          <img
-            src="photos/r2-table1.jpg"
-            alt="Round 2 feature match, table 1"
-            loading="lazy"
-          />
-          <figcaption>
-            <div class="photo-meta">Round 2 · Table 1</div>
-            Curran Delehanty (Elves) vs Brendan McBaine (Dreadnought).
-            <br>
-            <a href="feature-round2.html">Read full feature →</a>
-          </figcaption>
-        </figure>
-      </section>
-
-      <!-- ADD MORE ROUNDS / PHOTOS AS NEEDED -->
+      <section class="gallery" id="gallery"></section>
 
       <div class="footer">
         © B.C. Premodern Masters
       </div>
     </main>
   </div>
+
+  <script>
+    /*
+      AUTO JPG GALLERY (IMG_####.JPG)
+      ------------------------------
+      • gallery.html is in SAME folder as images
+      • Images named like: IMG_6396.JPG
+      • Case-sensitive
+      • Missing numbers skipped silently
+    */
+
+    const START = 6000;   // lowest IMG_#### number to try
+    const END   = 7000;   // highest IMG_#### number to try
+
+    const gallery = document.getElementById("gallery");
+
+    for(let i = START; i <= END; i++){
+      const src = `IMG_${i}.JPG`;
+
+      const img = new Image();
+      img.src = src;
+      img.loading = "lazy";
+      img.alt = "BCPMM Photo Gallery";
+
+      img.onerror = () => {}; // ignore missing files
+
+      img.onload = () => {
+        const frame = document.createElement("figure");
+        frame.className = "frame";
+
+        frame.appendChild(img);
+
+        const cap = document.createElement("figcaption");
+        cap.textContent = src;
+        frame.appendChild(cap);
+
+        gallery.appendChild(frame);
+      };
+    }
+  </script>
 </body>
 </html>
