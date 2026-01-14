@@ -53,9 +53,7 @@ h1{
   color:var(--muted);
 }
 
-.nav{
-  margin-top:10px;
-}
+.nav{ margin-top:10px; }
 
 .nav a{
   color:#1f6feb;
@@ -76,6 +74,7 @@ h1{
   padding:24px;
   border-radius:18px;
   box-shadow:var(--shadow);
+  /* background is set by JS to a random pastel */
 }
 
 .featured-frame img{
@@ -83,6 +82,8 @@ h1{
   width:100%;
   height:auto;
   display:block;
+  /* THIS is the key: makes the white become pastel while black stays black */
+  mix-blend-mode: multiply;
 }
 
 /* ================================
@@ -104,9 +105,7 @@ figure{
   gap:10px;
 }
 
-figure a{
-  display:block;
-}
+figure a{ display:block; }
 
 figure img{
   width:100%;
@@ -140,8 +139,6 @@ figcaption{
     Promotional artwork and print material for the B.C. Premodern Masters.
   </p>
   <div class="nav">
-    <a href="../BCPMM_coverage.html">← Tournament Coverage</a>
-    &nbsp;·&nbsp;
     <a href="../../">magic1.ca</a>
   </div>
 </header>
@@ -149,7 +146,7 @@ figcaption{
 <!-- FEATURED FRONT POSTER -->
 <section class="featured">
   <div class="featured-frame" id="featured-frame">
-    <a href="BCPMM(front).png" target="_blank">
+    <a href="BCPMM(front).png" target="_blank" rel="noopener">
       <img src="BCPMM(front).png" alt="BCPMM Front Poster">
     </a>
   </div>
@@ -159,31 +156,31 @@ figcaption{
 <section class="grid">
 
   <figure>
-    <a href="BCPMM_poster.jpg" target="_blank">
+    <a href="BCPMM_poster.jpg" target="_blank" rel="noopener">
       <img src="BCPMM_poster.jpg" alt="">
     </a>
     <figcaption>BCPMM Poster</figcaption>
   </figure>
 
   <figure>
-    <a href="webBCPMM.png" target="_blank">
+    <a href="webBCPMM.png" target="_blank" rel="noopener">
       <img src="webBCPMM.png" alt="">
     </a>
     <figcaption>Web Flyer (BCPMM)</figcaption>
   </figure>
 
   <figure>
-    <a href="prizeboosters.jpg" target="_blank">
-      <img src="prizeboosters.jpg" alt="">
-    </a>
-    <figcaption>Prize Boosters</figcaption>
-  </figure>
-
-  <figure>
-    <a href="webBCWL.png" target="_blank">
+    <a href="webBCWL.png" target="_blank" rel="noopener">
       <img src="webBCWL.png" alt="">
     </a>
     <figcaption>BC Winter League Flyer</figcaption>
+  </figure>
+
+  <figure>
+    <a href="prizeboosters.jpg" target="_blank" rel="noopener">
+      <img src="prizeboosters.jpg" alt="">
+    </a>
+    <figcaption>Prize Boosters</figcaption>
   </figure>
 
 </section>
@@ -196,7 +193,8 @@ figcaption{
 
 <script>
 /* ---------------------------------
-   RANDOM PASTEL FOR FEATURED POSTER
+   RANDOM PASTEL "INK" FOR BCPMM(front).png
+   (white becomes pastel via mix-blend-mode:multiply)
 -----------------------------------*/
 (() => {
   const pastels = [
