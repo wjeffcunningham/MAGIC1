@@ -62,28 +62,43 @@ h1{
 }
 
 /* ================================
-   FEATURED POSTER
+   FEATURED POSTER (LARGE)
 ================================ */
 .featured{
   display:flex;
   justify-content:center;
-  margin-bottom:36px;
+  margin-bottom:48px;
+}
+
+.featured-figure{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:18px;
+  box-shadow:var(--shadow);
+  max-width:900px; /* ~2x previous size */
+  width:100%;
 }
 
 .featured-frame{
-  padding:24px;
-  border-radius:18px;
-  box-shadow:var(--shadow);
-  /* background is set by JS to a random pastel */
+  padding:28px;
+  border-radius:14px;
 }
 
 .featured-frame img{
-  max-width:420px;
+  max-width:840px;
   width:100%;
   height:auto;
   display:block;
-  /* THIS is the key: makes the white become pastel while black stays black */
-  mix-blend-mode: multiply;
+  margin:0 auto;
+  mix-blend-mode:multiply;
+}
+
+.featured-figure figcaption{
+  margin-top:14px;
+  font-size:.9rem;
+  color:var(--muted);
+  text-align:center;
 }
 
 /* ================================
@@ -145,11 +160,14 @@ figcaption{
 
 <!-- FEATURED FRONT POSTER -->
 <section class="featured">
-  <div class="featured-frame" id="featured-frame">
-    <a href="BCPMM(front).png" target="_blank" rel="noopener">
-      <img src="BCPMM(front).png" alt="BCPMM Front Poster">
-    </a>
-  </div>
+  <figure class="featured-figure">
+    <div class="featured-frame" id="featured-frame">
+      <a href="BCPMM(front).png" target="_blank" rel="noopener">
+        <img src="BCPMM(front).png" alt="BCPMM Flyers">
+      </a>
+    </div>
+    <figcaption>Quarter-Page Flyers</figcaption>
+  </figure>
 </section>
 
 <!-- ARCHIVE GRID -->
@@ -159,21 +177,21 @@ figcaption{
     <a href="BCPMM_poster.jpg" target="_blank" rel="noopener">
       <img src="BCPMM_poster.jpg" alt="">
     </a>
-    <figcaption>BCPMM Poster</figcaption>
+    <figcaption>Official Flyer</figcaption>
   </figure>
 
   <figure>
     <a href="webBCPMM.png" target="_blank" rel="noopener">
       <img src="webBCPMM.png" alt="">
     </a>
-    <figcaption>Web Flyer (BCPMM)</figcaption>
+    <figcaption>Web Poster (BCPMM)</figcaption>
   </figure>
 
   <figure>
     <a href="webBCWL.png" target="_blank" rel="noopener">
       <img src="webBCWL.png" alt="">
     </a>
-    <figcaption>BC Winter League Flyer</figcaption>
+    <figcaption>Web Poster (BCWL)</figcaption>
   </figure>
 
   <figure>
@@ -194,14 +212,13 @@ figcaption{
 <script>
 /* ---------------------------------
    RANDOM PASTEL "INK" FOR BCPMM(front).png
-   (white becomes pastel via mix-blend-mode:multiply)
 -----------------------------------*/
 (() => {
   const pastels = [
-    "#FFF3C4", // warm cream
-    "#E9F2FF", // pale blue
-    "#FCE8F0", // blush
-    "#EAF7EA"  // mint
+    "#FFF3C4",
+    "#E9F2FF",
+    "#FCE8F0",
+    "#EAF7EA"
   ];
   const frame = document.getElementById("featured-frame");
   frame.style.background =
