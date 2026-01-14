@@ -62,7 +62,7 @@ h1{
 }
 
 /* ================================
-   FEATURED POSTER (LARGE)
+   FEATURED OFFICIAL POSTER
 ================================ */
 .featured{
   display:flex;
@@ -76,22 +76,15 @@ h1{
   border-radius:18px;
   padding:18px;
   box-shadow:var(--shadow);
-  max-width:600px; /* ~2x previous size */
+  max-width:700px;
   width:100%;
 }
 
-.featured-frame{
-  padding:28px;
-  border-radius:14px;
-}
-
-.featured-frame img{
-  max-width:840px;
+.featured-figure img{
   width:100%;
   height:auto;
   display:block;
-  margin:0 auto;
-  mix-blend-mode:multiply;
+  border-radius:12px;
 }
 
 .featured-figure figcaption{
@@ -136,6 +129,26 @@ figcaption{
   text-align:center;
 }
 
+/* ================================
+   QUARTER-PAGE FLYER CAROUSEL
+================================ */
+.flyer-frame{
+  height:320px;              /* fixed, uniform size */
+  padding:16px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.flyer-frame img{
+  max-height:100%;
+  max-width:100%;
+  object-fit:contain;
+  mix-blend-mode:multiply;
+}
+
 .footer{
   margin-top:40px;
   text-align:center;
@@ -158,26 +171,28 @@ figcaption{
   </div>
 </header>
 
-<!-- FEATURED FRONT POSTER -->
+<!-- FEATURED OFFICIAL FLYER -->
 <section class="featured">
   <figure class="featured-figure">
-    <div class="featured-frame" id="featured-frame">
-      <a href="BCPMM(front).png" target="_blank" rel="noopener">
-        <img src="BCPMM(front).png" alt="BCPMM Flyers">
-      </a>
-    </div>
-    <figcaption>Quarter-Page Flyers</figcaption>
+    <a href="BCPMM_poster.jpg" target="_blank" rel="noopener">
+      <img src="BCPMM_poster.jpg" alt="BCPMM Official Flyer">
+    </a>
+    <figcaption>Official Tournament Flyer</figcaption>
   </figure>
 </section>
 
 <!-- ARCHIVE GRID -->
 <section class="grid">
 
+  <!-- QUARTER-PAGE FLYERS (CYCLING) -->
   <figure>
-    <a href="BCPMM_poster.jpg" target="_blank" rel="noopener">
-      <img src="BCPMM_poster.jpg" alt="">
-    </a>
-    <figcaption>Official Flyer</figcaption>
+    <div class="flyer-frame" id="flyer-frame">
+      <img
+        id="flyer-img"
+        src="BCPMM(front)1.png"
+        alt="BCPMM Quarter-Page Flyers">
+    </div>
+    <figcaption>Quarter-Page Flyers (click to cycle)</figcaption>
   </figure>
 
   <figure>
@@ -211,7 +226,28 @@ figcaption{
 
 <script>
 /* ---------------------------------
-   RANDOM PASTEL "INK" FOR BCPMM(front).png
+   QUARTER-PAGE FLYER CAROUSEL
+-----------------------------------*/
+(() => {
+  const images = [
+    "BCPMM(front)1.png",
+    "BCPMM(front)2.png",
+    "BCPMM(front)3.png",
+    "BCPMM(front)4.png"
+  ];
+
+  let idx = 0;
+  const img = document.getElementById("flyer-img");
+  const frame = document.getElementById("flyer-frame");
+
+  frame.addEventListener("click", () => {
+    idx = (idx + 1) % images.length;
+    img.src = images[idx];
+  });
+})();
+
+/* ---------------------------------
+   RANDOM PASTEL "INK"
 -----------------------------------*/
 (() => {
   const pastels = [
@@ -220,7 +256,7 @@ figcaption{
     "#FCE8F0",
     "#EAF7EA"
   ];
-  const frame = document.getElementById("featured-frame");
+  const frame = document.getElementById("flyer-frame");
   frame.style.background =
     pastels[Math.floor(Math.random() * pastels.length)];
 })();
