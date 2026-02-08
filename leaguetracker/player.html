@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Player Stats</title>
+  <link rel="stylesheet" href="./css/league.css" />
+  <style>
+    .player-wrap { max-width: 900px; margin: 3rem auto; }
+    h1 { margin-bottom: 0.5rem; }
+    .meta { opacity: 0.7; margin-bottom: 2rem; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #333; }
+    th { text-align: left; opacity: 0.7; }
+    td.num { text-align: right; }
+
+    .delta.pos { color: #4caf50; }
+    .delta.neg { color: #f44336; }
+  </style>
+</head>
+<body>
+
+<div class="player-wrap">
+  <h1 id="player-name"></h1>
+  <div class="meta" id="player-meta"></div>
+
+  <h2>Points Breakdown</h2>
+  <table id="points-table">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th class="num">Points</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Match History (Elo)</h2>
+  <table id="history-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Event</th>
+        <th>Opponent</th>
+        <th>Score</th>
+        <th class="num">Δ Elo</th>
+        <th class="num">Elo</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+/* =========================================================
+   Config
+========================================================= */
+
+const EVENT_PATHS = [
+  '/leaguetracker/data/raw/events/bcpmm-2026-01-10.json',
+  '/leaguetracker/data/raw/events/connections-2026-01-12.json',
+  '/leaguetracker/data/raw/events/connections-2026-01-26.json',
+  '/leaguetracker/data/raw/events/stronghold-2026-02-01.json',
+  '/leaguetracker/data/raw/events/bcwl-2026-01-26-r1.json',
+  '/leaguetracker/data/raw/events/bcwl-2026-02-02-r2.json'
+];
+
+const START_ELO = 1600;
+
+const POINT_MULTIPLIERS = {
+  BCPMM: 6,
+  SHG: 3,
+  Connections: 2,
+  BCWL: 1
+};
+
+const K_VALUES = {
+  BCPMM: 64,
+  SHG: 32,
+  Connections: 24,
+  BCWL: 16
+};
+
+/* =========================================================
+   Helpers
+========================================================= */
+
+function qs(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+function slugToName(slug) {
+  return (slug || "").replace(/-/g, ' ');
+}
+
+function expectedScore(rA, rB) {
+  return 1 / (1 + Math.pow(10, (rB - rA) / 400));
+}
+
+/* =========================================================
+   Collect ALL matches (Swiss + Elimination)
+========================================================= */
+
+function getAllMatches(event) {
+  const matches = [];
+
+  // Swiss rounds
+  for (const round of event.rounds || []) {
+    for (const match of round.matches || []) {
+      matches.push({ ...match });
+    }
+  }
+
+  // Elimination rounds
+  const elim = event.elimination || {};
+  for (const phase of ['top8', 'semifinals', 'finals']) {
+    for (const match of elim[phase] || []) {
+      matches.push({ ...match });
+    }
+  }
+
+  return matches;
+}
+
+/* =========================================================
+   Normalize match
+========================================================= */
+
+function normalizeMatch(match, viewedPlayer) {
+  const { playerA, playerB } = match;
+  if (!playerA || !playerB) return null;
+
+  const isA = viewedPlayer === playerA;
+  const opp = isA ? playerB : playerA;
+
+  if (match.result === 'D') {
+    return { opp, scoreValue: 0.5, displayScore: '1-1*' };
+  }
+
+  if (typeof match.gamesA === 'number' && typeof match.gamesB === 'number') {
+    const a = match.gamesA;
+    const b = match.gamesB;
+    const isDraw = a === b;
+    const win = isA ? a > b : b > a;
+    return {
+      opp,
+      scoreValue: isDraw ? 0.5 : (win ? 1 : 0),
+      displayScore: isA ? `${a}-${b}` : `${b}-${a}`
+    };
+  }
+
+  if (match.winner) {
+    const win = match.winner === viewedPlayer;
+    return {
+      opp,
+      scoreValue: win ? 1 : 0,
+      displayScore: win ? '2-0*' : '0-2*'
+    };
+  }
+
+  return null;
+}
+
+/* =========================================================
+   Load events
+========================================================= */
+
+async function loadEvents() {
+  const events = [];
+  for (const path of EVENT_PATHS) {
+    try {
+      const res = await fetch(path);
+      if (res.ok) events.push(await res.json());
+    } catch {}
+  }
+  return events;
+}
+
+/* =========================================================
+   Points Breakdown
+========================================================= */
+
+function computePoints(player, events) {
+  const breakdown = { BCPMM: 0, SHG: 0, Connections: 0, BCWL: 0 };
+  for (const event of events) {
+    const mult = POINT_MULTIPLIERS[event?.event?.series] || 1;
+    for (const row of event.standings || []) {
+      if (row.player === player) {
+        breakdown[event.event.series] += row.match_points * mult;
+      }
+    }
+  }
+  return breakdown;
+}
+
+/* =========================================================
+   Elo Replay (FIXED)
+========================================================= */
+
+function replayElo(player, events) {
+  const ratings = {};
+  const history = [];
+
+  function ensure(p) {
+    if (!(p in ratings)) ratings[p] = START_ELO;
+  }
+
+  const ordered = [...events].sort(
+    (a, b) => new Date(a.event.date) - new Date(b.event.date)
+  );
+
+  for (const event of ordered) {
+    const series = event.event.series;
+    const K = K_VALUES[series] || 16;
+
+    for (const match of getAllMatches(event)) {
+      if (![match.playerA, match.playerB].includes(player)) continue;
+
+      const norm = normalizeMatch(match, player);
+      if (!norm) continue;
+
+      ensure(player);
+      ensure(norm.opp);
+
+      const Ra = ratings[player];
+      const Rb = ratings[norm.opp];
+      const Ea = expectedScore(Ra, Rb);
+
+      const delta = Math.round(K * (norm.scoreValue - Ea));
+      ratings[player] += delta;
+      ratings[norm.opp] -= delta;
+
+      history.push({
+        date: event.event.date,
+        event: series,
+        opponent: norm.opp,
+        score: norm.displayScore,
+        delta,
+        elo: ratings[player]
+      });
+    }
+  }
+
+  return history.reverse();
+}
+
+/* =========================================================
+   Render
+========================================================= */
+
+async function init() {
+  const player = qs('player');
+  if (!player) return;
+
+  const events = await loadEvents();
+
+  document.getElementById('player-name').textContent = slugToName(player);
+  document.getElementById('player-meta').textContent = `Player slug: ${player}`;
+
+  const breakdown = computePoints(player, events);
+  const pointsBody = document.querySelector('#points-table tbody');
+  Object.entries(breakdown).forEach(([k, v]) => {
+    pointsBody.innerHTML += `<tr><td>${k}</td><td class="num">${v}</td></tr>`;
+  });
+
+  const history = replayElo(player, events);
+  const histBody = document.querySelector('#history-table tbody');
+
+  history.forEach(row => {
+    histBody.innerHTML += `
+      <tr>
+        <td>${row.date}</td>
+        <td>${row.event}</td>
+        <td>
+          <a href="/leaguetracker/player.html?player=${row.opponent}">
+            ${slugToName(row.opponent)}
+          </a>
+        </td>
+        <td>${row.score}</td>
+        <td class="num delta ${row.delta >= 0 ? 'pos' : 'neg'}">
+          ${row.delta >= 0 ? '+' : ''}${row.delta}
+        </td>
+        <td class="num">${row.elo}</td>
+      </tr>
+    `;
+  });
+}
+
+init();
+</script>
+
+</body>
+</html>

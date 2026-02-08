@@ -1,0 +1,177 @@
+{
+  "event": {
+    "id": "bcpmm-2026-01-12",
+    "name": "BC Premodern Masters I",
+    "series": "BCPMM",
+    "format": "Premodern",
+    "date": "2026-01-10"
+  },
+
+  "standings": [
+    { "rank": 1, "player": "caitlyn-bethune", "match_points": 13, "omw": 57.33, "gw": 69.23, "ogw": 52.71 },
+    { "rank": 2, "player": "andrew-kidston", "match_points": 13, "omw": 53.27, "gw": 69.23, "ogw": 51.63 },
+    { "rank": 3, "player": "jeff-fung", "match_points": 11, "omw": 66.67, "gw": 61.54, "ogw": 59.42 },
+    { "rank": 4, "player": "curran-delahanty", "match_points": 10, "omw": 61.27, "gw": 52.78, "ogw": 56.19 },
+    { "rank": 5, "player": "brenden-mcbain", "match_points": 12, "omw": 53.33, "gw": 75.0, "ogw": 51.56 },
+    { "rank": 6, "player": "cameron-wolber", "match_points": 10, "omw": 62.67, "gw": 57.58, "ogw": 58.03 },
+    { "rank": 7, "player": "reilly-wood", "match_points": 9, "omw": 61.33, "gw": 58.33, "ogw": 58.48 },
+    { "rank": 8, "player": "james-onions", "match_points": 9, "omw": 57.27, "gw": 53.33, "ogw": 53.48 },
+    { "rank": 9, "player": "romulo-ramos", "match_points": 9, "omw": 55.93, "gw": 63.64, "ogw": 53.78 },
+    { "rank": 10, "player": "markus-thibeau", "match_points": 9, "omw": 51.93, "gw": 63.64, "ogw": 49.78 },
+    { "rank": 11, "player": "dakota-blais", "match_points": 9, "omw": 51.93, "gw": 58.33, "ogw": 51.17 },
+    { "rank": 12, "player": "tristan-oloughlin", "match_points": 9, "omw": 48.0, "gw": 58.33, "ogw": 51.02 },
+    { "rank": 13, "player": "kevin-mittertreiner", "match_points": 9, "omw": 45.2, "gw": 54.55, "ogw": 43.87 },
+    { "rank": 14, "player": "enrique-angulo", "match_points": 9, "omw": 43.87, "gw": 63.64, "ogw": 43.07 },
+    { "rank": 15, "player": "ian-washburne", "match_points": 6, "omw": 61.33, "gw": 41.67, "ogw": 56.09 },
+    { "rank": 16, "player": "andrew-alexandrov", "match_points": 6, "omw": 58.67, "gw": 46.15, "ogw": 54.8 },
+    { "rank": 17, "player": "sebastian-denno", "match_points": 6, "omw": 54.53, "gw": 50.0, "ogw": 51.44 },
+    { "rank": 18, "player": "veronica-baldys", "match_points": 6, "omw": 51.93, "gw": 41.67, "ogw": 52.4 },
+    { "rank": 19, "player": "matthew-thiessen", "match_points": 6, "omw": 49.27, "gw": 41.67, "ogw": 50.3 },
+    { "rank": 20, "player": "clint-taylor", "match_points": 6, "omw": 49.2, "gw": 43.33, "ogw": 47.2 },
+    { "rank": 21, "player": "elliot-fisher", "match_points": 6, "omw": 45.2, "gw": 50.0, "ogw": 44.87 },
+    { "rank": 22, "player": "luna-lawrence", "match_points": 6, "omw": 45.2, "gw": 40.0, "ogw": 44.87 },
+    { "rank": 23, "player": "patrick-oneill", "match_points": 3, "omw": 55.93, "gw": 27.27, "ogw": 52.02 },
+    { "rank": 24, "player": "arlen-wiesenthal", "match_points": 3, "omw": 49.33, "gw": 27.27, "ogw": 49.95 },
+    { "rank": 25, "player": "rodrigo-garcia", "match_points": 3, "omw": 46.67, "gw": 25.0, "ogw": 49.44 },
+    { "rank": 26, "player": "gerard-cadger", "match_points": 3, "omw": 45.2, "gw": 18.18, "ogw": 45.17 },
+    { "rank": 27, "player": "marvin-goncalves-de-aquino", "match_points": 3, "omw": 41.2, "gw": 22.22, "ogw": 42.93 },
+    { "rank": 28, "player": "dilon-dubyk", "match_points": 0, "omw": 44.33, "gw": 14.29, "ogw": 48.88 }
+  ],
+
+  "rounds": [
+    {
+      "round": 1,
+      "matches": [
+        { "table": 1, "playerA": "jeff-fung", "playerB": "enrique-angulo", "gamesA": 2, "gamesB": 0 },
+        { "table": 2, "playerA": "kevin-mittertreiner", "playerB": "james-onions", "gamesA": 0, "gamesB": 2 },
+        { "table": 3, "playerA": "reilly-wood", "playerB": "romulo-ramos", "gamesA": 2, "gamesB": 0 },
+        { "table": 4, "playerA": "tristan-oloughlin", "playerB": "markus-thibeau", "gamesA": 2, "gamesB": 0 },
+        { "table": 5, "playerA": "andrew-alexandrov", "playerB": "cameron-wolber", "gamesA": 0, "gamesB": 2 },
+        { "table": 6, "playerA": "arlen-wiesenthal", "playerB": "curran-delahanty", "gamesA": 1, "gamesB": 2 },
+        { "table": 7, "playerA": "dakota-blais", "playerB": "andrew-kidston", "gamesA": 1, "gamesB": 2 },
+        { "table": 8, "playerA": "sebastian-denno", "playerB": "dilon-dubyk", "gamesA": 2, "gamesB": 0 },
+        { "table": 9, "playerA": "caitlyn-bethune", "playerB": "veronica-baldys", "gamesA": 2, "gamesB": 1 },
+        { "table": 10, "playerA": "gerard-cadger", "playerB": "matthew-thiessen", "gamesA": 0, "gamesB": 2 },
+        { "table": 11, "playerA": "clint-taylor", "playerB": "brenden-mcbain", "gamesA": 1, "gamesB": 2 },
+        { "table": 12, "playerA": "ian-washburne", "playerB": "luna-lawrence", "gamesA": 2, "gamesB": 0 },
+        { "table": 13, "playerA": "marvin-goncalves-de-aquino", "playerB": "patrick-oneill", "gamesA": 0, "gamesB": 2 },
+        { "table": 14, "playerA": "elliot-fisher", "playerB": "rodrigo-garcia", "gamesA": 2, "gamesB": 0 }
+      ]
+    },
+
+    {
+      "round": 2,
+      "matches": [
+        { "table": 1, "playerA": "curran-delahanty", "playerB": "brenden-mcbain", "gamesA": 2, "gamesB": 1 },
+        { "table": 2, "playerA": "tristan-oloughlin", "playerB": "ian-washburne", "gamesA": 1, "gamesB": 2 },
+        { "table": 3, "playerA": "caitlyn-bethune", "playerB": "sebastian-denno", "gamesA": 2, "gamesB": 1 },
+        { "table": 4, "playerA": "patrick-oneill", "playerB": "andrew-kidston", "gamesA": 0, "gamesB": 2 },
+        { "table": 5, "playerA": "elliot-fisher", "playerB": "matthew-thiessen", "gamesA": 1, "gamesB": 2 },
+        { "table": 6, "playerA": "james-onions", "playerB": "jeff-fung", "gamesA": 0, "gamesB": 2 },
+        { "table": 7, "playerA": "reilly-wood", "playerB": "cameron-wolber", "gamesA": 1, "gamesB": 2 },
+        { "table": 8, "playerA": "marvin-goncalves-de-aquino", "playerB": "clint-taylor", "gamesA": 0, "gamesB": 1 },
+        { "table": 9, "playerA": "enrique-angulo", "playerB": "dilon-dubyk", "gamesA": 2, "gamesB": 0 },
+        { "table": 10, "playerA": "arlen-wiesenthal", "playerB": "romulo-ramos", "gamesA": 0, "gamesB": 2 },
+        { "table": 11, "playerA": "markus-thibeau", "playerB": "dakota-blais", "gamesA": 2, "gamesB": 0 },
+        { "table": 12, "playerA": "rodrigo-garcia", "playerB": "luna-lawrence", "gamesA": 0, "gamesB": 2 },
+        { "table": 13, "playerA": "veronica-baldys", "playerB": "andrew-alexandrov", "gamesA": 0, "gamesB": 2 },
+        { "table": 14, "playerA": "gerard-cadger", "playerB": "kevin-mittertreiner", "gamesA": 0, "gamesB": 2 }
+      ]
+    },
+
+    {
+      "round": 3,
+      "matches": [
+        { "table": 1, "playerA": "caitlyn-bethune", "playerB": "curran-delahanty", "gamesA": 2, "gamesB": 0 },
+        { "table": 2, "playerA": "andrew-kidston", "playerB": "ian-washburne", "gamesA": 2, "gamesB": 0 },
+        { "table": 3, "playerA": "matthew-thiessen", "playerB": "jeff-fung", "gamesA": 1, "gamesB": 2 },
+        { "table": 4, "playerA": "cameron-wolber", "playerB": "markus-thibeau", "gamesA": 2, "gamesB": 1 },
+        { "table": 5, "playerA": "romulo-ramos", "playerB": "sebastian-denno", "gamesA": 2, "gamesB": 0 },
+        { "table": 6, "playerA": "enrique-angulo", "playerB": "andrew-alexandrov", "gamesA": 1, "gamesB": 2 },
+        { "table": 7, "playerA": "tristan-oloughlin", "playerB": "luna-lawrence", "gamesA": 2, "gamesB": 0 },
+        { "table": 8, "playerA": "elliot-fisher", "playerB": "brenden-mcbain", "gamesA": 0, "gamesB": 2 },
+        { "table": 9, "playerA": "reilly-wood", "playerB": "kevin-mittertreiner", "gamesA": 2, "gamesB": 0 },
+        { "table": 10, "playerA": "james-onions", "playerB": "patrick-oneill", "gamesA": 2, "gamesB": 0 },
+        { "table": 11, "playerA": "clint-taylor", "playerB": "arlen-wiesenthal", "gamesA": 0, "gamesB": 2 },
+        { "table": 12, "playerA": "gerard-cadger", "playerB": "dilon-dubyk", "gamesA": 2, "gamesB": 1 },
+        { "table": 13, "playerA": "dakota-blais", "playerB": "rodrigo-garcia", "gamesA": 2, "gamesB": 0 },
+        { "table": 14, "playerA": "marvin-goncalves-de-aquino", "playerB": "veronica-baldys", "gamesA": 0, "gamesB": 2 }
+      ]
+    },
+
+    {
+      "round": 4,
+      "matches": [
+        { "table": 1, "playerA": "jeff-fung", "playerB": "andrew-kidston", "result": "D" },
+        { "table": 2, "playerA": "cameron-wolber", "playerB": "caitlyn-bethune", "gamesA": 0, "gamesB": 2 },
+        { "table": 3, "playerA": "curran-delahanty", "playerB": "andrew-alexandrov", "gamesA": 2, "gamesB": 1 },
+        { "table": 4, "playerA": "reilly-wood", "playerB": "ian-washburne", "gamesA": 2, "gamesB": 1 },
+        { "table": 5, "playerA": "tristan-oloughlin", "playerB": "romulo-ramos", "gamesA": 0, "gamesB": 2 },
+        { "table": 6, "playerA": "james-onions", "playerB": "brenden-mcbain", "gamesA": 0, "gamesB": 2 },
+        { "table": 7, "playerA": "matthew-thiessen", "playerB": "clint-taylor", "gamesA": 0, "gamesB": 2 },
+        { "table": 8, "playerA": "patrick-oneill", "playerB": "kevin-mittertreiner", "gamesA": 1, "gamesB": 2 },
+        { "table": 9, "playerA": "elliot-fisher", "playerB": "veronica-baldys", "gamesA": 1, "gamesB": 2 },
+        { "table": 10, "playerA": "enrique-angulo", "playerB": "gerard-cadger", "gamesA": 2, "gamesB": 0 },
+        { "table": 11, "playerA": "sebastian-denno", "playerB": "dakota-blais", "gamesA": 1, "gamesB": 2 },
+        { "table": 12, "playerA": "luna-lawrence", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 0 },
+        { "table": 13, "playerA": "markus-thibeau", "playerB": "marvin-goncalves-de-aquino", "gamesA": 2, "gamesB": 0 }
+      ],
+      "byes": ["rodrigo-garcia"]
+    },
+
+    {
+      "round": 5,
+      "matches": [
+        { "table": 1, "playerA": "caitlyn-bethune", "playerB": "jeff-fung", "result": "D" },
+        { "table": 2, "playerA": "andrew-kidston", "playerB": "romulo-ramos", "gamesA": 2, "gamesB": 1 },
+        { "table": 3, "playerA": "curran-delahanty", "playerB": "cameron-wolber", "result": "D" },
+        { "table": 4, "playerA": "brenden-mcbain", "playerB": "reilly-wood", "gamesA": 2, "gamesB": 0 },
+        { "table": 5, "playerA": "enrique-angulo", "playerB": "matthew-thiessen", "gamesA": 2, "gamesB": 0 },
+        { "table": 6, "playerA": "clint-taylor", "playerB": "james-onions", "gamesA": 0, "gamesB": 1 },
+        { "table": 7, "playerA": "veronica-baldys", "playerB": "markus-thibeau", "gamesA": 0, "gamesB": 2 },
+        { "table": 8, "playerA": "ian-washburne", "playerB": "kevin-mittertreiner", "gamesA": 0, "gamesB": 2 },
+        { "table": 9, "playerA": "luna-lawrence", "playerB": "dakota-blais", "gamesA": 0, "gamesB": 2 },
+        { "table": 10, "playerA": "tristan-oloughlin", "playerB": "andrew-alexandrov", "gamesA": 2, "gamesB": 1 },
+        { "table": 11, "playerA": "arlen-wiesenthal", "playerB": "elliot-fisher", "gamesA": 0, "gamesB": 2 },
+        { "table": 12, "playerA": "sebastian-denno", "playerB": "patrick-oneill", "gamesA": 2, "gamesB": 0 },
+        { "table": 13, "playerA": "gerard-cadger", "playerB": "marvin-goncalves-de-aquino", "gamesA": 0, "gamesB": 2 }
+      ]
+    }
+  ],
+
+  "elimination": {
+    "top8": [
+      { "table": 1, "playerA": "caitlyn-bethune", "playerB": "james-onions", "gamesA": 2, "gamesB": 1 },
+      { "table": 2, "playerA": "jeff-fung", "playerB": "cameron-wolber", "gamesA": 2, "gamesB": 1 },
+      { "table": 3, "playerA": "brenden-mcbain", "playerB": "curran-delahanty", "gamesA": 0, "gamesB": 2 },
+      { "table": 4, "playerA": "andrew-kidston", "playerB": "reilly-wood", "gamesA": 2, "gamesB": 0 }
+    ],
+    "semifinals": [
+      { "table": 1, "playerA": "caitlyn-bethune", "playerB": "jeff-fung", "gamesA": 2, "gamesB": 0 },
+      { "table": 2, "playerA": "andrew-kidston", "playerB": "curran-delahanty", "gamesA": 2, "gamesB": 0 }
+    ],
+    "finals": [
+      { "table": 1, "playerA": "caitlyn-bethune", "playerB": "andrew-kidston", "gamesA": 2, "gamesB": 1 }
+    ]
+  },
+
+"derived": {
+  "elim_wins": {
+    "caitlyn-bethune": 3,
+    "andrew-kidston": 2,
+    "jeff-fung": 1,
+    "curran-delahanty": 1
+  },
+  "event_points": {
+    "caitlyn-bethune": 22,
+    "andrew-kidston": 19,
+    "jeff-fung": 14,
+    "curran-delahanty": 13
+  }
+},
+
+  "notes": [
+    "0-0 matches in screenshots resolved as draws by cross-checking subsequent pairings + final match-point totals",
+    "Byes recorded explicitly when shown"
+  ]
+}

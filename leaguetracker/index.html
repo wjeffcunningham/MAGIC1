@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>League Tracker · magic1.ca</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- League tracker styles -->
+  <link rel="stylesheet" href="./css/league.css">
+</head>
+
+<body>
+  <main class="tracker">
+    <h1>League Tracker</h1>
+
+    <div class="tabs">
+      <button type="button" data-mode="bcpmm" class="active">
+        BCPMM Points
+      </button>
+
+      <!-- FIXED: data-mode must be "league" -->
+      <button type="button" data-mode="league">
+        League (Feb)
+      </button>
+
+      <button type="button" data-mode="elo">
+        Elo
+      </button>
+    </div>
+
+    <table class="ladder">
+      <thead>
+        <tr>
+          <th class="rank">#</th>
+          <th class="player">Player</th>
+          <th class="num">Value</th>
+        </tr>
+      </thead>
+      <tbody id="ladder-body">
+        <!-- populated by JS -->
+      </tbody>
+    </table>
+
+  </main>
+
+  <!-- Main league logic -->
+  <script src="./js/league.js"></script>
+</body>
+</html>

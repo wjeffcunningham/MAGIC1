@@ -1,0 +1,84 @@
+{
+  "event": {
+    "id": "stronghold-2026-02-01",
+    "name": "Stronghold Monthly",
+    "series": "SHG",
+    "format": "Premodern",
+    "date": "2026-02-01",
+    "location": "Stronghold Games"
+  },
+
+  "standings": [
+    { "rank": 1, "player": "elliot-fisher", "match_points": 12, "omw": 62.5, "gw": 88.89, "ogw": 57.8 },
+    { "rank": 2, "player": "tristan-oloughlin", "match_points": 9, "omw": 68.75, "gw": 60.0, "ogw": 63.03 },
+    { "rank": 3, "player": "jeff-cunningham", "match_points": 9, "omw": 58.25, "gw": 66.67, "ogw": 55.83 },
+    { "rank": 4, "player": "cody-foley", "match_points": 9, "omw": 47.75, "gw": 77.78, "ogw": 44.36 },
+    { "rank": 5, "player": "arlen-wiesenthal", "match_points": 6, "omw": 61.0, "gw": 44.44, "ogw": 59.15 },
+    { "rank": 6, "player": "kevin-mittertreiner", "match_points": 6, "omw": 58.33, "gw": 50.0, "ogw": 52.22 },
+    { "rank": 7, "player": "andrew-alexandrov", "match_points": 6, "omw": 58.25, "gw": 50.0, "ogw": 54.34 },
+    { "rank": 8, "player": "james-onions", "match_points": 6, "omw": 54.0, "gw": 54.55, "ogw": 50.47 },
+    { "rank": 9, "player": "patrick-oneill", "match_points": 6, "omw": 52.0, "gw": 40.0, "ogw": 51.14 },
+    { "rank": 10, "player": "marvin-goncalves-de-aquino", "match_points": 6, "omw": 47.75, "gw": 45.45, "ogw": 44.0 },
+    { "rank": 11, "player": "clint-taylor", "match_points": 3, "omw": 62.5, "gw": 40.0, "ogw": 59.75 },
+    { "rank": 12, "player": "rodrigo-garcia", "match_points": 0, "omw": 62.5, "gw": 20.0, "ogw": 61.62 },
+    { "rank": 13, "player": "veronica-baldys", "match_points": 0, "omw": 50.0, "gw": 27.27, "ogw": 48.61 }
+  ],
+
+  "rounds": [
+    {
+      "round": 1,
+      "matches": [
+        { "table": 1, "playerA": "veronica-baldys", "playerB": "andrew-alexandrov", "gamesA": 1, "gamesB": 2 },
+        { "table": 2, "playerA": "cody-foley", "playerB": "tristan-oloughlin", "gamesA": 1, "gamesB": 2 },
+        { "table": 3, "playerA": "marvin-goncalves-de-aquino", "playerB": "rodrigo-garcia", "gamesA": 2, "gamesB": 1 },
+        { "table": 4, "playerA": "jeff-cunningham", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 0 },
+        { "table": 5, "playerA": "elliot-fisher", "playerB": "james-onions", "gamesA": 2, "gamesB": 1 },
+        { "table": 6, "playerA": "clint-taylor", "playerB": "patrick-oneill", "gamesA": 2, "gamesB": 0 }
+      ],
+      "byes": ["kevin-mittertreiner"]
+    },
+
+    {
+      "round": 2,
+      "matches": [
+        { "table": 1, "playerA": "andrew-alexandrov", "playerB": "marvin-goncalves-de-aquino", "gamesA": 2, "gamesB": 0 },
+        { "table": 2, "playerA": "elliot-fisher", "playerB": "tristan-oloughlin", "gamesA": 2, "gamesB": 0 },
+        { "table": 3, "playerA": "jeff-cunningham", "playerB": "clint-taylor", "gamesA": 2, "gamesB": 1 },
+        { "table": 4, "playerA": "kevin-mittertreiner", "playerB": "patrick-oneill", "gamesA": 1, "gamesB": 2 },
+        { "table": 5, "playerA": "cody-foley", "playerB": "rodrigo-garcia", "gamesA": 2, "gamesB": 0 },
+        { "table": 6, "playerA": "james-onions", "playerB": "veronica-baldys", "gamesA": 2, "gamesB": 0 }
+      ],
+      "byes": ["arlen-wiesenthal"]
+    },
+
+    {
+      "round": 3,
+      "matches": [
+        { "table": 1, "playerA": "jeff-cunningham", "playerB": "elliot-fisher", "gamesA": 0, "gamesB": 2 },
+        { "table": 2, "playerA": "andrew-alexandrov", "playerB": "kevin-mittertreiner", "gamesA": 1, "gamesB": 2 },
+        { "table": 3, "playerA": "patrick-oneill", "playerB": "james-onions", "gamesA": 2, "gamesB": 1 },
+        { "table": 4, "playerA": "marvin-goncalves-de-aquino", "playerB": "tristan-oloughlin", "gamesA": 1, "gamesB": 2 },
+        { "table": 5, "playerA": "cody-foley", "playerB": "clint-taylor", "gamesA": 2, "gamesB": 0 },
+        { "table": 6, "playerA": "arlen-wiesenthal", "playerB": "veronica-baldys", "gamesA": 2, "gamesB": 1 }
+      ]
+    },
+
+    {
+      "round": 4,
+      "matches": [
+        { "table": 1, "playerA": "elliot-fisher", "playerB": "andrew-alexandrov", "gamesA": 2, "gamesB": 0 },
+        { "table": 2, "playerA": "jeff-cunningham", "playerB": "kevin-mittertreiner", "gamesA": 2, "gamesB": 0 },
+        { "table": 3, "playerA": "arlen-wiesenthal", "playerB": "cody-foley", "gamesA": 0, "gamesB": 2 },
+        { "table": 4, "playerA": "tristan-oloughlin", "playerB": "patrick-oneill", "gamesA": 2, "gamesB": 0 },
+        { "table": 5, "playerA": "clint-taylor", "playerB": "james-onions", "gamesA": 1, "gamesB": 2 },
+        { "table": 6, "playerA": "marvin-goncalves-de-aquino", "playerB": "veronica-baldys", "gamesA": 2, "gamesB": 1 }
+      ]
+    }
+  ],
+
+  "notes": [
+    "Player slugs normalized to match BCPMM canonical identifiers",
+    "No elimination bracket (monthly event)",
+    "Byes recorded explicitly when shown in pairings"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "generated": "2026-02-06T18:48:00",
+  "modes": {
+    "bcpmm": [
+      { "id": "caitlyn-bethune", "value": 36 },
+      { "id": "andrew-kidston", "value": 36 },
+      { "id": "elliot-fisher", "value": 24 }
+    ],
+    "league_month": [
+      { "id": "elliot-fisher", "value": 9 },
+      { "id": "james-onions", "value": 6 }
+    ],
+    "elo": [
+      { "id": "elliot-fisher", "value": 1636 },
+      { "id": "caitlyn-bethune", "value": 1612 },
+      { "id": "andrew-kidston", "value": 1604 }
+    ]
+  }
+}

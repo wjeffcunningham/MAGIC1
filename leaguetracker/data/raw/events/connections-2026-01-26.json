@@ -1,0 +1,145 @@
+{
+  "event": {
+    "id": "connections-2026-01-26",
+    "name": "Connections Premodern (2x Monthly)",
+    "series": "Connections",
+    "format": "Premodern",
+    "date": "2026-01-26",
+    "rounds_total": 4
+  },
+
+  "standings": [
+    { "rank": 1, "player": "james-onions", "match_points": 12 },
+    { "rank": 2, "player": "elliot-fisher", "match_points": 9 },
+    { "rank": 3, "player": "jeff-cunningham", "match_points": 6 },
+    { "rank": 4, "player": "arlen-wiesenthal", "match_points": 3 },
+    { "rank": 5, "player": "romulo-ramos", "match_points": 3 }
+  ],
+
+  "rounds": [
+    {
+      "round": 1,
+      "matches": [
+        {
+          "table": 1,
+          "playerA": "arlen-wiesenthal",
+          "playerB": "jeff-cunningham",
+          "winner": "jeff-cunningham",
+          "result": "W",
+          "gamesA": null,
+          "gamesB": null,
+          "inferred": true,
+          "inferred_from": "Round 2 pairings points (Arlen 0 / Jeff 3)"
+        },
+        {
+          "table": 2,
+          "playerA": "james-onions",
+          "playerB": "romulo-ramos",
+          "winner": "james-onions",
+          "result": "W",
+          "gamesA": null,
+          "gamesB": null,
+          "inferred": true,
+          "inferred_from": "Round 2 pairings points (Onions 3 / Romulo 0)"
+        }
+      ],
+      "byes": ["elliot-fisher"]
+    },
+
+    {
+      "round": 2,
+      "matches": [
+        {
+          "table": 1,
+          "playerA": "arlen-wiesenthal",
+          "playerB": "james-onions",
+          "winner": "james-onions",
+          "result": "W",
+          "gamesA": null,
+          "gamesB": null,
+          "inferred": true,
+          "inferred_from": "Round 3 pairings points (Arlen 0 / Onions 6 before Arlen R3 bye applied)"
+        },
+        {
+          "table": 2,
+          "playerA": "elliot-fisher",
+          "playerB": "jeff-cunningham",
+          "winner": "elliot-fisher",
+          "result": "W",
+          "gamesA": null,
+          "gamesB": null,
+          "inferred": true,
+          "inferred_from": "Round 3 pairings points (Elliot 6 / Jeff 3)"
+        }
+      ],
+      "byes": ["romulo-ramos"]
+    },
+
+    {
+      "round": 3,
+      "matches": [
+        {
+          "table": 1,
+          "playerA": "elliot-fisher",
+          "playerB": "james-onions",
+          "winner": "james-onions",
+          "result": "W",
+          "gamesA": null,
+          "gamesB": null,
+          "inferred": true,
+          "inferred_from": "Round 4 pairings points (Elliot 6 / Onions 9)"
+        },
+        {
+          "table": 2,
+          "playerA": "jeff-cunningham",
+          "playerB": "romulo-ramos",
+          "winner": "jeff-cunningham",
+          "result": "W",
+          "gamesA": null,
+          "gamesB": null,
+          "inferred": true,
+          "inferred_from": "Round 4 pairings points (Jeff 6 / Romulo not present R4; Jeff increased from 3 to 6)"
+        }
+      ],
+      "byes": ["arlen-wiesenthal"]
+    },
+
+    {
+      "round": 4,
+      "matches": [
+        {
+          "table": 1,
+          "playerA": "arlen-wiesenthal",
+          "playerB": "elliot-fisher",
+          "winner": "elliot-fisher",
+          "result": "W",
+          "gamesA": 0,
+          "gamesB": 2,
+          "inferred": false,
+          "source": "User-confirmed match score"
+        },
+        {
+          "table": 2,
+          "playerA": "james-onions",
+          "playerB": "jeff-cunningham",
+          "winner": "james-onions",
+          "result": "W",
+          "gamesA": 2,
+          "gamesB": 0,
+          "inferred": false,
+          "source": "User-confirmed match score"
+        }
+      ]
+    }
+  ],
+
+  "elimination": null,
+
+  "notes": [
+    "This event’s EventLink photos show 'Pairings by Name' with each player’s current match points entering the round (3 per match win).",
+    "Rounds 1–3 match winners are inferred by comparing point totals between successive round-pairing reports.",
+    "Per-game scores for Rounds 1–3 are unknown and stored as null.",
+    "Round 4 per-game scores were provided explicitly by the user.",
+    "Romulo Ramos does not appear in Round 4 pairings; assumed dropped after Round 3."
+  ]
+}

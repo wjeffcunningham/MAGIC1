@@ -1,0 +1,53 @@
+{
+  "event": {
+    "id": "bcwl-2026-01-26-r1",
+    "name": "BC Winter League – Round 1",
+    "series": "BCWL",
+    "format": "Premodern",
+    "date": "2026-01-26",
+    "round": 1
+  },
+
+  "standings": [
+    { "rank": 1, "player": "matthew-thiessen", "match_points": 3, "record": "1-0-0" },
+    { "rank": 2, "player": "james-onions", "match_points": 3, "record": "1-0-0" },
+    { "rank": 3, "player": "alastair-mclellan", "match_points": 3, "record": "1-0-0" },
+    { "rank": 4, "player": "dakota-blais", "match_points": 3, "record": "1-0-0" },
+    { "rank": 5, "player": "spencer-sj", "match_points": 3, "record": "1-0-0" },
+    { "rank": 6, "player": "bill-valeriote", "match_points": 3, "record": "1-0-0" },
+    { "rank": 7, "player": "kevin-mittertreiner", "match_points": 3, "record": "1-0-0" },
+    { "rank": 8, "player": "gerard-cadger", "match_points": 3, "record": "1-0-0" },
+
+    { "rank": 9, "player": "cameron-wolber", "match_points": 0, "record": "0-1-0" },
+    { "rank": 10, "player": "gaetan-zell", "match_points": 0, "record": "0-1-0" },
+    { "rank": 11, "player": "luna-lawrence", "match_points": 0, "record": "0-1-0" },
+    { "rank": 12, "player": "james-jost", "match_points": 0, "record": "0-1-0" },
+    { "rank": 13, "player": "markus-thibeau", "match_points": 0, "record": "0-1-0" },
+    { "rank": 14, "player": "marvin-goncalves-de-aquino", "match_points": 0, "record": "0-1-0" },
+    { "rank": 15, "player": "clint-taylor", "match_points": 0, "record": "0-1-0" },
+    { "rank": 16, "player": "arlen-wiesenthal", "match_points": 0, "record": "0-1-0" },
+    { "rank": 17, "player": "elliot-fisher", "match_points": 0, "record": "0-1-0" }
+  ],
+
+  "rounds": [
+    {
+      "round": 1,
+      "matches": [
+        { "table": 1, "playerA": "matthew-thiessen", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 0 },
+        { "table": 2, "playerA": "james-onions", "playerB": "clint-taylor", "gamesA": 2, "gamesB": 0 },
+        { "table": 3, "playerA": "alastair-mclellan", "playerB": "marvin-goncalves-de-aquino", "gamesA": 2, "gamesB": 0 },
+        { "table": 4, "playerA": "dakota-blais", "playerB": "luna-lawrence", "gamesA": 2, "gamesB": 1 },
+        { "table": 5, "playerA": "spencer-sj", "playerB": "cameron-wolber", "gamesA": 2, "gamesB": 1 },
+        { "table": 6, "playerA": "bill-valeriote", "playerB": "james-jost", "gamesA": 2, "gamesB": 1 },
+        { "table": 7, "playerA": "kevin-mittertreiner", "playerB": "ghost-empire", "gamesA": 2, "gamesB": 1 },
+        { "table": 8, "playerA": "gerard-cadger", "playerB": "gaetan-zell", "gamesA": 2, "gamesB": 1 }
+      ]
+    }
+  ],
+
+  "notes": [
+    "Round 1 pairings generated 2026-01-19",
+    "Results finalized and published 2026-01-26",
+    "All matches played in person; no byes"
+  ]
+}

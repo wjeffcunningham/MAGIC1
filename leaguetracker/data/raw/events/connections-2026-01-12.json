@@ -1,0 +1,139 @@
+{
+  "event": {
+    "id": "connections-2026-01-12",
+    "name": "Connections Premodern",
+    "series": "Connections",
+    "format": "Premodern",
+    "date": "2026-01-12",
+    "rounds_total": 3
+  },
+
+  "standings": [
+    { "rank": 1, "player": "elliot-fisher", "match_points": 9, "omw": 55, "gw": 100, "ogw": 55 },
+    { "rank": 2, "player": "james-onions", "match_points": 6, "omw": 66, "gw": 66, "ogw": 66 },
+    { "rank": 3, "player": "lucine-windy", "match_points": 6, "omw": 55, "gw": 66, "ogw": 55 },
+    { "rank": 4, "player": "jeff-cunningham", "match_points": 6, "omw": 44, "gw": 66, "ogw": 44 },
+    { "rank": 5, "player": "dakota-blais", "match_points": 0, "omw": 77, "gw": 33, "ogw": 77 },
+    { "rank": 6, "player": "james-szantho", "match_points": 0, "omw": 66, "gw": 33, "ogw": 66 }
+  ],
+
+  "rounds": [
+    {
+      "round": 1,
+      "matches": [
+        {
+          "table": 1,
+          "playerA": "dakota-blais",
+          "playerB": "elliot-fisher",
+          "winner": "elliot-fisher",
+          "gamesA": 0,
+          "gamesB": 2,
+          "games_inferred": true
+        },
+        {
+          "table": 2,
+          "playerA": "james-szantho",
+          "playerB": "lucine-windy",
+          "winner": "lucine-windy",
+          "gamesA": 0,
+          "gamesB": 2,
+          "games_inferred": true
+        },
+        {
+          "table": 3,
+          "playerA": "james-onions",
+          "playerB": "jeff-cunningham",
+          "winner": "james-onions",
+          "gamesA": 2,
+          "gamesB": 0,
+          "games_inferred": true
+        }
+      ]
+    },
+
+    {
+      "round": 2,
+      "matches": [
+        {
+          "table": 1,
+          "playerA": "elliot-fisher",
+          "playerB": "james-onions",
+          "winner": "elliot-fisher",
+          "gamesA": 2,
+          "gamesB": 0,
+          "games_inferred": true
+        },
+        {
+          "table": 2,
+          "playerA": "dakota-blais",
+          "playerB": "lucine-windy",
+          "winner": "lucine-windy",
+          "gamesA": 0,
+          "gamesB": 2,
+          "games_inferred": true
+        },
+        {
+          "table": 3,
+          "playerA": "james-szantho",
+          "playerB": "jeff-cunningham",
+          "winner": "jeff-cunningham",
+          "gamesA": 0,
+          "gamesB": 2,
+          "games_inferred": true
+        }
+      ]
+    },
+
+    {
+      "round": 3,
+      "matches": [
+        {
+          "table": 1,
+          "playerA": "elliot-fisher",
+          "playerB": "lucine-windy",
+          "winner": "elliot-fisher",
+          "gamesA": 2,
+          "gamesB": 0,
+          "games_inferred": true
+        },
+        {
+          "table": 2,
+          "playerA": "james-onions",
+          "playerB": "james-szantho",
+          "winner": "james-onions",
+          "gamesA": 2,
+          "gamesB": 0,
+          "games_inferred": true
+        },
+        {
+          "table": 3,
+          "playerA": "dakota-blais",
+          "playerB": "jeff-cunningham",
+          "winner": "jeff-cunningham",
+          "gamesA": 0,
+          "gamesB": 2,
+          "games_inferred": true
+        }
+      ]
+    }
+  ],
+
+  "derived": {
+    "points_model": "swiss-only",
+    "event_points": {
+      "elliot-fisher": 9,
+      "james-onions": 6,
+      "lucine-windy": 6,
+      "jeff-cunningham": 6,
+      "dakota-blais": 0,
+      "james-szantho": 0
+    }
+  },
+
+  "notes": [
+    "No per-game scores recorded for this event.",
+    "All match outcomes inferred from round-to-round pairing progression.",
+    "games_inferred=true indicates assumed 2–0 result for display only.",
+    "Elo should be computed per match using winner only."
+  ]
+}

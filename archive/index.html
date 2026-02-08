@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>B.C. Premodern Masters · magic1.ca</title>
+<title>Archive · B.C. Premodern Masters</title>
 
-<link rel="icon" type="image/svg+xml" href="./assets/BCPMM.svg" />
+<link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg" />
 
 <!-- KEFA fallback via Alegreya -->
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet">
 
 <style>
 /* =====================================================
-   BASE THEME
+   BASE THEME (shared with index)
 ===================================================== */
 :root {
   --bg: #ffffff;
@@ -90,7 +90,7 @@ body {
   cursor: pointer;
 }
 
-/* overlay to close menu */
+/* overlay */
 .menu-overlay {
   position: fixed;
   inset: 0;
@@ -104,35 +104,37 @@ body {
 }
 
 /* =====================================================
-   MAIN CONTENT
+   ARCHIVE CONTENT
 ===================================================== */
-.poster {
+.archive-wrap {
   max-width: 720px;
   margin: 140px auto 80px;
   padding: 0 28px;
 }
 
+.logo-small {
+  max-width: 180px;
+  margin: 0 auto 30px;
+  display: block;
+}
+
 .logo-large {
-  max-width: 320px;
-  margin: 0 auto 24px;
+  max-width: 280px;
+  margin: 20px auto 30px;
   display: block;
 }
 
 h1 {
-  font-size: 2.6em;
+  font-size: 2.4em;
   font-weight: 800;
-  letter-spacing: 1.5px;
-  margin: 0 0 28px;
+  letter-spacing: 1.4px;
+  margin-bottom: 36px;
   text-transform: uppercase;
 }
 
-.main-links {
-  margin: 30px 0 10px;
-}
-
-.main-links a {
+.archive-links a {
   display: block;
-  margin: 16px 0;
+  margin: 22px 0;
   font-size: 1.25em;
   font-weight: 800;
   text-transform: uppercase;
@@ -141,15 +143,23 @@ h1 {
   color: inherit;
 }
 
-.main-links a:hover {
+.archive-links a:hover {
   text-decoration: underline;
 }
 
-.footer-note {
-  margin-top: 40px;
-  opacity: 0.7;
+.back-link {
+  margin-top: 50px;
   font-size: 0.95em;
-  color: var(--muted);
+  opacity: 0.7;
+}
+
+.back-link a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.back-link a:hover {
+  text-decoration: underline;
 }
 </style>
 </head>
@@ -169,25 +179,24 @@ h1 {
     <div class="menu-close" id="menu-close">✕</div>
   </div>
 
-  <!-- Theme toggle icon -->
   <div class="menu-item" id="toggle-theme" title="Toggle light/dark">
     🌙
   </div>
 </div>
 
-<!-- MAIN -->
-<div class="poster">
-  <img src="./assets/BCPMM.svg" class="logo-large" alt="BC Premodern Masters logo" />
+<!-- ARCHIVE -->
+<div class="archive-wrap">
+  <img src="/assets/BCPMM.svg" class="logo-large" alt="BC Premodern Masters logo" />
 
-  <h1>B.C. Premodern Masters</h1>
+  <h1>Archive</h1>
 
-  <div class="main-links">
-    <a href="/leaguetracker/">League Tracker</a>
-    <a href="/archive/">Archive</a>
+  <div class="archive-links">
+    <a href="/bcpmm/flyers/">Posters &amp; Flyers</a>
+    <a href="/bcpmm/BCPMM_coverage.html">BCPMM Coverage</a>
   </div>
 
-  <div class="footer-note">
-    Watch this space. More to come.
+  <div class="back-link">
+    <a href="/">← Back to main</a>
   </div>
 </div>
 
@@ -215,7 +224,7 @@ menuClose.addEventListener("click", closeMenu);
 overlay.addEventListener("click", closeMenu);
 
 /* =====================================================
-   THEME TOGGLE
+   THEME TOGGLE (shared)
 ===================================================== */
 const toggleTheme = document.getElementById("toggle-theme");
 
