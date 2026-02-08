@@ -104,14 +104,12 @@ function expectedScore(rA, rB) {
 function getAllMatches(event) {
   const matches = [];
 
-  // Swiss rounds
   for (const round of event.rounds || []) {
     for (const match of round.matches || []) {
       matches.push({ ...match });
     }
   }
 
-  // Elimination rounds
   const elim = event.elimination || {};
   for (const phase of ['top8', 'semifinals', 'finals']) {
     for (const match of elim[phase] || []) {
@@ -142,6 +140,7 @@ function normalizeMatch(match, viewedPlayer) {
     const b = match.gamesB;
     const isDraw = a === b;
     const win = isA ? a > b : b > a;
+
     return {
       opp,
       scoreValue: isDraw ? 0.5 : (win ? 1 : 0),
@@ -194,7 +193,7 @@ function computePoints(player, events) {
 }
 
 /* =========================================================
-   Elo Replay (FIXED)
+   Elo Replay (FIXED ZERO-SUM)
 ========================================================= */
 
 function replayElo(player, events) {
@@ -226,17 +225,18 @@ function replayElo(player, events) {
       const Rb = ratings[norm.opp];
       const Ea = expectedScore(Ra, Rb);
 
-      const delta = Math.round(K * (norm.scoreValue - Ea));
-      ratings[player] += delta;
-      ratings[norm.opp] -= delta;
+      const deltaRaw = K * (norm.scoreValue - Ea);
+
+      ratings[player] += deltaRaw;
+      ratings[norm.opp] -= deltaRaw;
 
       history.push({
         date: event.event.date,
         event: series,
         opponent: norm.opp,
         score: norm.displayScore,
-        delta,
-        elo: ratings[player]
+        delta: Math.round(deltaRaw),
+        elo: Math.round(ratings[player])
       });
     }
   }

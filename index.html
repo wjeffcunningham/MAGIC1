@@ -6,8 +6,6 @@
 <title>B.C. Premodern Masters · magic1.ca</title>
 
 <link rel="icon" type="image/svg+xml" href="./assets/BCPMM.svg" />
-
-<!-- KEFA fallback via Alegreya -->
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet">
 
 <style>
@@ -18,6 +16,7 @@
   --bg: #ffffff;
   --fg: #000000;
   --muted: #666;
+  --logo-width: 320px;
 }
 
 body.dark {
@@ -41,9 +40,10 @@ body {
 ===================================================== */
 .menu-button {
   position: fixed;
-  top: 16px;
-  right: 18px;
-  font-size: 26px;
+  top: 22px;
+  right: 24px;
+  font-size: 40px;
+  line-height: 1;
   cursor: pointer;
   user-select: none;
   z-index: 1001;
@@ -53,10 +53,10 @@ body {
   position: fixed;
   top: 0;
   right: 0;
-  width: 240px;
+  width: 320px;
   height: 100vh;
   background: var(--bg);
-  padding: 24px 20px;
+  padding: 28px 24px;
   box-sizing: border-box;
   transform: translateX(100%);
   transition: transform 0.25s ease;
@@ -67,40 +67,40 @@ body {
   transform: translateX(0);
 }
 
-.menu-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.menu-header h4 {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.menu-close {
-  font-size: 22px;
-  cursor: pointer;
-}
-
-.menu-item {
-  margin-top: 28px;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-/* overlay to close menu */
 .menu-overlay {
   position: fixed;
   inset: 0;
-  background: transparent;
   display: none;
   z-index: 1000;
 }
 
 .menu-overlay.active {
   display: block;
+}
+
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-header strong {
+  font-size: 1.3em;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.menu-close {
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.menu-item {
+  margin-top: 36px;
+  font-size: 28px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 /* =====================================================
@@ -113,7 +113,9 @@ body {
 }
 
 .logo-large {
-  max-width: 320px;
+  width: 100%;
+  max-width: var(--logo-width);
+  height: auto;
   margin: 0 auto 24px;
   display: block;
 }
@@ -122,12 +124,13 @@ h1 {
   font-size: 2.6em;
   font-weight: 800;
   letter-spacing: 1.5px;
-  margin: 0 0 28px;
+  margin: 0 0 10px;
   text-transform: uppercase;
 }
 
-.main-links {
-  margin: 30px 0 10px;
+h2 {
+  margin: 0 0 28px;
+  font-weight: 400;
 }
 
 .main-links a {
@@ -136,7 +139,6 @@ h1 {
   font-size: 1.25em;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1px;
   text-decoration: none;
   color: inherit;
 }
@@ -148,42 +150,82 @@ h1 {
 .footer-note {
   margin-top: 40px;
   opacity: 0.7;
-  font-size: 0.95em;
   color: var(--muted);
+}
+
+/* ================================
+   SOCIAL BUTTONS
+================================ */
+.social-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin: 36px 0 10px;
+}
+
+.social-buttons a {
+  display: inline-block;
+}
+
+.social-buttons img {
+  height: 80px;
+  width: auto;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.social-buttons img:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+body.dark .social-buttons img {
+  filter: brightness(0.9);
 }
 </style>
 </head>
 
 <body>
 
-<!-- MENU BUTTON -->
 <div class="menu-button" id="menu-btn">☰</div>
-
-<!-- OVERLAY -->
 <div class="menu-overlay" id="menu-overlay"></div>
 
-<!-- MENU PANEL -->
 <div class="menu-panel" id="menu-panel">
   <div class="menu-header">
-    <h4>Menu</h4>
-    <div class="menu-close" id="menu-close">✕</div>
+    <strong>Menu</strong>
+    <span class="menu-close" id="menu-close">✕</span>
   </div>
 
-  <!-- Theme toggle icon -->
   <div class="menu-item" id="toggle-theme" title="Toggle light/dark">
     🌙
   </div>
 </div>
 
-<!-- MAIN -->
 <div class="poster">
   <img src="./assets/BCPMM.svg" class="logo-large" alt="BC Premodern Masters logo" />
 
   <h1>B.C. Premodern Masters</h1>
+  <h2><i>"Magic Lives in B.C."</i></h2>
 
   <div class="main-links">
     <a href="/leaguetracker/">League Tracker</a>
+    <a href="/leaguejoin/">Join Page</a>
+    <a href="/buylist/">Buylist</a>
     <a href="/archive/">Archive</a>
+  </div>
+
+  <div class="social-buttons">
+    <a href="https://vvipmedia.net" target="_blank" rel="noopener">
+      <img src="./assets/vvip.png" alt="VVIP Media" />
+    </a>
+
+    <a href="https://discord.gg/zm6r4pVjNr" target="_blank" rel="noopener">
+      <img src="./assets/discord.png" alt="Discord" />
+    </a>
+
+    <a href="https://www.instagram.com/bcpremodernmasters/" target="_blank" rel="noopener">
+      <img src="./assets/instagram.png" alt="Instagram" />
+    </a>
   </div>
 
   <div class="footer-note">
@@ -192,54 +234,40 @@ h1 {
 </div>
 
 <script>
-/* =====================================================
-   MENU LOGIC
-===================================================== */
-const menuBtn = document.getElementById("menu-btn");
-const menuPanel = document.getElementById("menu-panel");
-const menuClose = document.getElementById("menu-close");
+const btn = document.getElementById("menu-btn");
+const panel = document.getElementById("menu-panel");
+const closeBtn = document.getElementById("menu-close");
 const overlay = document.getElementById("menu-overlay");
+const toggle = document.getElementById("toggle-theme");
 
-function openMenu() {
-  menuPanel.classList.add("open");
+btn.onclick = () => {
+  panel.classList.add("open");
   overlay.classList.add("active");
-}
+};
 
-function closeMenu() {
-  menuPanel.classList.remove("open");
+closeBtn.onclick = overlay.onclick = () => {
+  panel.classList.remove("open");
   overlay.classList.remove("active");
+};
+
+function syncIcon() {
+  toggle.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
 }
 
-menuBtn.addEventListener("click", openMenu);
-menuClose.addEventListener("click", closeMenu);
-overlay.addEventListener("click", closeMenu);
-
-/* =====================================================
-   THEME TOGGLE
-===================================================== */
-const toggleTheme = document.getElementById("toggle-theme");
-
-function updateThemeIcon() {
-  toggleTheme.textContent =
-    document.body.classList.contains("dark") ? "☀️" : "🌙";
-}
-
-toggleTheme.addEventListener("click", () => {
+toggle.onclick = () => {
   document.body.classList.toggle("dark");
   localStorage.setItem(
     "bcpmm-theme",
     document.body.classList.contains("dark") ? "dark" : "light"
   );
-  updateThemeIcon();
-});
+  syncIcon();
+};
 
-/* =====================================================
-   LOAD SAVED THEME
-===================================================== */
 (() => {
-  const saved = localStorage.getItem("bcpmm-theme");
-  if (saved === "dark") document.body.classList.add("dark");
-  updateThemeIcon();
+  if (localStorage.getItem("bcpmm-theme") === "dark") {
+    document.body.classList.add("dark");
+  }
+  syncIcon();
 })();
 </script>
 
