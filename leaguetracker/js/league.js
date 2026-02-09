@@ -1,9 +1,9 @@
 /* =========================================================
-   League Tracker – Core Logic
-   - Pagination (16 per page)
-   - Hot streak 🔥 (won last 3 matches)
-   - Trophy 🏆 (season winners)
-   - Elo computed globally (Swiss + elimination)
+   League Tracker – Core Logic (Robust + Elimination + Elo)
+   - Tabs: "bcpmm" | "league" | "elo"
+   - Elo computed globally (all matches), zero-sum
+   - Includes Swiss + ALL elimination matches (robust walker)
+   - Adds win-streak 🔥 and champion 🏆 markers
 ========================================================= */
 
 const EVENT_PATHS = [
@@ -15,20 +15,19 @@ const EVENT_PATHS = [
   "/leaguetracker/data/raw/events/bcwl-2026-02-02-r2.json"
 ];
 
-const PAGE_SIZE = 16;
-const START_ELO = 1600;
-
-/* TEMP: season trophy winners */
-const TROPHY_WINNERS = new Set([
-  "caitlyn-bethune" // BCPMM winner
-]);
-
 const ladderBody = document.getElementById("ladder-body");
 const tabs = document.querySelectorAll(".tabs button");
 
 let events = [];
 let currentMode = "bcpmm";
-let currentPage = 0;
+
+/* =========================================================
+   Constants (Badges)
+========================================================= */
+
+const START_ELO = 1600;
+const WIN_STREAK_THRESHOLD = 3;
+const BCPMM_CHAMPION = "caitlyn-bethune";
 
 /* =========================================================
    Load events
@@ -40,7 +39,7 @@ async function loadEvents() {
   for (const path of EVENT_PATHS) {
     try {
       const res = await fetch(path, { cache: "no-store" });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("fetch failed");
       events.push(await res.json());
     } catch {
       console.warn("[LeagueTracker] Skipped:", path);
@@ -58,110 +57,114 @@ function slugToName(slug) {
   return (slug || "").replace(/-/g, " ");
 }
 
+function getPointMultiplier(series) {
+  return (
+    {
+      BCPMM: 6,
+      SHG: 3,
+      Connections: 2,
+      BCWL: 1
+    }[series] ?? 1
+  );
+}
+
+function getKValue(series) {
+  return (
+    {
+      BCPMM: 64,
+      SHG: 32,
+      Connections: 24,
+      BCWL: 16
+    }[series] ?? 16
+  );
+}
+
 function expectedScore(rA, rB) {
   return 1 / (1 + Math.pow(10, (rB - rA) / 400));
 }
 
-function getKValue(series) {
-  return { BCPMM: 64, SHG: 32, Connections: 24, BCWL: 16 }[series] ?? 16;
-}
-
-function matchPoints(gA, gB, result) {
-  if (result === "D") return [1, 1];
-  if (typeof gA === "number" && typeof gB === "number" && gA === gB) return [1, 1];
-  return gA > gB ? [3, 0] : [0, 3];
-}
-
 /* =========================================================
-   Normalize + collect ALL matches
+   Normalize match-like objects
 ========================================================= */
 
-function normalizeMatchLike(m) {
-  const a = m.playerA ?? m.player1;
-  const b = m.playerB ?? m.player2;
+function normalizeMatchLike(node) {
+  if (!node || typeof node !== "object") return null;
+
+  const a = node.playerA ?? node.player1 ?? node.p1 ?? null;
+  const b = node.playerB ?? node.player2 ?? node.p2 ?? null;
   if (!a || !b) return null;
 
   return {
     playerA: a,
     playerB: b,
-    gamesA: m.gamesA,
-    gamesB: m.gamesB,
-    result: m.result,
-    winner: m.winner
+    gamesA: node.gamesA ?? node.games1 ?? null,
+    gamesB: node.gamesB ?? node.games2 ?? null,
+    winner: node.winner ?? null,
+    result: node.result ?? null
   };
 }
 
-function scoreA(m) {
+function scoreAFromMatch(m) {
   if (m.result === "D") return 0.5;
+
   if (typeof m.gamesA === "number" && typeof m.gamesB === "number") {
     if (m.gamesA === m.gamesB) return 0.5;
     return m.gamesA > m.gamesB ? 1 : 0;
   }
+
   if (m.winner) return m.winner === m.playerA ? 1 : 0;
   return null;
 }
 
+/* =========================================================
+   Collect matches (Swiss + Elimination)
+========================================================= */
+
 function collectMatches(event) {
   const out = [];
 
-  for (const r of event.rounds || []) {
-    for (const raw of r.matches || []) {
+  for (const round of event.rounds || []) {
+    for (const raw of round.matches || []) {
       const m = normalizeMatchLike(raw);
       if (m) out.push(m);
     }
   }
 
-  (function walk(node) {
+  function walk(node) {
     if (!node) return;
     if (Array.isArray(node)) return node.forEach(walk);
     if (typeof node === "object") {
       const m = normalizeMatchLike(node);
-      if (m) out.push(m);
+      if (m) {
+        out.push(m);
+        return;
+      }
       Object.values(node).forEach(walk);
     }
-  })(event.elimination);
+  }
 
+  walk(event.elimination);
   return out;
 }
 
 /* =========================================================
-   Build per-player match history (for streaks)
+   Streaks + Elo (computed once, reused by multiple tabs)
 ========================================================= */
 
-function buildMatchHistory() {
-  const history = {};
-
-  const ordered = [...events].sort(
-    (a, b) => new Date(a.event.date) - new Date(b.event.date)
-  );
-
-  for (const event of ordered) {
-    for (const m of collectMatches(event)) {
-      const Sa = scoreA(m);
-      if (Sa === null) continue;
-
-      const Sb = 1 - Sa;
-
-      history[m.playerA] ??= [];
-      history[m.playerB] ??= [];
-
-      history[m.playerA].push(Sa);
-      history[m.playerB].push(Sb);
-    }
-  }
-
-  return history;
-}
-
-/* =========================================================
-   Compute Elo
-========================================================= */
-
-function computeElo(matchHistory) {
+function computeEloAndStreaks() {
   const ratings = {};
+  const recentResults = {}; // player -> [bool wins]
 
   function ensure(p) {
     if (!(p in ratings)) ratings[p] = START_ELO;
+    if (!(p in recentResults)) recentResults[p] = [];
+  }
+
+  function pushResult(player, isWin) {
+    recentResults[player].push(isWin);
+    if (recentResults[player].length > WIN_STREAK_THRESHOLD) {
+      recentResults[player].shift();
+    }
   }
 
   const ordered = [...events].sort(
@@ -170,8 +173,9 @@ function computeElo(matchHistory) {
 
   for (const event of ordered) {
     const K = getKValue(event?.event?.series);
+
     for (const m of collectMatches(event)) {
-      const Sa = scoreA(m);
+      const Sa = scoreAFromMatch(m);
       if (Sa === null) continue;
 
       ensure(m.playerA);
@@ -180,102 +184,116 @@ function computeElo(matchHistory) {
       const Ra = ratings[m.playerA];
       const Rb = ratings[m.playerB];
       const Ea = expectedScore(Ra, Rb);
+      const deltaA = K * (Sa - Ea);
 
-      const delta = K * (Sa - Ea);
-      ratings[m.playerA] += delta;
-      ratings[m.playerB] -= delta;
+      ratings[m.playerA] = Ra + deltaA;
+      ratings[m.playerB] = Rb - deltaA;
+
+      // streaks: only count wins (draw/loss break the streak)
+      pushResult(m.playerA, Sa === 1);
+      pushResult(m.playerB, Sa === 0);
     }
   }
 
-  return Object.entries(ratings)
-    .map(([player, value]) => ({ player, value: Math.round(value) }))
+  const streakMap = {};
+  Object.keys(recentResults).forEach(p => {
+    const r = recentResults[p];
+    streakMap[p] =
+      Array.isArray(r) &&
+      r.length === WIN_STREAK_THRESHOLD &&
+      r.every(Boolean);
+  });
+
+  const eloRows = Object.entries(ratings)
+    .map(([player, value]) => ({
+      player,
+      value: Math.round(value),
+      streak: !!streakMap[player]
+    }))
     .sort((a, b) => b.value - a.value);
+
+  return { eloRows, streakMap };
 }
 
 /* =========================================================
-   Points Race
+   Points Race (BCPMM)
 ========================================================= */
 
-function computePointsRace() {
+function computePointsRace(streakMap) {
   const totals = {};
 
-  for (const e of events) {
-    const mult = { BCPMM: 6, SHG: 3, Connections: 2, BCWL: 1 }[e?.event?.series] ?? 1;
+  for (const event of events) {
+    const mult = getPointMultiplier(event?.event?.series);
 
-    if (e.standings) {
-      for (const r of e.standings) {
-        totals[r.player] = (totals[r.player] || 0) + r.match_points * mult;
+    if (event.standings) {
+      for (const row of event.standings) {
+        totals[row.player] =
+          (totals[row.player] || 0) + row.match_points * mult;
       }
     }
   }
 
   return Object.entries(totals)
-    .map(([player, value]) => ({ player, value }))
+    .map(([player, value]) => ({
+      player,
+      value,
+      streak: !!streakMap[player]
+    }))
     .sort((a, b) => b.value - a.value);
 }
 
 /* =========================================================
-   Render (with pagination + emojis)
+   League standings (latest BCWL)
+========================================================= */
+
+function computeLatestLeagueStandings() {
+  const league = [...events]
+    .filter(e => e?.event?.series === "BCWL")
+    .sort((a, b) => new Date(b.event.date) - new Date(a.event.date))[0];
+
+  if (!league || !league.standings) return [];
+
+  return league.standings
+    .map(r => ({ player: r.player, value: r.match_points }))
+    .sort((a, b) => b.value - a.value);
+}
+
+/* =========================================================
+   Render
 ========================================================= */
 
 function render() {
   ladderBody.innerHTML = "";
 
-  const matchHistory = buildMatchHistory();
+  const { eloRows, streakMap } = computeEloAndStreaks();
+
   let rows = [];
+  if (currentMode === "bcpmm") rows = computePointsRace(streakMap);
+  if (currentMode === "league") rows = computeLatestLeagueStandings();
+  if (currentMode === "elo") rows = eloRows;
 
-  if (currentMode === "bcpmm") rows = computePointsRace();
-  if (currentMode === "elo") rows = computeElo(matchHistory);
+  rows.forEach((r, i) => {
+    const showFire = (currentMode === "bcpmm" || currentMode === "elo") && r.streak;
+    const fire = showFire ? " 🔥" : "";
 
-  const start = currentPage * PAGE_SIZE;
-  const slice = rows.slice(start, start + PAGE_SIZE);
-
-  slice.forEach((r, i) => {
-    const history = matchHistory[r.player] || [];
-    const hot = history.slice(-3).every(x => x === 1);
-    const fire = hot ? " 🔥" : "";
-    const trophy = TROPHY_WINNERS.has(r.player) ? " 🏆" : "";
+    const trophy =
+      currentMode === "bcpmm" && r.player === BCPMM_CHAMPION ? " 🏆" : "";
 
     ladderBody.insertAdjacentHTML(
       "beforeend",
-      `<tr>
-        <td class="rank">${start + i + 1}</td>
+      `
+      <tr>
+        <td class="rank">${i + 1}</td>
         <td class="player">
           <a href="./player.html?player=${r.player}">
-            ${slugToName(r.player)}${fire}${trophy}
-          </a>
+            ${slugToName(r.player)}
+          </a>${fire}${trophy}
         </td>
         <td class="num">${r.value}</td>
-      </tr>`
+      </tr>
+      `
     );
   });
-
-  renderPager(rows.length);
-}
-
-function renderPager(total) {
-  const old = document.getElementById("pager");
-  if (old) old.remove();
-
-  if (total <= PAGE_SIZE) return;
-
-  const pager = document.createElement("div");
-  pager.id = "pager";
-  pager.style.marginTop = "1.5rem";
-  pager.style.display = "flex";
-  pager.style.justifyContent = "space-between";
-
-  pager.innerHTML = `
-    <button ${currentPage === 0 ? "disabled" : ""}>«</button>
-    <button ${(currentPage + 1) * PAGE_SIZE >= total ? "disabled" : ""}>»</button>
-  `;
-
-  const [prev, next] = pager.querySelectorAll("button");
-
-  prev.onclick = () => { currentPage--; render(); };
-  next.onclick = () => { currentPage++; render(); };
-
-  ladderBody.parentElement.after(pager);
 }
 
 /* =========================================================
@@ -287,7 +305,6 @@ tabs.forEach(btn => {
     tabs.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     currentMode = btn.dataset.mode;
-    currentPage = 0;
     render();
   });
 });

@@ -19,6 +19,21 @@
   padding: 0 1.5rem;
 }
 
+/* Back link (consistent with league + player pages) */
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
+
 h1 {
   text-align: center;
   margin-bottom: 0.25rem;
@@ -52,13 +67,13 @@ h1 {
 }
 
 /* =====================================================
-   GRID VIEW
+   GRID VIEW (DENSE / SMALL)
 ===================================================== */
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 20px;
 }
 
 .card-tile {
@@ -66,36 +81,39 @@ h1 {
 }
 
 .card-tile img {
-  width: 100%;
+  width: 120px;
+  max-width: 100%;
   height: auto;
   border-radius: 6px;
+  margin: 0 auto;
+  display: block;
 }
 
 .card-meta {
-  margin-top: 0.75rem;
-  line-height: 1.35;
+  margin-top: 0.35rem;
+  line-height: 1.25;
 }
 
 .card-name {
-  font-weight: 800;
-  font-size: 1.05rem;          /* primary anchor */
-  margin-bottom: 0.15rem;
+  font-weight: 700;
+  font-size: 0.78rem;
+  margin-bottom: 0.1rem;
 }
 
 .card-set {
-  font-size: 0.95rem;
+  font-size: 0.72rem;
   color: var(--muted);
 }
 
 .card-tag {
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   color: var(--muted);
 }
 
 .card-price {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  margin-top: 0.25rem;
+  margin-top: 0.15rem;
 }
 
 /* =====================================================
@@ -134,15 +152,21 @@ table.buylist {
    RESPONSIVE
 ===================================================== */
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .card-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 520px) {
   .card-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>
@@ -154,6 +178,8 @@ table.buylist {
 <div id="global-menu-root"></div>
 
 <div class="buylist-wrap">
+
+  <a href="/" class="back-link">← Back to main</a>
 
   <h1>Buylist</h1>
   <div class="subtitle">NM only · Prices in CAD</div>
@@ -184,7 +210,7 @@ table.buylist {
 
 <script>
 /* =====================================================
-   SOURCE DATA (PARSED ONCE)
+   SOURCE DATA
 ===================================================== */
 
 const cards = [
@@ -199,8 +225,8 @@ const cards = [
   { name:"Snow-Covered Island", set:"ice", setLabel:"Ice Age · #371", tag:"Land", price:3 },
   { name:"Squee, Goblin Nabob", set:"mmq", setLabel:"Mercadian Masques · #214", tag:"Recursion", price:25 },
   { name:"Survival of the Fittest", set:"wc98", setLabel:"World Championship 1998", tag:"Tutor", price:60 },
-    { name:"Eladamri, Lord of Leaves", set:"tmp", setLabel:"Tempest · #224", tag:"Lord", price:60 },
-     { name:"Elvish Champion", set:"10e", setLabel:"10th Edition · #261", tag:"Lord", price:10 }
+  { name:"Eladamri, Lord of Leaves", set:"tmp", setLabel:"Tempest · #224", tag:"Lord", price:60 },
+  { name:"Elvish Champion", set:"10e", setLabel:"10th Edition · #261", tag:"Lord", price:10 }
 ];
 
 /* =====================================================
