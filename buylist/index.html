@@ -6,338 +6,281 @@
 <title>Buylist · B.C. Premodern Masters</title>
 
 <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg" />
-<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet">
-
-<!-- GLOBAL SHELL -->
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
 
 <style>
 /* =====================================================
-   BUYLIST PAGE STYLES (THEME-AWARE)
+   LAYOUT
 ===================================================== */
-body {
-  background: var(--bg);
-  color: var(--fg);
-}
 
 .buylist-wrap {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 6rem auto 4rem;
-  padding: 0 1.75rem;
-}
-
-.logo {
-  max-width: 220px;
-  margin: 0 auto 32px;
-  display: block;
+  padding: 0 1.5rem;
 }
 
 h1 {
   text-align: center;
-  font-size: 2.4em;
-  font-weight: 800;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: 0.25rem;
 }
 
 .subtitle {
   text-align: center;
-  font-size: 0.95em;
   color: var(--muted);
-  margin-bottom: 28px;
+  margin-bottom: 1.75rem;
 }
 
-.toggle-wrap {
+.view-toggle {
   text-align: center;
-  margin-bottom: 18px;
+  margin-bottom: 2rem;
 }
 
-.toggle-wrap button {
+.view-toggle button {
   font-family: inherit;
-  font-size: 0.9em;
-  padding: 6px 12px;
+  font-weight: 700;
+  padding: 0.4rem 0.8rem;
+  margin: 0 0.25rem;
+  border: 1px solid var(--muted);
+  background: transparent;
+  color: var(--fg);
   cursor: pointer;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 24px;
+.view-toggle button.active {
+  background: var(--fg);
+  color: var(--bg);
 }
 
-th,
-td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--muted);
-  vertical-align: top;
+/* =====================================================
+   GRID VIEW
+===================================================== */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
 }
 
-th {
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: 0.85em;
-}
-
-td.qty {
+.card-tile {
   text-align: center;
-  width: 60px;
 }
 
-td.price {
-  text-align: right;
-  width: 120px;
-  color: var(--muted);
-}
-
-.card-name {
-  font-weight: 700;
-}
-
-.card-image img {
-  max-width: 220px;
-  margin-top: 8px;
+.card-tile img {
+  width: 100%;
+  height: auto;
   border-radius: 6px;
 }
 
-.set {
+.card-meta {
+  margin-top: 0.75rem;
+  line-height: 1.35;
+}
+
+.card-name {
+  font-weight: 800;
+  font-size: 1.05rem;          /* primary anchor */
+  margin-bottom: 0.15rem;
+}
+
+.card-set {
+  font-size: 0.95rem;
   color: var(--muted);
-  font-size: 0.9em;
 }
 
-.tag {
-  font-size: 0.8em;
-  text-transform: uppercase;
+.card-tag {
+  font-size: 0.9rem;
   color: var(--muted);
 }
 
-.notes {
-  margin-top: 36px;
-  font-size: 0.95em;
-  color: var(--muted);
+.card-price {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
 }
 
-.back-link {
-  margin-top: 48px;
-  text-align: center;
+/* =====================================================
+   LIST VIEW
+===================================================== */
+
+table.buylist {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.back-link a {
-  color: inherit;
-  text-decoration: none;
+.buylist th,
+.buylist td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--muted);
 }
 
-.back-link a:hover {
-  text-decoration: underline;
+.buylist th {
+  text-align: left;
+  opacity: 0.7;
+}
+
+.buylist td.num {
+  text-align: right;
+}
+
+/* =====================================================
+   HIDDEN STATES
+===================================================== */
+
+.hidden {
+  display: none;
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 900px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<!-- GLOBAL MENU ROOT -->
+<!-- GLOBAL MENU -->
 <div id="global-menu-root"></div>
 
 <div class="buylist-wrap">
 
-  <img src="/assets/BCPMM.svg" class="logo" alt="BC Premodern Masters logo" />
-
   <h1>Buylist</h1>
   <div class="subtitle">NM only · Prices in CAD</div>
 
-  <div class="toggle-wrap">
-    <button id="toggle-images">Show card images</button>
+  <div class="view-toggle">
+    <button id="grid-btn" class="active">Images</button>
+    <button id="list-btn">List</button>
   </div>
 
-  <table>
+  <!-- GRID VIEW -->
+  <div id="grid-view" class="card-grid"></div>
+
+  <!-- LIST VIEW -->
+  <table id="list-view" class="buylist hidden">
     <thead>
       <tr>
-        <th>Qty</th>
+        <th>#</th>
         <th>Card</th>
         <th>Set</th>
         <th>Type</th>
-        <th>Price</th>
+        <th class="num">Price</th>
       </tr>
     </thead>
-    <tbody>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="City of Brass" data-set="chr">
-City of Brass
-<div class="card-image"></div>
-</td>
-<td class="set">Chronicles · #112</td>
-<td class="tag">Land</td>
-<td class="price">20</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Elvish Spirit Guide" data-set="all">
-Elvish Spirit Guide
-<div class="card-image"></div>
-</td>
-<td class="set">Alliances · #89</td>
-<td class="tag">Ramp</td>
-<td class="price">4</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Engineered Plague" data-set="ulg">
-Engineered Plague
-<div class="card-image"></div>
-</td>
-<td class="set">Urza’s Legacy · #51</td>
-<td class="tag">Removal</td>
-<td class="price">8</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Hermit Druid" data-set="sth">
-Hermit Druid
-<div class="card-image"></div>
-</td>
-<td class="set">Stronghold · #108</td>
-<td class="tag">Mill</td>
-<td class="price">12</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Intuition" data-set="tmp">
-Intuition
-<div class="card-image"></div>
-</td>
-<td class="set">Tempest · #70</td>
-<td class="tag">Tutor</td>
-<td class="price">200</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Merchant Scroll" data-set="hml">
-Merchant Scroll
-<div class="card-image"></div>
-</td>
-<td class="set">Homelands · #33</td>
-<td class="tag">Tutor</td>
-<td class="price">5</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Recurring Nightmare" data-set="wc98">
-Recurring Nightmare
-<div class="card-image"></div>
-</td>
-<td class="set">World Championship 1998</td>
-<td class="tag">Recursion</td>
-<td class="price">20</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Snow-Covered Forest" data-set="ice">
-Snow-Covered Forest
-<div class="card-image"></div>
-</td>
-<td class="set">Ice Age · #383</td>
-<td class="tag">Land</td>
-<td class="price">3</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Snow-Covered Island" data-set="ice">
-Snow-Covered Island
-<div class="card-image"></div>
-</td>
-<td class="set">Ice Age · #371</td>
-<td class="tag">Land</td>
-<td class="price">3</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Squee, Goblin Nabob" data-set="mmq">
-Squee, Goblin Nabob
-<div class="card-image"></div>
-</td>
-<td class="set">Mercadian Masques · #214</td>
-<td class="tag">Recursion</td>
-<td class="price">25</td>
-</tr>
-
-<tr>
-<td class="qty">1</td>
-<td class="card-name" data-name="Survival of the Fittest" data-set="wc98">
-Survival of the Fittest
-<div class="card-image"></div>
-</td>
-<td class="set">World Championship 1998</td>
-<td class="tag">Tutor</td>
-<td class="price">60</td>
-</tr>
-
-    </tbody>
+    <tbody></tbody>
   </table>
-
-  <div class="notes"></div>
-
-  <div class="back-link">
-    <a href="/">← Back to main</a>
-  </div>
 
 </div>
 
-<!-- GLOBAL SHELL LOGIC -->
-<script src="/js/bcpmm-shell.js"></script>
-
 <script>
 /* =====================================================
-   SCRYFALL IMAGE TOGGLE
+   SOURCE DATA (PARSED ONCE)
 ===================================================== */
-let imagesVisible = false;
 
-async function loadCardImage(cell) {
-  if (cell.dataset.loaded) return;
+const cards = [
+  { name:"City of Brass", set:"chr", setLabel:"Chronicles · #112", tag:"Land", price:20 },
+  { name:"Elvish Spirit Guide", set:"all", setLabel:"Alliances · #89", tag:"Ramp", price:4 },
+  { name:"Engineered Plague", set:"ulg", setLabel:"Urza’s Legacy · #51", tag:"Removal", price:8 },
+  { name:"Hermit Druid", set:"sth", setLabel:"Stronghold · #108", tag:"Mill", price:12 },
+  { name:"Intuition", set:"tmp", setLabel:"Tempest · #70", tag:"Tutor", price:200 },
+  { name:"Merchant Scroll", set:"hml", setLabel:"Homelands · #33", tag:"Tutor", price:5 },
+  { name:"Recurring Nightmare", set:"wc98", setLabel:"World Championship 1998", tag:"Recursion", price:20 },
+  { name:"Snow-Covered Forest", set:"ice", setLabel:"Ice Age · #383", tag:"Land", price:3 },
+  { name:"Snow-Covered Island", set:"ice", setLabel:"Ice Age · #371", tag:"Land", price:3 },
+  { name:"Squee, Goblin Nabob", set:"mmq", setLabel:"Mercadian Masques · #214", tag:"Recursion", price:25 },
+  { name:"Survival of the Fittest", set:"wc98", setLabel:"World Championship 1998", tag:"Tutor", price:60 }
+];
 
-  const q = encodeURIComponent(`!"${cell.dataset.name}" set:${cell.dataset.set}`);
-  const url = `https://api.scryfall.com/cards/search?q=${q}`;
+/* =====================================================
+   SCRYFALL IMAGE LOADER
+===================================================== */
 
-  const res = await fetch(url);
+async function loadImage(card, imgEl) {
+  const q = encodeURIComponent(`!"${card.name}" set:${card.set}`);
+  const res = await fetch(`https://api.scryfall.com/cards/search?q=${q}`);
   const data = await res.json();
-  const card = data?.data?.[0];
-
-  if (!card?.image_uris?.large) return;
-
-  const img = document.createElement("img");
-  img.src = card.image_uris.large;
-  img.loading = "lazy";
-
-  cell.querySelector(".card-image").appendChild(img);
-  cell.dataset.loaded = "1";
+  const image = data?.data?.[0]?.image_uris?.large;
+  if (image) imgEl.src = image;
 }
 
-document.getElementById("toggle-images").onclick = async () => {
-  imagesVisible = !imagesVisible;
+/* =====================================================
+   RENDER GRID
+===================================================== */
 
-  document.getElementById("toggle-images").textContent =
-    imagesVisible ? "Hide card images" : "Show card images";
+const gridView = document.getElementById("grid-view");
 
-  const cells = document.querySelectorAll(".card-name");
+cards.forEach(card => {
+  const tile = document.createElement("div");
+  tile.className = "card-tile";
 
-  if (imagesVisible) {
-    for (const cell of cells) await loadCardImage(cell);
-  } else {
-    document.querySelectorAll(".card-image").forEach(div => (div.innerHTML = ""));
-    cells.forEach(c => delete c.dataset.loaded);
-  }
+  const img = document.createElement("img");
+  img.alt = card.name;
+  loadImage(card, img);
+
+  tile.innerHTML = `
+    <div class="card-meta">
+      <div class="card-name">${card.name}</div>
+      <div class="card-set">${card.setLabel}</div>
+      <div class="card-tag">${card.tag}</div>
+      <div class="card-price">${card.price}</div>
+    </div>
+  `;
+
+  tile.prepend(img);
+  gridView.appendChild(tile);
+});
+
+/* =====================================================
+   RENDER LIST
+===================================================== */
+
+const listBody = document.querySelector("#list-view tbody");
+
+cards.forEach((card, i) => {
+  listBody.insertAdjacentHTML("beforeend", `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${card.name}</td>
+      <td>${card.setLabel}</td>
+      <td>${card.tag}</td>
+      <td class="num">${card.price}</td>
+    </tr>
+  `);
+});
+
+/* =====================================================
+   VIEW TOGGLE
+===================================================== */
+
+const gridBtn = document.getElementById("grid-btn");
+const listBtn = document.getElementById("list-btn");
+const listView = document.getElementById("list-view");
+
+gridBtn.onclick = () => {
+  gridView.classList.remove("hidden");
+  listView.classList.add("hidden");
+  gridBtn.classList.add("active");
+  listBtn.classList.remove("active");
+};
+
+listBtn.onclick = () => {
+  gridView.classList.add("hidden");
+  listView.classList.remove("hidden");
+  listBtn.classList.add("active");
+  gridBtn.classList.remove("active");
 };
 </script>
 
+<script src="/js/bcpmm-shell.js"></script>
 </body>
 </html>
