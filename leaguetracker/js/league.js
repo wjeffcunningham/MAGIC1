@@ -2,8 +2,9 @@
    League Tracker – Core Logic (Robust + Elimination + Elo)
    - Tabs: "bcpmm" | "league" | "elo"
    - Elo computed globally (all matches), zero-sum
-   - Includes Swiss + ALL elimination matches (robust walker)
-   - Adds win-streak 🔥 and champion 🏆 markers
+   - Includes Swiss + ALL elimination matches
+   - 16-per-page pagination
+   - Win-streak 🔥 and champion 🏆 markers
 ========================================================= */
 
 const EVENT_PATHS = [
@@ -18,16 +19,15 @@ const EVENT_PATHS = [
 const ladderBody = document.getElementById("ladder-body");
 const tabs = document.querySelectorAll(".tabs button");
 
-let events = [];
-let currentMode = "bcpmm";
-
-/* =========================================================
-   Constants (Badges)
-========================================================= */
-
 const START_ELO = 1600;
 const WIN_STREAK_THRESHOLD = 3;
 const BCPMM_CHAMPION = "caitlyn-bethune";
+
+const PAGE_SIZE = 16;
+let currentPage = 0;
+
+let events = [];
+let currentMode = "bcpmm";
 
 /* =========================================================
    Load events
@@ -58,25 +58,21 @@ function slugToName(slug) {
 }
 
 function getPointMultiplier(series) {
-  return (
-    {
-      BCPMM: 6,
-      SHG: 3,
-      Connections: 2,
-      BCWL: 1
-    }[series] ?? 1
-  );
+  return {
+    BCPMM: 6,
+    SHG: 3,
+    Connections: 2,
+    BCWL: 1
+  }[series] ?? 1;
 }
 
 function getKValue(series) {
-  return (
-    {
-      BCPMM: 64,
-      SHG: 32,
-      Connections: 24,
-      BCWL: 16
-    }[series] ?? 16
-  );
+  return {
+    BCPMM: 64,
+    SHG: 32,
+    Connections: 24,
+    BCWL: 16
+  }[series] ?? 16;
 }
 
 function expectedScore(rA, rB) {
@@ -148,23 +144,21 @@ function collectMatches(event) {
 }
 
 /* =========================================================
-   Streaks + Elo (computed once, reused by multiple tabs)
+   Elo + Win Streaks (computed once)
 ========================================================= */
 
 function computeEloAndStreaks() {
   const ratings = {};
-  const recentResults = {}; // player -> [bool wins]
+  const recent = {};
 
   function ensure(p) {
     if (!(p in ratings)) ratings[p] = START_ELO;
-    if (!(p in recentResults)) recentResults[p] = [];
+    if (!(p in recent)) recent[p] = [];
   }
 
-  function pushResult(player, isWin) {
-    recentResults[player].push(isWin);
-    if (recentResults[player].length > WIN_STREAK_THRESHOLD) {
-      recentResults[player].shift();
-    }
+  function push(player, win) {
+    recent[player].push(win);
+    if (recent[player].length > WIN_STREAK_THRESHOLD) recent[player].shift();
   }
 
   const ordered = [...events].sort(
@@ -189,26 +183,23 @@ function computeEloAndStreaks() {
       ratings[m.playerA] = Ra + deltaA;
       ratings[m.playerB] = Rb - deltaA;
 
-      // streaks: only count wins (draw/loss break the streak)
-      pushResult(m.playerA, Sa === 1);
-      pushResult(m.playerB, Sa === 0);
+      push(m.playerA, Sa === 1);
+      push(m.playerB, Sa === 0);
     }
   }
 
   const streakMap = {};
-  Object.keys(recentResults).forEach(p => {
-    const r = recentResults[p];
+  Object.keys(recent).forEach(p => {
     streakMap[p] =
-      Array.isArray(r) &&
-      r.length === WIN_STREAK_THRESHOLD &&
-      r.every(Boolean);
+      recent[p].length === WIN_STREAK_THRESHOLD &&
+      recent[p].every(Boolean);
   });
 
   const eloRows = Object.entries(ratings)
     .map(([player, value]) => ({
       player,
       value: Math.round(value),
-      streak: !!streakMap[player]
+      streak: streakMap[player]
     }))
     .sort((a, b) => b.value - a.value);
 
@@ -224,12 +215,11 @@ function computePointsRace(streakMap) {
 
   for (const event of events) {
     const mult = getPointMultiplier(event?.event?.series);
+    if (!event.standings) continue;
 
-    if (event.standings) {
-      for (const row of event.standings) {
-        totals[row.player] =
-          (totals[row.player] || 0) + row.match_points * mult;
-      }
+    for (const row of event.standings) {
+      totals[row.player] =
+        (totals[row.player] || 0) + row.match_points * mult;
     }
   }
 
@@ -237,7 +227,7 @@ function computePointsRace(streakMap) {
     .map(([player, value]) => ({
       player,
       value,
-      streak: !!streakMap[player]
+      streak: streakMap[player]
     }))
     .sort((a, b) => b.value - a.value);
 }
@@ -259,7 +249,7 @@ function computeLatestLeagueStandings() {
 }
 
 /* =========================================================
-   Render
+   Render + Pagination
 ========================================================= */
 
 function render() {
@@ -272,10 +262,15 @@ function render() {
   if (currentMode === "league") rows = computeLatestLeagueStandings();
   if (currentMode === "elo") rows = eloRows;
 
-  rows.forEach((r, i) => {
-    const showFire = (currentMode === "bcpmm" || currentMode === "elo") && r.streak;
-    const fire = showFire ? " 🔥" : "";
+  const start = currentPage * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  const pageRows = rows.slice(start, end);
 
+  pageRows.forEach((r, i) => {
+    const showFire =
+      (currentMode === "bcpmm" || currentMode === "elo") && r.streak;
+
+    const fire = showFire ? " 🔥" : "";
     const trophy =
       currentMode === "bcpmm" && r.player === BCPMM_CHAMPION ? " 🏆" : "";
 
@@ -283,7 +278,7 @@ function render() {
       "beforeend",
       `
       <tr>
-        <td class="rank">${i + 1}</td>
+        <td class="rank">${start + i + 1}</td>
         <td class="player">
           <a href="./player.html?player=${r.player}">
             ${slugToName(r.player)}
@@ -294,6 +289,45 @@ function render() {
       `
     );
   });
+
+  renderPager(rows.length);
+}
+
+function renderPager(total) {
+  let pager = document.getElementById("pager");
+  if (!pager) {
+    pager = document.createElement("div");
+    pager.id = "pager";
+    pager.style.marginTop = "1.25rem";
+    pager.style.display = "flex";
+    pager.style.justifyContent = "space-between";
+    ladderBody.parentElement.after(pager);
+  }
+
+  pager.innerHTML = "";
+  const maxPage = Math.floor((total - 1) / PAGE_SIZE);
+
+  if (currentPage > 0) {
+    const prev = document.createElement("button");
+    prev.textContent = "«";
+    prev.onclick = () => {
+      currentPage--;
+      render();
+    };
+    pager.appendChild(prev);
+  } else {
+    pager.appendChild(document.createElement("span"));
+  }
+
+  if (currentPage < maxPage) {
+    const next = document.createElement("button");
+    next.textContent = "»";
+    next.onclick = () => {
+      currentPage++;
+      render();
+    };
+    pager.appendChild(next);
+  }
 }
 
 /* =========================================================
@@ -305,6 +339,7 @@ tabs.forEach(btn => {
     tabs.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     currentMode = btn.dataset.mode;
+    currentPage = 0;
     render();
   });
 });
