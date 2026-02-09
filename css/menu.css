@@ -1,0 +1,68 @@
+/* ================================
+   GLOBAL MENU
+================================ */
+
+.menu-button {
+  position: fixed;
+  top: 20px;
+  right: 22px;
+  font-size: 56px;      /* BIG icon */
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  z-index: 1001;
+}
+
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 1000;
+}
+
+.menu-overlay.active {
+  display: block;
+}
+
+.menu-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 200px;         /* SLIM drawer */
+  height: 100vh;
+  background: var(--bg);
+  padding: 22px 18px;
+  box-sizing: border-box;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 1002;
+}
+
+.menu-panel.open {
+  transform: translateX(0);
+}
+
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-header strong {
+  font-size: 1.2em;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.menu-close {
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.menu-item {
+  margin-top: 40px;
+  font-size: 34px;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -6,29 +6,24 @@
 <title>Buylist · B.C. Premodern Masters</title>
 
 <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg" />
-
-<!-- KEFA fallback via Alegreya -->
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet">
 
-<style>
-:root {
-  --bg: #ffffff;
-  --fg: #000000;
-  --muted: #666;
-}
+<!-- GLOBAL SHELL -->
+<link rel="stylesheet" href="/css/bcpmm-shell.css" />
 
+<style>
+/* =====================================================
+   BUYLIST PAGE STYLES (THEME-AWARE)
+===================================================== */
 body {
-  margin: 0;
-  padding: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: "Kefa", "Alegreya", serif;
 }
 
 .buylist-wrap {
   max-width: 900px;
-  margin: 120px auto 80px;
-  padding: 0 28px;
+  margin: 6rem auto 4rem;
+  padding: 0 1.75rem;
 }
 
 .logo {
@@ -43,14 +38,26 @@ h1 {
   font-weight: 800;
   letter-spacing: 1.4px;
   text-transform: uppercase;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .subtitle {
   text-align: center;
   font-size: 0.95em;
   color: var(--muted);
-  margin-bottom: 40px;
+  margin-bottom: 28px;
+}
+
+.toggle-wrap {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.toggle-wrap button {
+  font-family: inherit;
+  font-size: 0.9em;
+  padding: 6px 12px;
+  cursor: pointer;
 }
 
 table {
@@ -59,18 +66,17 @@ table {
   margin-top: 24px;
 }
 
-th, td {
+th,
+td {
   padding: 10px 12px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-  vertical-align: middle;
+  border-bottom: 1px solid var(--muted);
+  vertical-align: top;
 }
 
 th {
   font-weight: 800;
   text-transform: uppercase;
   font-size: 0.85em;
-  letter-spacing: 0.5px;
 }
 
 td.qty {
@@ -88,6 +94,12 @@ td.price {
   font-weight: 700;
 }
 
+.card-image img {
+  max-width: 220px;
+  margin-top: 8px;
+  border-radius: 6px;
+}
+
 .set {
   color: var(--muted);
   font-size: 0.9em;
@@ -96,7 +108,6 @@ td.price {
 .tag {
   font-size: 0.8em;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
   color: var(--muted);
 }
 
@@ -114,7 +125,6 @@ td.price {
 .back-link a {
   color: inherit;
   text-decoration: none;
-  font-size: 0.9em;
 }
 
 .back-link a:hover {
@@ -125,11 +135,19 @@ td.price {
 
 <body>
 
+<!-- GLOBAL MENU ROOT -->
+<div id="global-menu-root"></div>
+
 <div class="buylist-wrap">
 
   <img src="/assets/BCPMM.svg" class="logo" alt="BC Premodern Masters logo" />
 
   <h1>Buylist</h1>
+  <div class="subtitle">NM only · Prices in CAD</div>
+
+  <div class="toggle-wrap">
+    <button id="toggle-images">Show card images</button>
+  </div>
 
   <table>
     <thead>
@@ -138,111 +156,188 @@ td.price {
         <th>Card</th>
         <th>Set</th>
         <th>Type</th>
-        <th>Price (CAD)</th>
+        <th>Price</th>
       </tr>
     </thead>
     <tbody>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">City of Brass</td>
-        <td class="set">Chronicles · #112</td>
-        <td class="tag">Land</td>
-        <td class="price">20CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="City of Brass" data-set="chr">
+City of Brass
+<div class="card-image"></div>
+</td>
+<td class="set">Chronicles · #112</td>
+<td class="tag">Land</td>
+<td class="price">20</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Elvish Spirit Guide</td>
-        <td class="set">Alliances · #89</td>
-        <td class="tag">Ramp</td>
-        <td class="price">4CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Elvish Spirit Guide" data-set="all">
+Elvish Spirit Guide
+<div class="card-image"></div>
+</td>
+<td class="set">Alliances · #89</td>
+<td class="tag">Ramp</td>
+<td class="price">4</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Engineered Plague</td>
-        <td class="set">Urza’s Legacy · #51</td>
-        <td class="tag">Removal</td>
-        <td class="price">8CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Engineered Plague" data-set="ulg">
+Engineered Plague
+<div class="card-image"></div>
+</td>
+<td class="set">Urza’s Legacy · #51</td>
+<td class="tag">Removal</td>
+<td class="price">8</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Hermit Druid</td>
-        <td class="set">Stronghold · #108</td>
-        <td class="tag">Mill</td>
-        <td class="price">12CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Hermit Druid" data-set="sth">
+Hermit Druid
+<div class="card-image"></div>
+</td>
+<td class="set">Stronghold · #108</td>
+<td class="tag">Mill</td>
+<td class="price">12</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Intuition</td>
-        <td class="set">Tempest · #70</td>
-        <td class="tag">Tutor</td>
-        <td class="price">200CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Intuition" data-set="tmp">
+Intuition
+<div class="card-image"></div>
+</td>
+<td class="set">Tempest · #70</td>
+<td class="tag">Tutor</td>
+<td class="price">200</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Merchant Scroll</td>
-        <td class="set">Homelands · #33</td>
-        <td class="tag">Tutor</td>
-        <td class="price">5CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Merchant Scroll" data-set="hml">
+Merchant Scroll
+<div class="card-image"></div>
+</td>
+<td class="set">Homelands · #33</td>
+<td class="tag">Tutor</td>
+<td class="price">5</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Recurring Nightmare</td>
-        <td class="set">World Championship 1998 · bs72</td>
-        <td class="tag">Recursion</td>
-        <td class="price">20CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Recurring Nightmare" data-set="wc98">
+Recurring Nightmare
+<div class="card-image"></div>
+</td>
+<td class="set">World Championship 1998</td>
+<td class="tag">Recursion</td>
+<td class="price">20</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Snow-Covered Forest</td>
-        <td class="set">Ice Age · #383</td>
-        <td class="tag">Land</td>
-        <td class="price">3CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Snow-Covered Forest" data-set="ice">
+Snow-Covered Forest
+<div class="card-image"></div>
+</td>
+<td class="set">Ice Age · #383</td>
+<td class="tag">Land</td>
+<td class="price">3</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Snow-Covered Island</td>
-        <td class="set">Ice Age · #371</td>
-        <td class="tag">Land</td>
-        <td class="price">3CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Snow-Covered Island" data-set="ice">
+Snow-Covered Island
+<div class="card-image"></div>
+</td>
+<td class="set">Ice Age · #371</td>
+<td class="tag">Land</td>
+<td class="price">3</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Squee, Goblin Nabob</td>
-        <td class="set">Mercadian Masques · #214</td>
-        <td class="tag">Recursion</td>
-        <td class="price">25CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Squee, Goblin Nabob" data-set="mmq">
+Squee, Goblin Nabob
+<div class="card-image"></div>
+</td>
+<td class="set">Mercadian Masques · #214</td>
+<td class="tag">Recursion</td>
+<td class="price">25</td>
+</tr>
 
-      <tr>
-        <td class="qty">1</td>
-        <td class="card-name">Survival of the Fittest</td>
-        <td class="set">World Championship 1998 · bs129</td>
-        <td class="tag">Tutor</td>
-        <td class="price">60CAD</td>
-      </tr>
+<tr>
+<td class="qty">1</td>
+<td class="card-name" data-name="Survival of the Fittest" data-set="wc98">
+Survival of the Fittest
+<div class="card-image"></div>
+</td>
+<td class="set">World Championship 1998</td>
+<td class="tag">Tutor</td>
+<td class="price">60</td>
+</tr>
 
     </tbody>
   </table>
 
-  <div class="notes">
-    • NM only<br>
-  </div>
+  <div class="notes"></div>
 
   <div class="back-link">
     <a href="/">← Back to main</a>
   </div>
 
 </div>
+
+<!-- GLOBAL SHELL LOGIC -->
+<script src="/js/bcpmm-shell.js"></script>
+
+<script>
+/* =====================================================
+   SCRYFALL IMAGE TOGGLE
+===================================================== */
+let imagesVisible = false;
+
+async function loadCardImage(cell) {
+  if (cell.dataset.loaded) return;
+
+  const q = encodeURIComponent(`!"${cell.dataset.name}" set:${cell.dataset.set}`);
+  const url = `https://api.scryfall.com/cards/search?q=${q}`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+  const card = data?.data?.[0];
+
+  if (!card?.image_uris?.large) return;
+
+  const img = document.createElement("img");
+  img.src = card.image_uris.large;
+  img.loading = "lazy";
+
+  cell.querySelector(".card-image").appendChild(img);
+  cell.dataset.loaded = "1";
+}
+
+document.getElementById("toggle-images").onclick = async () => {
+  imagesVisible = !imagesVisible;
+
+  document.getElementById("toggle-images").textContent =
+    imagesVisible ? "Hide card images" : "Show card images";
+
+  const cells = document.querySelectorAll(".card-name");
+
+  if (imagesVisible) {
+    for (const cell of cells) await loadCardImage(cell);
+  } else {
+    document.querySelectorAll(".card-image").forEach(div => (div.innerHTML = ""));
+    cells.forEach(c => delete c.dataset.loaded);
+  }
+};
+</script>
 
 </body>
 </html>

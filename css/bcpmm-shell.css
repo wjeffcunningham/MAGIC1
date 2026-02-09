@@ -1,0 +1,162 @@
+/* =====================================================
+   GLOBAL THEME
+===================================================== */
+:root {
+  --bg: #ffffff;
+  --fg: #000000;
+  --muted: #666;
+
+  /* UI surfaces (menus, icon chips, cards) */
+  --surface: #f2f2f2;
+
+  --logo-width: 320px;
+}
+
+body.dark {
+  --bg: #121212;
+  --fg: #f4f4f4;
+  --muted: #aaa;
+
+  --surface: #1f1f1f;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Kefa", "Alegreya", serif;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* =====================================================
+   GLOBAL MENU
+===================================================== */
+.menu-button {
+  position: fixed;
+  top: 20px;
+  right: 22px;
+  font-size: 56px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  z-index: 1001;
+}
+
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 1000;
+}
+
+.menu-overlay.active {
+  display: block;
+}
+
+.menu-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 100vh;
+
+  background: var(--surface);
+  color: var(--fg);
+
+  padding: 22px 18px;
+  box-sizing: border-box;
+  transform: translateX(100%);
+  transition: transform 0.25s ease, background 0.25s ease;
+  z-index: 1002;
+}
+
+.menu-panel.open {
+  transform: translateX(0);
+}
+
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-header strong {
+  font-size: 1.2em;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.menu-close {
+  font-size: 26px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.menu-close:hover {
+  opacity: 1;
+}
+
+.menu-item {
+  margin-top: 40px;
+  font-size: 34px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  opacity: 0.85;
+}
+
+/* =====================================================
+   SOCIAL ICONS (THEME-AWARE, OPTICALLY NORMALIZED)
+===================================================== */
+
+.social-icons {
+  display: flex;
+  gap: 32px;              /* slightly more breathing room */
+  justify-content: center;
+  align-items: center;
+  margin-top: 3.5rem;
+}
+
+.social-icons img {
+  display: block;
+  height: 58px;           /* +33% base size */
+  width: auto;
+  opacity: 0.9;
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* Hover polish */
+.social-icons a:hover img {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+/* Dark mode: invert monochrome icons + subtle glow */
+body.dark .social-icons img {
+  filter: invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.18));
+}
+
+/* -----------------------------------------------------
+   Optical compensation per icon (intentional)
+----------------------------------------------------- */
+
+/* Instagram outline still needs extra weight */
+.social-icons img[src*="instagram"] {
+  height: 62px;
+}
+
+/* Discord glyph runs small */
+.social-icons img[src*="discord"] {
+  height: 60px;
+}
+
+/* VVIP logo is visually heavy */
+.social-icons img[src*="vvip"] {
+  height: 54px;
+}
