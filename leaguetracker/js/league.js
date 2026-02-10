@@ -10,7 +10,7 @@
    - Champion marker:
        🏆 on BCPMM tab only (current season BCPMM winner)
    - Pagination: 16 per page with « and »
-   - Player aliasing:
+   - Player aliasing (FOLDED AT INGESTION TIME):
        ghost-empire -> markus-thibeau
        spencer-sj   -> spencer-shaw-jaworek
 ========================================================= */
@@ -56,7 +56,94 @@ const START_ELO = 1600;
 const BCPMM_CHAMPION = "caitlyn-bethune";
 
 /* =========================================================
-   Load events
+   Series helpers (robust)
+========================================================= */
+
+function normalizeSeries(series) {
+  if (!series) return null;
+  const s = String(series).toLowerCase();
+  if (s.includes("bcpmm")) return "BCPMM";
+  if (s.includes("stronghold") || s === "shg") return "SHG";
+  if (s.includes("connection")) return "CONNECTIONS";
+  if (s.includes("league") || s.includes("bcwl")) return "BCWL";
+  return null;
+}
+
+function getPointMultiplier(seriesRaw) {
+  const norm = normalizeSeries(seriesRaw);
+  return (
+    {
+      BCPMM: 6,
+      SHG: 3,
+      CONNECTIONS: 2,
+      BCWL: 1
+    }[norm] ?? 1
+  );
+}
+
+function getKValue(seriesRaw) {
+  const norm = normalizeSeries(seriesRaw);
+  return (
+    {
+      BCPMM: 64,
+      SHG: 32,
+      CONNECTIONS: 24,
+      BCWL: 16
+    }[norm] ?? 16
+  );
+}
+
+function expectedScore(rA, rB) {
+  return 1 / (1 + Math.pow(10, (rB - rA) / 400));
+}
+
+/* =========================================================
+   IMPORTANT: Canonicalize entire event at ingestion time
+========================================================= */
+
+function canonicalizeEvent(event) {
+  if (!event || typeof event !== "object") return event;
+
+  if (Array.isArray(event.standings)) {
+    event.standings.forEach(row => {
+      if (row?.player) row.player = canonicalPlayer(row.player);
+    });
+  }
+
+  for (const round of event.rounds || []) {
+    for (const m of round.matches || []) {
+      if (m?.playerA) m.playerA = canonicalPlayer(m.playerA);
+      if (m?.playerB) m.playerB = canonicalPlayer(m.playerB);
+      if (m?.winner)  m.winner  = canonicalPlayer(m.winner);
+    }
+    if (Array.isArray(round.byes)) round.byes = round.byes.map(canonicalPlayer);
+  }
+
+  function walk(node) {
+    if (!node) return;
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node === "object") {
+      if (node.playerA) node.playerA = canonicalPlayer(node.playerA);
+      if (node.playerB) node.playerB = canonicalPlayer(node.playerB);
+      if (node.winner)  node.winner  = canonicalPlayer(node.winner);
+      Object.values(node).forEach(walk);
+    }
+  }
+  walk(event.elimination);
+
+  if (event.derived?.event_points && typeof event.derived.event_points === "object") {
+    const next = {};
+    for (const [p, v] of Object.entries(event.derived.event_points)) {
+      next[canonicalPlayer(p)] = (next[canonicalPlayer(p)] || 0) + Number(v || 0);
+    }
+    event.derived.event_points = next;
+  }
+
+  return event;
+}
+
+/* =========================================================
+   Load events (NOW canonicalized)
 ========================================================= */
 
 async function loadEvents() {
@@ -66,7 +153,8 @@ async function loadEvents() {
     try {
       const res = await fetch(path, { cache: "no-store" });
       if (!res.ok) throw new Error("fetch failed");
-      events.push(await res.json());
+      const ev = canonicalizeEvent(await res.json());
+      events.push(ev);
     } catch {
       console.warn("[LeagueTracker] Skipped:", path);
     }
@@ -83,34 +171,8 @@ function slugToName(slug) {
   return (slug || "").replace(/-/g, " ");
 }
 
-function getPointMultiplier(series) {
-  return (
-    {
-      BCPMM: 6,
-      SHG: 3,
-      Connections: 2,
-      BCWL: 1
-    }[series] ?? 1
-  );
-}
-
-function getKValue(series) {
-  return (
-    {
-      BCPMM: 64,
-      SHG: 32,
-      Connections: 24,
-      BCWL: 16
-    }[series] ?? 16
-  );
-}
-
-function expectedScore(rA, rB) {
-  return 1 / (1 + Math.pow(10, (rB - rA) / 400));
-}
-
 /* =========================================================
-   Normalize match-like objects (Swiss + elim variance)
+   Normalize match-like objects
 ========================================================= */
 
 function normalizeMatchLike(node) {
@@ -120,6 +182,7 @@ function normalizeMatchLike(node) {
   const b = node.playerB ?? node.player2 ?? node.p2 ?? node.b ?? null;
   if (!a || !b) return null;
 
+  // events already canonicalized, but keep safe:
   const playerA = canonicalPlayer(a);
   const playerB = canonicalPlayer(b);
 
@@ -153,7 +216,6 @@ function scoreAFromMatch(m) {
 function collectMatches(event) {
   const out = [];
 
-  // swiss
   for (const round of event.rounds || []) {
     for (const raw of round.matches || []) {
       const m = normalizeMatchLike(raw);
@@ -161,7 +223,6 @@ function collectMatches(event) {
     }
   }
 
-  // elim
   function walk(node) {
     if (!node) return;
     if (Array.isArray(node)) return node.forEach(walk);
@@ -180,8 +241,7 @@ function collectMatches(event) {
 }
 
 /* =========================================================
-   Points from match (used when standings missing)
-   - Win = 3, Loss = 0, Draw = 1
+   Points from match (when standings missing)
 ========================================================= */
 
 function matchPointsForPlayers(m) {
@@ -194,13 +254,12 @@ function matchPointsForPlayers(m) {
 }
 
 /* =========================================================
-   Elo + Streaks (computed once, reused)
-   Streak definition: consecutive match wins at END of timeline.
+   Elo + Streaks
 ========================================================= */
 
 function computeEloAndStreaks() {
   const ratings = {};
-  const streakLen = {}; // player -> current consecutive wins (at end)
+  const streakLen = {};
 
   function ensure(p) {
     if (!(p in ratings)) ratings[p] = START_ELO;
@@ -221,16 +280,15 @@ function computeEloAndStreaks() {
       ensure(m.playerA);
       ensure(m.playerB);
 
-      // Elo update (zero-sum)
       const Ra = ratings[m.playerA];
       const Rb = ratings[m.playerB];
       const Ea = expectedScore(Ra, Rb);
+
       const deltaA = K * (Sa - Ea);
 
       ratings[m.playerA] = Ra + deltaA;
       ratings[m.playerB] = Rb - deltaA;
 
-      // Streak logic
       if (Sa === 1) {
         streakLen[m.playerA] += 1;
         streakLen[m.playerB] = 0;
@@ -238,7 +296,6 @@ function computeEloAndStreaks() {
         streakLen[m.playerB] += 1;
         streakLen[m.playerA] = 0;
       } else {
-        // draw resets both
         streakLen[m.playerA] = 0;
         streakLen[m.playerB] = 0;
       }
@@ -263,28 +320,36 @@ function firesForStreak(n) {
 }
 
 /* =========================================================
-   Points Race (weighted across ALL events)
-   - If standings exists: use it
-   - Else: derive from matches + byes
+   Points Race (ALL events)
 ========================================================= */
 
 function computePointsRace(streakLen) {
   const totals = {};
 
   for (const event of events) {
-    const series = event?.event?.series;
-    const mult = getPointMultiplier(series);
+    const seriesNorm = normalizeSeries(event?.event?.series);
+    if (!seriesNorm) continue;
 
-    // standings path
+    const mult = getPointMultiplier(event?.event?.series);
+
+    // standings
     if (Array.isArray(event.standings) && event.standings.length) {
       for (const row of event.standings) {
-        const p = canonicalPlayer(row.player);
-        totals[p] = (totals[p] || 0) + (row.match_points || 0) * mult;
+        const p = row.player; // already canonicalized
+        totals[p] = (totals[p] || 0) + Number(row.match_points || 0) * mult;
       }
       continue;
     }
 
-    // derive from swiss rounds + byes
+    // derived.event_points (older Connections)
+    if (event.derived?.event_points && typeof event.derived.event_points === "object") {
+      for (const [p, mp] of Object.entries(event.derived.event_points)) {
+        totals[p] = (totals[p] || 0) + Number(mp || 0) * mult;
+      }
+      continue;
+    }
+
+    // derive from matches + byes
     for (const round of event.rounds || []) {
       for (const raw of round.matches || []) {
         const m = normalizeMatchLike(raw);
@@ -297,8 +362,7 @@ function computePointsRace(streakLen) {
         totals[m.playerB] = (totals[m.playerB] || 0) + pts.b * mult;
       }
 
-      for (const byeRaw of round.byes || []) {
-        const bye = canonicalPlayer(byeRaw);
+      for (const bye of round.byes || []) {
         totals[bye] = (totals[bye] || 0) + 3 * mult;
       }
     }
@@ -319,18 +383,17 @@ function computePointsRace(streakLen) {
 
 function computeLatestLeagueStandings() {
   const league = [...events]
-    .filter(e => e?.event?.series === "BCWL")
+    .filter(e => normalizeSeries(e?.event?.series) === "BCWL")
     .sort((a, b) => new Date(b.event.date) - new Date(a.event.date))[0];
 
   if (!league) return [];
 
   if (Array.isArray(league.standings) && league.standings.length) {
     return league.standings
-      .map(r => ({ player: canonicalPlayer(r.player), value: r.match_points || 0 }))
+      .map(r => ({ player: r.player, value: r.match_points || 0 }))
       .sort((a, b) => b.value - a.value);
   }
 
-  // derive if standings missing
   const totals = {};
   for (const round of league.rounds || []) {
     for (const raw of round.matches || []) {
@@ -344,8 +407,7 @@ function computeLatestLeagueStandings() {
       totals[m.playerB] = (totals[m.playerB] || 0) + pts.b;
     }
 
-    for (const byeRaw of round.byes || []) {
-      const bye = canonicalPlayer(byeRaw);
+    for (const bye of round.byes || []) {
       totals[bye] = (totals[bye] || 0) + 3;
     }
   }
@@ -363,7 +425,11 @@ function ensurePager() {
   let pager = document.getElementById("ladder-pager");
   if (pager) return pager;
 
-  const table = document.querySelector("table.ladder");
+  // prefer your ladder table, fallback to first table
+  const table =
+    document.querySelector("table.ladder") ||
+    document.querySelector("table");
+
   if (!table) return null;
 
   pager = document.createElement("div");
@@ -407,10 +473,9 @@ function updatePager(totalRows) {
 
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
   const safeIndex = Math.min(Math.max(0, pageIndexByMode[currentMode] || 0), totalPages - 1);
-
   pageIndexByMode[currentMode] = safeIndex;
 
-  // If only one page, hide the whole control (but keep it in DOM)
+  // show only when multiple pages
   pager.style.display = totalPages <= 1 ? "none" : "flex";
 
   label.textContent = `Page ${safeIndex + 1} / ${totalPages}`;
@@ -470,7 +535,7 @@ function render() {
       <tr>
         <td class="rank">${globalRank}</td>
         <td class="player">
-          <a href="./player.html?player=${r.player}">
+          <a href="./player.html?player=${encodeURIComponent(r.player)}">
             ${slugToName(r.player)}
           </a>${fire}${trophy}
         </td>
@@ -490,10 +555,7 @@ tabs.forEach(btn => {
     tabs.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     currentMode = btn.dataset.mode;
-
-    // reset to page 1 on mode change (less confusing)
     pageIndexByMode[currentMode] = 0;
-
     render();
   });
 });
