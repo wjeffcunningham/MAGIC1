@@ -4,21 +4,52 @@
   <meta charset="utf-8" />
   <title>Join · Magic1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif;
+      padding: 2rem;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 0.5rem;
+    }
+
+    button {
+      font-size: 1rem;
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+    }
+
+    #user {
+      margin-top: 1.5rem;
+    }
+  </style>
 </head>
 <body>
 
-<h1>Join Magic1</h1>
+<h1>Join Magic1.ca</h1>
+<p>Create an account or sign in to claim your player profile.</p>
 
 <div id="auth"></div>
 <div id="user"></div>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
+  // -----------------------------------------------------
+  // Supabase client
+  // -----------------------------------------------------
   const supabase = window.supabase.createClient(
-    "https://YOUR_PROJECT_ID.supabase.co",
-    "YOUR_PUBLIC_ANON_KEY"
+    "https://dkzdfhzlewlvfmunywal.supabase.co",
+    "sb_publishable_B1r1cUzqYm-aMel-yW-4TA_-s3kdZ7N"
   );
 
+  // -----------------------------------------------------
+  // Render auth state
+  // -----------------------------------------------------
   async function render() {
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -32,10 +63,12 @@
       authDiv.innerHTML = `
         <button id="google">Sign in with Google</button>
       `;
+
       document.getElementById("google").onclick = () => {
         supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
+            // IMPORTANT: stay on this page
             redirectTo: window.location.href
           }
         });
@@ -45,6 +78,7 @@
         <p>Signed in as <strong>${user.email}</strong></p>
         <button id="logout">Sign out</button>
       `;
+
       document.getElementById("logout").onclick = async () => {
         await supabase.auth.signOut();
         render();
@@ -52,6 +86,7 @@
     }
   }
 
+  // Initial render + post-OAuth return
   render();
 </script>
 
