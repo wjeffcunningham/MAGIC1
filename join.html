@@ -37,15 +37,15 @@
 <div id="auth"></div>
 <div id="user"></div>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-
   console.log("join.html script loaded");
 
   // -----------------------------------------------------
-  // Supabase client
+  // Supabase client (renamed to avoid collisions)
   // -----------------------------------------------------
-  const supabase = window.supabase.createClient(
+  const supabaseClient = window.supabase.createClient(
     "https://dkzdfhzlewlvfmunywal.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI"
   );
@@ -54,7 +54,7 @@
   // Render auth state
   // -----------------------------------------------------
   async function render() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
 
     const authDiv = document.getElementById("auth");
     const userDiv = document.getElementById("user");
@@ -68,10 +68,10 @@
       `;
 
       document.getElementById("google").onclick = () => {
-        supabase.auth.signInWithOAuth({
+        supabaseClient.auth.signInWithOAuth({
           provider: "google",
           options: {
-            // IMPORTANT: stay on this page
+            // stay on this page
             redirectTo: window.location.href
           }
         });
@@ -83,7 +83,7 @@
       `;
 
       document.getElementById("logout").onclick = async () => {
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
         render();
       };
     }
