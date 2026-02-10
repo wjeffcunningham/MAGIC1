@@ -14,7 +14,10 @@
         <strong>Menu</strong>
         <span class="menu-close" id="menu-close">✕</span>
       </div>
-<a href="/join.html">Sign in / Join</a>
+
+      <!-- AUTH SLOT (filled elsewhere, read-only for now) -->
+      <div class="menu-item" id="auth-slot"></div>
+
       <div class="menu-item" id="toggle-theme" title="Toggle light/dark">
         🌙
       </div>
