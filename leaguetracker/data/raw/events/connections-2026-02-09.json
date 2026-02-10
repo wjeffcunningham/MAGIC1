@@ -1,0 +1,88 @@
+{
+  "event": {
+    "id": "connections-2026-02-09",
+    "name": "Connections Premodern",
+    "series": "Connections",
+    "format": "Premodern",
+    "date": "2026-02-09",
+    "rounds_total": 4
+  },
+
+  "standings": [
+    { "rank": 1, "player": "lucine-windy", "match_points": 9, "omw": 58, "gw": 66, "ogw": 53 },
+    { "rank": 2, "player": "jeff-cunningham", "match_points": 9, "omw": 52, "gw": 66, "ogw": 51 },
+    { "rank": 3, "player": "spencer-shaw-jaworek", "match_points": 9, "omw": 52, "gw": 63, "ogw": 51 },
+    { "rank": 4, "player": "clint-taylor", "match_points": 6, "omw": 68, "gw": 50, "ogw": 61 },
+    { "rank": 5, "player": "elliot-fisher", "match_points": 6, "omw": 58, "gw": 55, "ogw": 53 },
+    { "rank": 6, "player": "james-onions", "match_points": 6, "omw": 58, "gw": 55, "ogw": 53 },
+    { "rank": 7, "player": "arlen-wiesenthal", "match_points": 3, "omw": 41, "gw": 50, "ogw": 43 },
+    { "rank": 8, "player": "romulo-ramos", "match_points": 0, "omw": 52, "gw": 33, "ogw": 50 }
+  ],
+
+  "rounds": [
+    {
+      "round": 1,
+      "matches": [
+        { "playerA": "lucine-windy", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "clint-taylor", "playerB": "james-onions", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "jeff-cunningham", "playerB": "elliot-fisher", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "spencer-shaw-jaworek", "playerB": "romulo-ramos", "gamesA": 2, "gamesB": 0 }
+      ],
+      "byes": []
+    },
+
+    {
+      "round": 2,
+      "matches": [
+        { "playerA": "arlen-wiesenthal", "playerB": "romulo-ramos", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "clint-taylor", "playerB": "jeff-cunningham", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "elliot-fisher", "playerB": "james-onions", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "lucine-windy", "playerB": "spencer-shaw-jaworek", "gamesA": 2, "gamesB": 0 }
+      ],
+      "byes": []
+    },
+
+    {
+      "round": 3,
+      "matches": [
+        { "playerA": "jeff-cunningham", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 1 },
+        { "playerA": "lucine-windy", "playerB": "clint-taylor", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "spencer-shaw-jaworek", "playerB": "elliot-fisher", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "james-onions", "playerB": "romulo-ramos", "gamesA": 2, "gamesB": 0 }
+      ],
+      "byes": []
+    },
+
+    {
+      "round": 4,
+      "matches": [
+        { "playerA": "james-onions", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "spencer-shaw-jaworek", "playerB": "clint-taylor", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "elliot-fisher", "playerB": "romulo-ramos", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "jeff-cunningham", "playerB": "lucine-windy", "gamesA": 2, "gamesB": 0 }
+      ],
+      "byes": []
+    }
+  ],
+
+  "derived": {
+    "points_model": "swiss-only",
+    "event_points": {
+      "lucine-windy": 9,
+      "jeff-cunningham": 9,
+      "spencer-shaw-jaworek": 9,
+      "clint-taylor": 6,
+      "elliot-fisher": 6,
+      "james-onions": 6,
+      "arlen-wiesenthal": 3,
+      "romulo-ramos": 0
+    }
+  },
+
+  "notes": [
+    "Four-round Swiss Connections event.",
+    "Standings imported directly from EventLink final standings.",
+    "Per-game scores recorded where available.",
+    "Elo should be computed per match result."
+  ]
+}
