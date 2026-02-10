@@ -15,7 +15,7 @@
         <span class="menu-close" id="menu-close">✕</span>
       </div>
 
-      <!-- AUTH SLOT (filled elsewhere, read-only for now) -->
+      <!-- AUTH SLOT -->
       <div class="menu-item" id="auth-slot"></div>
 
       <div class="menu-item" id="toggle-theme" title="Toggle light/dark">
@@ -68,4 +68,29 @@
   else document.body.classList.remove("dark");
 
   syncIcon();
+
+  /* =====================================================
+     AUTH SLOT FILL (READ-ONLY)
+  ===================================================== */
+  (async () => {
+    if (!window.auth) return;
+
+    const slot = document.getElementById("auth-slot");
+    if (!slot) return;
+
+    const user = await auth.getUser();
+
+    if (!user) {
+      slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
+    } else {
+      slot.innerHTML = `
+        <span style="opacity:.7; font-size:0.9em">${user.email}</span><br>
+        <a href="#" id="logout-link">Sign out</a>
+      `;
+      document.getElementById("logout-link").onclick = (e) => {
+        e.preventDefault();
+        auth.signOut();
+      };
+    }
+  })();
 })();
