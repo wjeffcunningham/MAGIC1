@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Join · Magic1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+
+<h1>Join Magic1</h1>
+
+<div id="auth"></div>
+<div id="user"></div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = window.supabase.createClient(
+    "https://YOUR_PROJECT_ID.supabase.co",
+    "YOUR_PUBLIC_ANON_KEY"
+  );
+
+  async function render() {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const authDiv = document.getElementById("auth");
+    const userDiv = document.getElementById("user");
+
+    authDiv.innerHTML = "";
+    userDiv.innerHTML = "";
+
+    if (!user) {
+      authDiv.innerHTML = `
+        <button id="google">Sign in with Google</button>
+      `;
+      document.getElementById("google").onclick = () => {
+        supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: window.location.href
+          }
+        });
+      };
+    } else {
+      userDiv.innerHTML = `
+        <p>Signed in as <strong>${user.email}</strong></p>
+        <button id="logout">Sign out</button>
+      `;
+      document.getElementById("logout").onclick = async () => {
+        await supabase.auth.signOut();
+        render();
+      };
+    }
+  }
+
+  render();
+</script>
+
+</body>
+</html>
