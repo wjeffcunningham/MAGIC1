@@ -83,20 +83,17 @@ function expectedScore(rA, rB) {
 
 /* =========================
    IMPORTANT: Canonicalize entire event at ingestion time
-   This is what actually "folds" aliases into the real player.
 ========================= */
 
 function canonicalizeEvent(event) {
   if (!event || typeof event !== "object") return event;
 
-  // standings
   if (Array.isArray(event.standings)) {
     event.standings.forEach(row => {
       if (row && row.player) row.player = canonicalPlayer(row.player);
     });
   }
 
-  // rounds + matches + byes
   for (const round of event.rounds || []) {
     for (const m of round.matches || []) {
       if (m?.playerA) m.playerA = canonicalPlayer(m.playerA);
@@ -109,27 +106,24 @@ function canonicalizeEvent(event) {
     }
   }
 
-  // elim walker (if present)
   function walk(node) {
     if (!node) return;
     if (Array.isArray(node)) return node.forEach(walk);
     if (typeof node === "object") {
-      // if it looks like a match, canonicalize fields
       if (node.playerA) node.playerA = canonicalPlayer(node.playerA);
       if (node.playerB) node.playerB = canonicalPlayer(node.playerB);
       if (node.winner)  node.winner  = canonicalPlayer(node.winner);
-
       Object.values(node).forEach(walk);
     }
   }
 
   walk(event.elimination);
 
-  // derived.event_points (older Connections files)
   if (event.derived?.event_points && typeof event.derived.event_points === "object") {
     const next = {};
     for (const [p, v] of Object.entries(event.derived.event_points)) {
-      next[canonicalPlayer(p)] = (next[canonicalPlayer(p)] || 0) + Number(v || 0);
+      const cp = canonicalPlayer(p);
+      next[cp] = (next[cp] || 0) + Number(v || 0);
     }
     event.derived.event_points = next;
   }
@@ -148,7 +142,6 @@ function normalizeMatch(raw) {
   const b = raw.playerB ?? raw.player2 ?? raw.p2 ?? raw.b ?? null;
   if (!a || !b) return null;
 
-  // events are canonicalized already, but keep this safe:
   const playerA = canonicalPlayer(a);
   const playerB = canonicalPlayer(b);
 
@@ -215,7 +208,7 @@ function collectMatches(event) {
 }
 
 /* =========================
-   Load events (NOW canonicalized)
+   Load events (canonicalized)
 ========================= */
 
 async function loadEvents() {
@@ -314,21 +307,18 @@ function computePointsBreakdown(events, playerSlugRaw) {
 
     const mult = getPointMultiplier(event?.event?.series);
 
-    // standings (authoritative)
     if (Array.isArray(event.standings) && event.standings.length) {
       const row = event.standings.find(r => r?.player === player);
       if (row) buckets[seriesNorm] += Number(row.match_points || 0) * mult;
       continue;
     }
 
-    // older derived.event_points (connections-2026-01-12 style)
     if (event.derived?.event_points && typeof event.derived.event_points === "object") {
       const mp = Number(event.derived.event_points[player] || 0);
       buckets[seriesNorm] += mp * mult;
       continue;
     }
 
-    // derive from matches + byes
     let mp = 0;
 
     for (const round of event.rounds || []) {
@@ -361,72 +351,73 @@ function computePointsBreakdown(events, playerSlugRaw) {
 async function main() {
   const params = new URLSearchParams(window.location.search);
   const raw = (params.get("player") || "").trim();
-
   const player = canonicalPlayer(raw);
 
-  // If alias URL, rewrite URL in-place
   if (raw && raw !== player) {
     params.set("player", player);
     history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
   }
 
-  // Header
-  const nameEl = document.getElementById("player-name") || document.querySelector("h1");
-  const ratingEl = document.getElementById("player-rating");
-  if (nameEl) nameEl.textContent = player;
-  if (ratingEl) ratingEl.textContent = `Player slug: ${player}`;
+  const nameEl = document.getElementById("player-name");
+  const metaEl = document.getElementById("player-meta");
+
+  if (nameEl) nameEl.textContent = slugToName(player);
+  if (metaEl) metaEl.textContent = `Player slug: ${player}`;
 
   const events = await loadEvents();
 
-  // Points Breakdown table in your HTML (the FIRST table under "Points Breakdown")
-  const pointsTables = Array.from(document.querySelectorAll("table"));
-  const pointsTable = pointsTables[0];
-  const pointsBody = pointsTable?.querySelector("tbody") || pointsTable;
-
+  // ---- Points table (create rows if empty) ----
+  const pointsBody = document.querySelector("#points-table tbody");
   const points = computePointsBreakdown(events, player);
 
   if (pointsBody) {
-    // Your existing markup uses 4 rows already; we just replace the right column
-    const rows = pointsTable.querySelectorAll("tbody tr").length
-      ? pointsTable.querySelectorAll("tbody tr")
-      : pointsTable.querySelectorAll("tr");
+    if (!pointsBody.querySelector("tr")) {
+      pointsBody.innerHTML = `
+        <tr><td>BCPMM</td><td class="num"></td></tr>
+        <tr><td>SHG</td><td class="num"></td></tr>
+        <tr><td>Connections</td><td class="num"></td></tr>
+        <tr><td>BCWL</td><td class="num"></td></tr>
+      `;
+    }
 
-    // If your HTML already has the rows, patch them in order:
-    // BCPMM, SHG, Connections, BCWL
+    const rows = Array.from(pointsBody.querySelectorAll("tr"));
     const vals = [points.BCPMM, points.SHG, points.CONNECTIONS, points.BCWL];
+
     rows.forEach((tr, i) => {
       const tds = tr.querySelectorAll("td");
-      if (tds.length >= 2 && i < vals.length) tds[1].textContent = vals[i];
+      if (tds.length >= 2 && i < vals.length) tds[1].textContent = String(vals[i]);
     });
   }
 
-  // Match History table is the SECOND table in your HTML
-  const matchesTable = pointsTables[1] || document.getElementById("matches-table");
-  const matchBody = matchesTable?.querySelector("tbody");
-
+  // ---- Match history ----
+  const histBody = document.querySelector("#history-table tbody");
   const historyRows = replayGlobalEloForPlayer(events, player);
 
-  if (!matchBody) return;
+  if (!histBody) return;
 
   if (!historyRows.length) {
-    matchBody.innerHTML = `<tr><td colspan="6" class="center">No matches recorded.</td></tr>`;
+    histBody.innerHTML = `<tr><td colspan="6">No matches recorded.</td></tr>`;
     return;
   }
 
-  matchBody.innerHTML = historyRows
+  histBody.innerHTML = historyRows
     .map(h => {
       const d = h.eloDelta;
       const dStr = d > 0 ? `+${d}` : `${d}`;
       const opp = encodeURIComponent(h.opponent);
 
+      const eventLabel =
+        h.seriesNorm === "CONNECTIONS" ? "Connections" :
+        h.seriesNorm || "Event";
+
       return `
         <tr>
           <td>${h.date}</td>
-          <td>${h.seriesNorm === "CONNECTIONS" ? "Connections" : (h.seriesNorm || "Event")}</td>
-          <td><a href="./player.html?player=${opp}">${h.opponent}</a></td>
+          <td>${eventLabel}</td>
+          <td><a href="./player.html?player=${opp}">${slugToName(h.opponent)}</a></td>
           <td>${h.scoreText}</td>
-          <td class="center" style="color:${d >= 0 ? "green" : "red"}">${dStr}</td>
-          <td class="center">${h.eloAfter}</td>
+          <td class="num">${dStr}</td>
+          <td class="num">${h.eloAfter}</td>
         </tr>
       `;
     })
