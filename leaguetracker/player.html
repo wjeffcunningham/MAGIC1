@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/css/bcpmm-shell.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/auth.js"></script>
+  <script src="/leaguetracker/js/player.js" defer></script>
 
   <style>
     body { background: var(--bg); color: var(--fg); }
@@ -77,58 +78,8 @@
 </div>
 
 <script>
-
 /* =========================================================
-   ORIGINAL LEAGUE LOGIC RESTORED
-========================================================= */
-
-const EVENT_PATHS = [
-  "/leaguetracker/data/raw/events/bcpmm-2026-01-10.json",
-  "/leaguetracker/data/raw/events/connections-2026-01-12.json",
-  "/leaguetracker/data/raw/events/connections-2026-01-26.json",
-  "/leaguetracker/data/raw/events/connections-2026-02-09.json",
-  "/leaguetracker/data/raw/events/stronghold-2026-02-01.json",
-  "/leaguetracker/data/raw/events/bcwl-2026-01-26-r1.json",
-  "/leaguetracker/data/raw/events/bcwl-2026-02-02-r2.json"
-];
-
-const START_ELO = 1600;
-
-function qs(name) {
-  return new URLSearchParams(window.location.search).get(name);
-}
-
-function toSlug(input) {
-  return (input || "")
-    .toString()
-    .trim()
-    .normalize("NFKD")
-    .toLowerCase()
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-async function loadEvents() {
-  const out = [];
-  for (const path of EVENT_PATHS) {
-    try {
-      const res = await fetch(path);
-      if (res.ok) out.push(await res.json());
-    } catch {}
-  }
-  return out;
-}
-
-/* Your full Elo + points logic remains exactly as before.
-   I am intentionally not rewriting it here because
-   it was already correct and working in your original file.
-   We are not touching it.
-*/
-
-/* =========================================================
-   CLAIM SYSTEM (ADDED WITHOUT TOUCHING LEAGUE LOGIC)
+   CLAIM SYSTEM (MODERATED)
 ========================================================= */
 
 async function renderClaimUI(slug) {
@@ -138,46 +89,15 @@ async function renderClaimUI(slug) {
   if (!slot) return;
 
   const user = await auth.getUser();
-const supabase = auth._client;
+  const supabase = auth._client;
 
+  // Not signed in
   if (!user) {
-
-slot.innerHTML = `
-  <div style="margin-top:10px;">
-    <input id="claim-name" placeholder="Your real name" style="display:block;margin-bottom:6px;width:100%;max-width:320px;">
-    <input id="claim-email" placeholder="Contact email (optional)" style="display:block;margin-bottom:6px;width:100%;max-width:320px;">
-    <textarea id="claim-note" placeholder="Note to admin (optional)" style="display:block;margin-bottom:8px;width:100%;max-width:320px;"></textarea>
-    <button id="claim-btn">Request Claim</button>
-  </div>
-`;
-
-document.getElementById("claim-btn").onclick = async () => {
-  const name = document.getElementById("claim-name").value.trim();
-  const email = document.getElementById("claim-email").value.trim();
-  const note = document.getElementById("claim-note").value.trim();
-
-  if (!name) {
-    alert("Please enter your real name.");
+    slot.innerHTML = `<a href="/join.html">Sign in to claim this profile</a>`;
     return;
   }
 
-  await supabase.from("player_claims").insert({
-    slug: slug,
-    user_id: user.id,
-    status: "pending",
-    display_name: name,
-    contact_email: email || user.email,
-    note: note
-  });
-
-  renderClaimUI(slug);
-};
-
-
-
-
-
-
+  // Check if already approved
   const { data: approved } = await supabase
     .from("player_claims")
     .select("*")
@@ -190,6 +110,7 @@ document.getElementById("claim-btn").onclick = async () => {
     return;
   }
 
+  // Check if this user already requested
   const { data: mine } = await supabase
     .from("player_claims")
     .select("*")
@@ -202,14 +123,38 @@ document.getElementById("claim-btn").onclick = async () => {
     return;
   }
 
-  slot.innerHTML = `<button id="claim-btn">Claim this profile</button>`;
+  // Show claim form
+  slot.innerHTML = `
+    <div style="margin-top:10px;">
+      <input id="claim-name" placeholder="Your real name"
+        style="display:block;margin-bottom:6px;width:100%;max-width:320px;">
+      <input id="claim-email" placeholder="Contact email (optional)"
+        style="display:block;margin-bottom:6px;width:100%;max-width:320px;">
+      <textarea id="claim-note" placeholder="Note to admin (optional)"
+        style="display:block;margin-bottom:8px;width:100%;max-width:320px;"></textarea>
+      <button id="claim-btn">Request Claim</button>
+    </div>
+  `;
 
   document.getElementById("claim-btn").onclick = async () => {
+    const name = document.getElementById("claim-name").value.trim();
+    const email = document.getElementById("claim-email").value.trim();
+    const note = document.getElementById("claim-note").value.trim();
+
+    if (!name) {
+      alert("Please enter your real name.");
+      return;
+    }
+
     await supabase.from("player_claims").insert({
       slug: slug,
       user_id: user.id,
-      status: "pending"
+      status: "pending",
+      display_name: name,
+      contact_email: email || user.email,
+      note: note
     });
+
     renderClaimUI(slug);
   };
 }
@@ -218,25 +163,11 @@ document.getElementById("claim-btn").onclick = async () => {
    INIT
 ========================================================= */
 
-async function init() {
-  const playerParam = qs("player");
-  if (!playerParam) return;
-
-  const viewedSlug = toSlug(playerParam);
-
-  document.getElementById("player-name").textContent =
-    viewedSlug.replace(/-/g, " ");
-
-  document.getElementById("player-meta").textContent =
-    `Player slug: ${viewedSlug}`;
-
-  // YOUR EXISTING LEAGUE RENDER CALLS REMAIN HERE
-
-  renderClaimUI(viewedSlug);
-}
-
-init();
-
+document.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get("player");
+  if (slug) renderClaimUI(slug);
+});
 </script>
 
 <script src="/js/bcpmm-shell.js"></script>
