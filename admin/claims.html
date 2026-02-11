@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Claim Moderation · Magic1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="/css/bcpmm-shell.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+
+  <style>
+    body { background: var(--bg); color: var(--fg); }
+
+    .wrap {
+      max-width: 900px;
+      margin: 6rem auto 4rem;
+      padding: 0 1.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--muted);
+    }
+
+    button {
+      margin-right: 8px;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+
+    .approve { background: #4caf50; color: white; }
+    .reject  { background: #f44336; color: white; }
+  </style>
+</head>
+
+<body>
+
+<div id="global-menu-root"></div>
+
+<div class="wrap">
+  <h1>Pending Player Claims</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Slug</th>
+        <th>User ID</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="claims-body"></tbody>
+  </table>
+</div>
+
+<script>
+async function init() {
+  if (!window.auth) return;
+
+  const user = await auth.getUser();
+  if (!user) {
+    document.body.innerHTML = "Not authorized.";
+    return;
+  }
+
+  const supabase = auth.supabase;
+
+  const { data: claims } = await supabase
+    .from("player_claims")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+
+  const body = document.getElementById("claims-body");
+  body.innerHTML = "";
+
+  if (!claims || claims.length === 0) {
+    body.innerHTML = `<tr><td colspan="4">No pending claims.</td></tr>`;
+    return;
+  }
+
+  claims.forEach(claim => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${claim.slug}</td>
+      <td style="font-size:0.85em">${claim.user_id}</td>
+      <td>${new Date(claim.created_at).toLocaleString()}</td>
+      <td>
+        <button class="approve">Approve</button>
+        <button class="reject">Reject</button>
+      </td>
+    `;
+
+    const approveBtn = row.querySelector(".approve");
+    const rejectBtn = row.querySelector(".reject");
+
+    approveBtn.onclick = async () => {
+      // Approve this claim
+      await supabase
+        .from("player_claims")
+        .update({
+          status: "approved",
+          reviewed_by: user.id,
+          reviewed_at: new Date()
+        })
+        .eq("id", claim.id);
+
+      // Reject all other pending claims for same slug
+      await supabase
+        .from("player_claims")
+        .update({ status: "rejected" })
+        .eq("slug", claim.slug)
+        .eq("status", "pending");
+
+      init();
+    };
+
+    rejectBtn.onclick = async () => {
+      await supabase
+        .from("player_claims")
+        .update({
+          status: "rejected",
+          reviewed_by: user.id,
+          reviewed_at: new Date()
+        })
+        .eq("id", claim.id);
+
+      init();
+    };
+
+    body.appendChild(row);
+  });
+}
+
+init();
+</script>
+
+<script src="/js/bcpmm-shell.js"></script>
+
+</body>
+</html>
