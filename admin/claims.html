@@ -36,6 +36,11 @@
 
     .approve { background: #4caf50; color: white; }
     .reject  { background: #f44336; color: white; }
+
+    .notice {
+      opacity: .7;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 
@@ -45,6 +50,8 @@
 
 <div class="wrap">
   <h1>Pending Player Claims</h1>
+  <div class="notice" id="admin-notice"></div>
+
   <table>
     <thead>
       <tr>
@@ -59,22 +66,48 @@
 </div>
 
 <script>
+/* =========================================
+   CONFIG: ADMIN EMAILS
+========================================= */
+
+const ADMIN_EMAILS = [
+  "your@email.com"
+];
+
+/* =========================================
+   INIT
+========================================= */
+
 async function init() {
   if (!window.auth) return;
 
   const user = await auth.getUser();
+  const notice = document.getElementById("admin-notice");
+
   if (!user) {
     document.body.innerHTML = "Not authorized.";
     return;
   }
 
-  const supabase = auth.supabase;
+  if (!ADMIN_EMAILS.includes(user.email)) {
+    document.body.innerHTML = "Admin access required.";
+    return;
+  }
 
-  const { data: claims } = await supabase
+  notice.textContent = `Signed in as ${user.email}`;
+
+  const supabase = auth._client;
+
+  const { data: claims, error } = await supabase
     .from("player_claims")
     .select("*")
     .eq("status", "pending")
     .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   const body = document.getElementById("claims-body");
   body.innerHTML = "";
@@ -100,36 +133,60 @@ async function init() {
     const approveBtn = row.querySelector(".approve");
     const rejectBtn = row.querySelector(".reject");
 
-    approveBtn.onclick = async () => {
-      // Approve this claim
-      await supabase
-        .from("player_claims")
-        .update({
-          status: "approved",
-          reviewed_by: user.id,
-          reviewed_at: new Date()
-        })
-        .eq("id", claim.id);
+    /* ===============================
+       APPROVE
+    =============================== */
 
-      // Reject all other pending claims for same slug
+    approveBtn.onclick = async () => {
+      if (!confirm("Approve this claim? This will reject all other pending claims for this player.")) return;
+
+      // Reject ALL other pending claims first
       await supabase
         .from("player_claims")
         .update({ status: "rejected" })
         .eq("slug", claim.slug)
         .eq("status", "pending");
 
+      // Approve selected claim
+      const { error } = await supabase
+        .from("player_claims")
+        .update({
+          status: "approved",
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq("id", claim.id);
+
+      if (error) {
+        alert("Approval failed.");
+        console.error(error);
+        return;
+      }
+
       init();
     };
 
+    /* ===============================
+       REJECT
+    =============================== */
+
     rejectBtn.onclick = async () => {
-      await supabase
+      if (!confirm("Reject this claim?")) return;
+
+      const { error } = await supabase
         .from("player_claims")
         .update({
           status: "rejected",
           reviewed_by: user.id,
-          reviewed_at: new Date()
+          reviewed_at: new Date().toISOString()
         })
         .eq("id", claim.id);
+
+      if (error) {
+        alert("Rejection failed.");
+        console.error(error);
+        return;
+      }
 
       init();
     };
