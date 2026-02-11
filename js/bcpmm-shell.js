@@ -85,6 +85,7 @@
     } else {
       slot.innerHTML = `
         <span style="opacity:.7; font-size:0.9em">${user.email}</span><br>
+        <a href="/profile-edit.html">My Profile</a><br>
         <a href="#" id="logout-link">Sign out</a>
       `;
       document.getElementById("logout-link").onclick = (e) => {
