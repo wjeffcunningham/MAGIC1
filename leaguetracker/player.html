@@ -141,9 +141,42 @@ async function renderClaimUI(slug) {
 const supabase = auth._client;
 
   if (!user) {
-    slot.innerHTML = `<a href="/join.html">Sign in to claim this profile</a>`;
+
+slot.innerHTML = `
+  <div style="margin-top:10px;">
+    <input id="claim-name" placeholder="Your real name" style="display:block;margin-bottom:6px;width:100%;max-width:320px;">
+    <input id="claim-email" placeholder="Contact email (optional)" style="display:block;margin-bottom:6px;width:100%;max-width:320px;">
+    <textarea id="claim-note" placeholder="Note to admin (optional)" style="display:block;margin-bottom:8px;width:100%;max-width:320px;"></textarea>
+    <button id="claim-btn">Request Claim</button>
+  </div>
+`;
+
+document.getElementById("claim-btn").onclick = async () => {
+  const name = document.getElementById("claim-name").value.trim();
+  const email = document.getElementById("claim-email").value.trim();
+  const note = document.getElementById("claim-note").value.trim();
+
+  if (!name) {
+    alert("Please enter your real name.");
     return;
   }
+
+  await supabase.from("player_claims").insert({
+    slug: slug,
+    user_id: user.id,
+    status: "pending",
+    display_name: name,
+    contact_email: email || user.email,
+    note: note
+  });
+
+  renderClaimUI(slug);
+};
+
+
+
+
+
 
   const { data: approved } = await supabase
     .from("player_claims")

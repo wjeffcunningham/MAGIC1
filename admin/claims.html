@@ -13,7 +13,7 @@
     body { background: var(--bg); color: var(--fg); }
 
     .wrap {
-      max-width: 900px;
+      max-width: 1100px;
       margin: 6rem auto 4rem;
       padding: 0 1.5rem;
     }
@@ -26,7 +26,10 @@
     th, td {
       padding: 10px;
       border-bottom: 1px solid var(--muted);
+      vertical-align: top;
     }
+
+    th { text-align: left; opacity: .8; }
 
     button {
       margin-right: 8px;
@@ -40,6 +43,13 @@
     .notice {
       opacity: .7;
       margin-bottom: 1rem;
+    }
+
+    .small { font-size: 0.85em; opacity: .8; }
+
+    .note-cell {
+      max-width: 260px;
+      font-size: 0.85em;
     }
   </style>
 </head>
@@ -56,7 +66,10 @@
     <thead>
       <tr>
         <th>Slug</th>
-        <th>User ID</th>
+        <th>Name</th>
+        <th>Contact</th>
+        <th>Note</th>
+        <th>Supabase User</th>
         <th>Created</th>
         <th>Actions</th>
       </tr>
@@ -113,7 +126,7 @@ async function init() {
   body.innerHTML = "";
 
   if (!claims || claims.length === 0) {
-    body.innerHTML = `<tr><td colspan="4">No pending claims.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7">No pending claims.</td></tr>`;
     return;
   }
 
@@ -122,7 +135,10 @@ async function init() {
 
     row.innerHTML = `
       <td>${claim.slug}</td>
-      <td style="font-size:0.85em">${claim.user_id}</td>
+      <td>${claim.display_name || "-"}</td>
+      <td>${claim.contact_email || "-"}</td>
+      <td class="note-cell">${claim.note || "-"}</td>
+      <td class="small">${claim.user_id}</td>
       <td>${new Date(claim.created_at).toLocaleString()}</td>
       <td>
         <button class="approve">Approve</button>
@@ -140,7 +156,7 @@ async function init() {
     approveBtn.onclick = async () => {
       if (!confirm("Approve this claim? This will reject all other pending claims for this player.")) return;
 
-      // Reject ALL other pending claims first
+      // Reject all pending claims for same slug
       await supabase
         .from("player_claims")
         .update({ status: "rejected" })
