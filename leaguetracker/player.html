@@ -33,6 +33,33 @@
     td.num, th.num { text-align: right; }
 
     #claim-slot { margin-bottom: 1rem; }
+
+    .profile-card {
+      margin-bottom: 1.25rem;
+      padding: 1rem;
+      border: 1px solid var(--muted);
+      border-radius: 6px;
+    }
+
+    .profile-card img {
+      width: 96px;
+      height: 96px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin-bottom: 0.5rem;
+    }
+
+    .profile-quote {
+      font-style: italic;
+      opacity: 0.8;
+      margin-top: 0.5rem;
+    }
+
+    .profile-meta {
+      font-size: 0.9em;
+      opacity: 0.75;
+      margin-top: 0.5rem;
+    }
   </style>
 </head>
 
@@ -46,6 +73,7 @@
   </div>
 
   <h1 id="player-name"></h1>
+  <div id="profile-display"></div>
   <div id="claim-slot"></div>
   <div class="meta" id="player-meta"></div>
 
@@ -76,10 +104,9 @@
   </table>
 </div>
 
-<!-- 1️⃣ Load canonical league engine -->
+<!-- Load canonical league engine -->
 <script src="/leaguetracker/js/player.js"></script>
 
-<!-- 2️⃣ Add claim system ONLY -->
 <script>
 function normalizeSlug(input) {
   return (input || "")
@@ -93,6 +120,46 @@ function normalizeSlug(input) {
     .replace(/^-|-$/g, "");
 }
 
+/* --------------------------------------------------
+   Load public profile display
+-------------------------------------------------- */
+async function renderProfile(slugRaw) {
+  if (!window.auth) return;
+
+  const slug = normalizeSlug(slugRaw);
+  const container = document.getElementById("profile-display");
+  if (!container) return;
+
+  const supabase = auth._client;
+
+  const { data } = await supabase
+    .from("player_profiles")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  if (!data) {
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="profile-card">
+      ${data.avatar_url ? `<img src="${data.avatar_url}" alt="Avatar">` : ""}
+      <div><strong>${data.display_name || slug}</strong></div>
+      ${data.quote ? `<div class="profile-quote">"${data.quote}"</div>` : ""}
+      <div class="profile-meta">
+        ${data.remote_mtgo ? "MTGO " : ""}
+        ${data.remote_webcam ? "Webcam " : ""}
+        ${data.store ? `<div>Local Store: ${data.store}</div>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+/* --------------------------------------------------
+   Claim system
+-------------------------------------------------- */
 async function renderClaimUI(slugRaw) {
   if (!window.auth) return;
 
@@ -103,7 +170,26 @@ async function renderClaimUI(slugRaw) {
   const user = await auth.getUser();
   const supabase = auth._client;
 
-  // Check approved claim
+  if (!user) {
+    slot.innerHTML = `<a href="/join.html">Sign in to claim this profile</a>`;
+    return;
+  }
+
+  const { data: approvedElsewhere } = await supabase
+    .from("player_claims")
+    .select("slug")
+    .eq("user_id", user.id)
+    .eq("status", "approved")
+    .limit(1);
+
+  if (approvedElsewhere && approvedElsewhere.length > 0) {
+    const approvedSlug = approvedElsewhere[0].slug;
+    if (approvedSlug !== slug) {
+      slot.innerHTML = `<em>You are already verified as ${approvedSlug}. Each user may only claim one profile.</em>`;
+      return;
+    }
+  }
+
   const { data: approved } = await supabase
     .from("player_claims")
     .select("*")
@@ -113,11 +199,6 @@ async function renderClaimUI(slugRaw) {
 
   if (approved && approved.length > 0) {
     slot.innerHTML = `<span style="opacity:.7">Profile claimed</span>`;
-    return;
-  }
-
-  if (!user) {
-    slot.innerHTML = `<a href="/join.html">Sign in to claim this profile</a>`;
     return;
   }
 
@@ -137,23 +218,18 @@ async function renderClaimUI(slugRaw) {
       return;
     }
 
-    if (latest.status === "approved") {
-      slot.innerHTML = `<span style="opacity:.7">Profile claimed</span>`;
-      return;
-    }
-
     if (latest.status === "rejected") {
-      slot.innerHTML = `<em>Your previous claim was rejected. You may submit again.</em><br><button id="claim-btn">Request Claim Again</button>`;
+      slot.innerHTML = `<em>Your previous claim was rejected. You may submit again.</em><br>
+      <button id="claim-btn">Request Claim Again</button>`;
 
       document.getElementById("claim-btn").onclick = async () => {
         await supabase.from("player_claims").insert({
-          slug: slug,
+          slug,
           user_id: user.id,
           status: "pending"
         });
         renderClaimUI(slug);
       };
-
       return;
     }
   }
@@ -162,7 +238,7 @@ async function renderClaimUI(slugRaw) {
 
   document.getElementById("claim-btn").onclick = async () => {
     await supabase.from("player_claims").insert({
-      slug: slug,
+      slug,
       user_id: user.id,
       status: "pending"
     });
@@ -170,11 +246,16 @@ async function renderClaimUI(slugRaw) {
   };
 }
 
-// Hook into existing page once player.js finishes rendering
+/* --------------------------------------------------
+   INIT
+-------------------------------------------------- */
 window.addEventListener("load", () => {
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("player");
-  if (slug) renderClaimUI(slug);
+  if (!slug) return;
+
+  renderProfile(slug);
+  renderClaimUI(slug);
 });
 </script>
 

@@ -70,7 +70,7 @@
   syncIcon();
 
   /* =====================================================
-     AUTH SLOT FILL (READ-ONLY)
+     AUTH SLOT FILL
   ===================================================== */
   (async () => {
     if (!window.auth) return;
@@ -80,18 +80,35 @@
 
     const user = await auth.getUser();
 
+    // Not signed in
     if (!user) {
       slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
-    } else {
-      slot.innerHTML = `
-        <span style="opacity:.7; font-size:0.9em">${user.email}</span><br>
-        <a href="/profile-edit.html">My Profile</a><br>
-        <a href="#" id="logout-link">Sign out</a>
-      `;
-      document.getElementById("logout-link").onclick = (e) => {
-        e.preventDefault();
-        auth.signOut();
-      };
+      return;
     }
+
+    // Check if user has an approved claim
+    const { data: approved } = await auth._client
+      .from("player_claims")
+      .select("slug")
+      .eq("user_id", user.id)
+      .eq("status", "approved")
+      .limit(1);
+
+    let profileLink = "";
+
+    if (approved && approved.length > 0) {
+      profileLink = `<a href="/profile-edit.html">Edit Profile</a><br>`;
+    }
+
+    slot.innerHTML = `
+      <span style="opacity:.7; font-size:0.9em">${user.email}</span><br>
+      ${profileLink}
+      <a href="#" id="logout-link">Sign out</a>
+    `;
+
+    document.getElementById("logout-link").onclick = (e) => {
+      e.preventDefault();
+      auth.signOut();
+    };
   })();
 })();

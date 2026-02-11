@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Edit Profile · B.C. Premodern Masters</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="/css/bcpmm-shell.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+
+  <style>
+    body { background: var(--bg); color: var(--fg); }
+
+    .wrap {
+      max-width: 900px;
+      margin: 6rem auto 4rem;
+      padding: 0 1.5rem;
+    }
+
+    h1 { margin: 0 0 0.75rem; }
+    .meta { opacity: 0.75; margin-bottom: 1.25rem; color: var(--muted); }
+
+    .card {
+      border: 1px solid var(--muted);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 14px 0;
+      background: rgba(255,255,255,0.02);
+    }
+
+    label { display:block; font-weight: 700; margin: 10px 0 6px; }
+    input[type="text"], textarea, select {
+      width: 100%;
+      max-width: 520px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--muted);
+      background: transparent;
+      color: inherit;
+      outline: none;
+    }
+
+    textarea { min-height: 90px; resize: vertical; }
+
+    .row {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .col { flex: 1 1 320px; }
+
+    .checks {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .checks label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .btns {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--muted);
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 0.95em;
+    }
+    button.primary {
+      border-color: var(--fg);
+    }
+
+    .status {
+      margin-top: 10px;
+      opacity: 0.85;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .avatar-preview {
+      width: 110px;
+      height: 110px;
+      border-radius: 12px;
+      border: 1px solid var(--muted);
+      object-fit: cover;
+      display: block;
+      background: rgba(0,0,0,0.12);
+    }
+
+    .small { font-size: 0.9em; opacity: 0.8; }
+
+    .back a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid var(--muted);
+    }
+    .back a:hover { border-bottom-color: var(--fg); }
+  </style>
+</head>
+
+<body>
+  <div id="global-menu-root"></div>
+
+  <div class="wrap">
+    <div class="back" style="margin-bottom: 1rem;">
+      <a href="/leaguetracker/">← Back to League Tracker</a>
+    </div>
+
+    <h1>Edit Profile</h1>
+    <div class="meta" id="meta">Checking sign-in…</div>
+
+    <div class="card" id="gate-card" style="display:none;">
+      <div id="gate-msg"></div>
+    </div>
+
+    <div class="card" id="form-card" style="display:none;">
+      <div class="row">
+        <div class="col">
+          <label for="display_name">Name (public)</label>
+          <input id="display_name" type="text" placeholder="e.g., Jeff C." />
+
+          <label for="quote">Quote (public)</label>
+          <textarea id="quote" placeholder="Short quote that appears on your player page."></textarea>
+
+          <label for="store">Local store</label>
+          <select id="store">
+            <option value="">—</option>
+            <option value="Magic Stronghold">Magic Stronghold</option>
+            <option value="Connections Renfrew">Connections Renfrew</option>
+            <option value="Freelance Mage">Freelance Mage</option>
+          </select>
+
+          <label>Remote play</label>
+          <div class="checks">
+            <label><input id="remote_mtgo" type="checkbox" /> MTGO</label>
+            <label><input id="remote_webcam" type="checkbox" /> Webcam</label>
+          </div>
+          <div class="small" style="margin-top:6px;">You can check either, neither, or both.</div>
+        </div>
+
+        <div class="col">
+          <label>Avatar (public)</label>
+          <img id="avatar_preview" class="avatar-preview" alt="Avatar preview" />
+          <div class="small" style="margin-top:8px;">PNG/JPG recommended. Square crops look best.</div>
+
+          <div style="margin-top:10px;">
+            <input id="avatar_file" type="file" accept="image/*" />
+          </div>
+
+          <div class="btns">
+            <button class="primary" id="save_btn">Save</button>
+            <button id="view_btn" type="button">View my player page</button>
+          </div>
+
+          <div class="status" id="status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ================================
+       CONFIG
+       - Set this to your real bucket name in Supabase Storage.
+       - If you haven't created one yet, create a public bucket
+         (or keep private + serve via signed URLs later).
+    ================================= */
+    const AVATAR_BUCKET = "player-avatars";
+
+    function normalizeSlug(input) {
+      return (input || "")
+        .toString()
+        .trim()
+        .normalize("NFKD")
+        .toLowerCase()
+        .replace(/['’]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+    }
+
+    function setStatus(msg) {
+      const el = document.getElementById("status");
+      if (el) el.textContent = msg || "";
+    }
+
+    function showGate(msg) {
+      document.getElementById("meta").textContent = "";
+      document.getElementById("form-card").style.display = "none";
+      const gate = document.getElementById("gate-card");
+      gate.style.display = "block";
+      document.getElementById("gate-msg").innerHTML = msg;
+    }
+
+    function showForm() {
+      document.getElementById("gate-card").style.display = "none";
+      document.getElementById("form-card").style.display = "block";
+    }
+
+    async function getApprovedSlugForUser(supabase, userId) {
+      const { data, error } = await supabase
+        .from("player_claims")
+        .select("slug")
+        .eq("user_id", userId)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+      return data[0].slug;
+    }
+
+    async function loadProfileRow(supabase, slug) {
+      const { data, error } = await supabase
+        .from("player_profiles")
+        .select("slug, display_name, avatar_url, quote, remote_mtgo, remote_webcam, store, updated_at")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data || null;
+    }
+
+    async function upsertProfileRow(supabase, row) {
+      const { error } = await supabase
+        .from("player_profiles")
+        .upsert(row, { onConflict: "slug" });
+
+      if (error) throw error;
+    }
+
+    async function uploadAvatar(supabase, slug, file) {
+      const safeName = (file.name || "avatar").replace(/[^a-z0-9._-]+/gi, "-");
+      const path = `${slug}/${Date.now()}-${safeName}`;
+
+      const { error: upErr } = await supabase
+        .storage
+        .from(AVATAR_BUCKET)
+        .upload(path, file, { upsert: true });
+
+      if (upErr) throw upErr;
+
+      const { data } = supabase
+        .storage
+        .from(AVATAR_BUCKET)
+        .getPublicUrl(path);
+
+      return data?.publicUrl || null;
+    }
+
+    async function init() {
+      if (!window.auth) return;
+
+      const supabase = auth._client;
+      const user = await auth.getUser();
+
+      if (!user) {
+        showGate(`You must sign in first. <a href="/join.html">Sign in / Join</a>`);
+        return;
+      }
+
+      document.getElementById("meta").textContent = `Signed in as ${user.email}`;
+
+      let approvedSlug = null;
+      try {
+        approvedSlug = await getApprovedSlugForUser(supabase, user.id);
+      } catch (e) {
+        console.error(e);
+        showGate(`Could not check verification status. Try again, or contact an admin.`);
+        return;
+      }
+
+      if (!approvedSlug) {
+        showGate(`You are not verified to a player profile yet.<br><br>
+        Go to your player page and click <strong>Claim this profile</strong>, then wait for moderator approval.`);
+        return;
+      }
+
+      const slug = normalizeSlug(approvedSlug);
+
+      // View button
+      document.getElementById("view_btn").onclick = () => {
+        window.location.href = `/leaguetracker/player.html?player=${encodeURIComponent(slug)}`;
+      };
+
+      // Load existing profile
+      let existing = null;
+      try {
+        existing = await loadProfileRow(supabase, slug);
+      } catch (e) {
+        console.error(e);
+        showGate(`Could not load your profile row. This is usually an RLS/policy issue.`);
+        return;
+      }
+
+      // Fill form
+      document.getElementById("display_name").value = (existing && existing.display_name) ? existing.display_name : "";
+      document.getElementById("quote").value = (existing && existing.quote) ? existing.quote : "";
+      document.getElementById("store").value = (existing && existing.store) ? existing.store : "";
+      document.getElementById("remote_mtgo").checked = !!(existing && existing.remote_mtgo);
+      document.getElementById("remote_webcam").checked = !!(existing && existing.remote_webcam);
+
+      const avatarPreview = document.getElementById("avatar_preview");
+      avatarPreview.src = (existing && existing.avatar_url) ? existing.avatar_url : "";
+      if (!avatarPreview.src) {
+        avatarPreview.removeAttribute("src");
+      }
+
+      // Live preview when choosing a file
+      const avatarInput = document.getElementById("avatar_file");
+      avatarInput.addEventListener("change", () => {
+        const f = avatarInput.files && avatarInput.files[0];
+        if (!f) return;
+        const url = URL.createObjectURL(f);
+        avatarPreview.src = url;
+      });
+
+      // Save
+      document.getElementById("save_btn").onclick = async () => {
+        try {
+          setStatus("Saving…");
+
+          const displayName = document.getElementById("display_name").value.trim();
+          const quote = document.getElementById("quote").value.trim();
+          const store = document.getElementById("store").value;
+          const remote_mtgo = document.getElementById("remote_mtgo").checked;
+          const remote_webcam = document.getElementById("remote_webcam").checked;
+
+          let avatar_url = (existing && existing.avatar_url) ? existing.avatar_url : null;
+          const file = avatarInput.files && avatarInput.files[0];
+          if (file) {
+            setStatus("Uploading avatar…");
+            const url = await uploadAvatar(supabase, slug, file);
+            if (url) avatar_url = url;
+          }
+
+          const row = {
+            slug: slug,
+            display_name: displayName || null,
+            avatar_url: avatar_url || null,
+            quote: quote || null,
+            remote_mtgo: !!remote_mtgo,
+            remote_webcam: !!remote_webcam,
+            store: store || null,
+            updated_at: new Date().toISOString()
+          };
+
+          await upsertProfileRow(supabase, row);
+
+          existing = row;
+          setStatus("Saved.");
+        } catch (e) {
+          console.error(e);
+          setStatus("Save failed. Check console for details.\n\n" + (e && e.message ? e.message : String(e)));
+        }
+      };
+
+      showForm();
+    }
+
+    window.addEventListener("load", init);
+  </script>
+
+  <script src="/js/bcpmm-shell.js"></script>
+</body>
+</html>
