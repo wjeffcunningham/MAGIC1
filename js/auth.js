@@ -23,6 +23,11 @@ const auth = (() => {
   return {
     getUser,
     signOut,
-    _client: supabaseClient // private-ish, for later
+    _client: supabaseClient // exposed for controlled DB access
   };
 })();
+
+/* =====================================================
+   Expose globally so other scripts can access it
+===================================================== */
+window.auth = auth;
