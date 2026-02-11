@@ -138,7 +138,7 @@ async function renderClaimUI(slug) {
   if (!slot) return;
 
   const user = await auth.getUser();
-  const supabase = auth.supabase;
+const supabase = auth._client;
 
   if (!user) {
     slot.innerHTML = `<a href="/join.html">Sign in to claim this profile</a>`;
