@@ -81,9 +81,22 @@
 
 <!-- 2️⃣ Add claim system ONLY -->
 <script>
-async function renderClaimUI(slug) {
+function normalizeSlug(input) {
+  return (input || "")
+    .toString()
+    .trim()
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function renderClaimUI(slugRaw) {
   if (!window.auth) return;
 
+  const slug = normalizeSlug(slugRaw);
   const slot = document.getElementById("claim-slot");
   if (!slot) return;
 
@@ -108,43 +121,42 @@ async function renderClaimUI(slug) {
     return;
   }
 
-const { data: mine } = await supabase
-  .from("player_claims")
-  .select("*")
-  .eq("slug", slug)
-  .eq("user_id", user.id)
-  .order("created_at", { ascending: false })
-  .limit(1);
+  const { data: mine } = await supabase
+    .from("player_claims")
+    .select("*")
+    .eq("slug", slug)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
 
-if (mine && mine.length > 0) {
-  const latest = mine[0];
+  if (mine && mine.length > 0) {
+    const latest = mine[0];
 
-  if (latest.status === "pending") {
-    slot.innerHTML = `<em>Claim pending moderator approval.</em>`;
-    return;
+    if (latest.status === "pending") {
+      slot.innerHTML = `<em>Claim pending moderator approval.</em>`;
+      return;
+    }
+
+    if (latest.status === "approved") {
+      slot.innerHTML = `<span style="opacity:.7">Profile claimed</span>`;
+      return;
+    }
+
+    if (latest.status === "rejected") {
+      slot.innerHTML = `<em>Your previous claim was rejected. You may submit again.</em><br><button id="claim-btn">Request Claim Again</button>`;
+
+      document.getElementById("claim-btn").onclick = async () => {
+        await supabase.from("player_claims").insert({
+          slug: slug,
+          user_id: user.id,
+          status: "pending"
+        });
+        renderClaimUI(slug);
+      };
+
+      return;
+    }
   }
-
-  if (latest.status === "approved") {
-    slot.innerHTML = `<span style="opacity:.7">Profile claimed</span>`;
-    return;
-  }
-
-  if (latest.status === "rejected") {
-    // allow re-claim
-    slot.innerHTML = `<em>Your previous claim was rejected. You may submit again.</em><br><button id="claim-btn">Request Claim Again</button>`;
-
-    document.getElementById("claim-btn").onclick = async () => {
-      await supabase.from("player_claims").insert({
-        slug: slug,
-        user_id: user.id,
-        status: "pending"
-      });
-      renderClaimUI(slug);
-    };
-
-    return;
-  }
-}
 
   slot.innerHTML = `<button id="claim-btn">Claim this profile</button>`;
 
@@ -159,7 +171,7 @@ if (mine && mine.length > 0) {
 }
 
 // Hook into existing page once player.js finishes rendering
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("load", () => {
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("player");
   if (slug) renderClaimUI(slug);
