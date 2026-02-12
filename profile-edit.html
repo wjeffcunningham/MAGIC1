@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Edit Profile · B.C. Premodern Masters</title>
+<title>Profile · B.C. Premodern Masters</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
@@ -21,8 +21,8 @@ body { background: var(--bg); color: var(--fg); }
 .card {
   border: 1px solid var(--muted);
   border-radius: 16px;
-  padding: 28px;
-  background: rgba(255,255,255,0.03);
+  padding: 24px;
+  background: rgba(255,255,255,0.02);
   backdrop-filter: blur(6px);
 }
 
@@ -44,51 +44,59 @@ input, textarea, select {
   font-size:0.95rem;
 }
 
-textarea { min-height:90px; }
+textarea { min-height:100px; }
 
 .avatar-preview {
-  width:120px;
-  height:120px;
+  width:130px;
+  height:130px;
   object-fit:cover;
-  border-radius:14px;
+  border-radius:12px;
   border:1px solid var(--muted);
   display:block;
   margin-bottom:12px;
-  background:rgba(0,0,0,0.15);
 }
 
 .checks {
   display:flex;
-  gap:20px;
-  margin-top:8px;
+  gap:18px;
+  margin-top:10px;
 }
 
-.buttons {
+.checks label {
+  font-weight:600;
   display:flex;
-  gap:14px;
-  flex-wrap:wrap;
-  margin-top:22px;
+  gap:8px;
+  align-items:center;
 }
 
 button {
-  padding:12px 20px;
+  padding:14px 20px;
   border-radius:14px;
   border:1px solid var(--fg);
   background:transparent;
-  color:inherit;
   font-weight:800;
   cursor:pointer;
-  letter-spacing:0.5px;
-}
-
-button.secondary {
-  border-color: var(--muted);
+  margin-top:24px;
 }
 
 .status {
   margin-top:14px;
-  opacity:.8;
+  opacity:.85;
   font-size:0.9rem;
+}
+
+.notice {
+  margin-bottom:1rem;
+  font-weight:700;
+}
+
+.notice.pending { color:#ff6666; }
+.notice.approved { color:#4caf50; }
+.notice.none { color:#ffaa00; }
+
+.locked {
+  opacity:0.6;
+  pointer-events:none;
 }
 </style>
 </head>
@@ -97,186 +105,211 @@ button.secondary {
 <div id="global-menu-root"></div>
 
 <div class="wrap">
-  <h1>Edit Profile</h1>
+<h1>Your Profile</h1>
 
-  <div class="card">
-    <label>Alias (optional)</label>
-    <input id="alias" placeholder="Displayed instead of placeholder" />
+<div class="card">
 
-    <label>Quote</label>
-    <textarea id="quote"></textarea>
+<div id="state-msg" class="notice"></div>
 
-    <label>Local Store</label>
-    <select id="store">
-      <option value="">—</option>
-      <option>Magic Stronghold</option>
-      <option>Connections Renfrew</option>
-      <option>Freelance Mage</option>
-    </select>
+<label>Alias (public display name)</label>
+<input id="alias">
 
-    <label>Remote Play</label>
-    <div class="checks">
-      <label><input type="checkbox" id="remote_mtgo"> MTGO</label>
-      <label><input type="checkbox" id="remote_webcam"> Webcam</label>
-    </div>
+<label>Quote</label>
+<textarea id="quote"></textarea>
 
-    <label>Avatar</label>
-    <img id="avatar_preview" class="avatar-preview">
-    <input type="file" id="avatar_file" accept="image/*">
+<label>Local Store</label>
+<select id="store">
+  <option value="">—</option>
+  <option>Magic Stronghold</option>
+  <option>Connections Renfrew</option>
+  <option>Freelance Mage</option>
+</select>
 
-    <div class="buttons">
-      <button id="save_btn">Save Profile</button>
-      <button id="view_btn" class="secondary" type="button">View My Player Page</button>
-      <button id="delete_avatar_btn" class="secondary" type="button">Delete Avatar</button>
-    </div>
+<label>Remote Play</label>
+<div class="checks">
+  <label><input type="checkbox" id="remote_mtgo"> MTGO</label>
+  <label><input type="checkbox" id="remote_webcam"> Webcam</label>
+</div>
 
-    <div class="status" id="status"></div>
-  </div>
+<label>Make this profile public</label>
+<select id="is_public">
+  <option value="true">Yes</option>
+  <option value="false">No</option>
+</select>
+
+<label>Avatar</label>
+<img id="avatar_preview" class="avatar-preview">
+<input type="file" id="avatar_file" accept="image/*">
+
+<hr style="margin:30px 0; opacity:.2;">
+
+<label>Claim Tournament Identity</label>
+<select id="slug-select"></select>
+
+<button id="save_btn">Save Profile</button>
+<div class="status" id="status"></div>
+
+</div>
 </div>
 
 <script>
 const AVATAR_BUCKET = "avatars";
 
 function normalizeSlug(s){
-  return (s||"")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g,"-")
-    .replace(/^-|-$/g,"");
+  return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 }
 
-let existingProfile = null;
-let slug = null;
+function prettify(slug){
+  return slug.split("-").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");
+}
+
+async function loadAllSlugs(){
+  const paths = [
+    "/leaguetracker/data/raw/events/bcpmm-2026-01-10.json",
+    "/leaguetracker/data/raw/events/connections-2026-01-12.json",
+    "/leaguetracker/data/raw/events/connections-2026-01-26.json",
+    "/leaguetracker/data/raw/events/connections-2026-02-09.json",
+    "/leaguetracker/data/raw/events/stronghold-2026-02-01.json",
+    "/leaguetracker/data/raw/events/bcwl-2026-01-26-r1.json",
+    "/leaguetracker/data/raw/events/bcwl-2026-02-02-r2.json"
+  ];
+
+  const set = new Set();
+
+  for(const p of paths){
+    try{
+      const r = await fetch(p);
+      const j = await r.json();
+      (j.standings||[]).forEach(s=>set.add(normalizeSlug(s.player)));
+    }catch{}
+  }
+
+  return [...set].sort();
+}
 
 async function init(){
+  if(!window.auth) return;
+
   const supabase = auth._client;
   const user = await auth.getUser();
-
   if(!user){
-    document.querySelector(".wrap").innerHTML = 'Sign in first.';
+    document.body.innerHTML="Sign in first.";
     return;
   }
 
+  const stateMsg = document.getElementById("state-msg");
+  const slugSelect = document.getElementById("slug-select");
+
+  /* -------------------------
+     Load draft profile
+  ------------------------- */
+  const { data: draft } = await supabase
+    .from("user_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if(draft){
+    alias.value = draft.alias || "";
+    quote.value = draft.quote || "";
+    store.value = draft.store || "";
+    remote_mtgo.checked = !!draft.remote_mtgo;
+    remote_webcam.checked = !!draft.remote_webcam;
+    is_public.value = draft.is_public ? "true":"false";
+    if(draft.avatar_url) avatar_preview.src = draft.avatar_url;
+  }
+
+  /* -------------------------
+     Claim status
+  ------------------------- */
   const { data: claim } = await supabase
     .from("player_claims")
-    .select("slug")
+    .select("slug,status")
     .eq("user_id", user.id)
-    .eq("status","approved")
+    .order("created_at",{ascending:false})
     .limit(1)
     .maybeSingle();
 
-  if(!claim){
-    document.querySelector(".wrap").innerHTML =
-      'You must have an approved claim first.';
-    return;
-  }
+  /* -------------------------
+     Load all tournament slugs
+  ------------------------- */
+  const allSlugs = await loadAllSlugs();
 
-  slug = normalizeSlug(claim.slug);
+  const { data: approvedClaims } = await supabase
+    .from("player_claims")
+    .select("slug")
+    .eq("status","approved");
 
-  document.getElementById("view_btn").onclick = () => {
-    window.location.href = `/leaguetracker/player.html?player=${encodeURIComponent(slug)}`;
-  };
+  const takenSet = new Set((approvedClaims||[]).map(x=>x.slug));
 
-  const { data: profile } = await supabase
-    .from("player_profiles")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
+  slugSelect.innerHTML='<option value="">— Select your tournament name —</option>';
 
-  existingProfile = profile || null;
-
-  if(existingProfile){
-    document.getElementById("alias").value = existingProfile.alias || "";
-    document.getElementById("quote").value = existingProfile.quote || "";
-    document.getElementById("store").value = existingProfile.store || "";
-    document.getElementById("remote_mtgo").checked = !!existingProfile.remote_mtgo;
-    document.getElementById("remote_webcam").checked = !!existingProfile.remote_webcam;
-    if(existingProfile.avatar_url){
-      document.getElementById("avatar_preview").src = existingProfile.avatar_url;
-    }
-  }
-
-  document.getElementById("avatar_file").addEventListener("change", e=>{
-    const file = e.target.files[0];
-    if(file){
-      const preview = URL.createObjectURL(file);
-      document.getElementById("avatar_preview").src = preview;
-    }
+  allSlugs.forEach(sl=>{
+    const opt = document.createElement("option");
+    opt.value = sl;
+    opt.textContent = prettify(sl);
+    if(takenSet.has(sl)) opt.disabled = true;
+    slugSelect.appendChild(opt);
   });
 
-  document.getElementById("save_btn").onclick = saveProfile;
-  document.getElementById("delete_avatar_btn").onclick = deleteAvatar;
-}
+  if(claim){
+    slugSelect.value = claim.slug;
+    slugSelect.disabled = true;
 
-async function saveProfile(){
-  const supabase = auth._client;
-  const status = document.getElementById("status");
-  status.textContent = "Saving...";
+    if(claim.status === "approved"){
+      stateMsg.textContent = "Verified ✓";
+      stateMsg.className="notice approved";
+    } else {
+      stateMsg.textContent = "Verification pending";
+      stateMsg.className="notice pending";
+    }
+  } else {
+    stateMsg.textContent = "Not yet verified";
+    stateMsg.className="notice none";
+  }
 
-  try{
-    let avatar_url = existingProfile?.avatar_url || null;
-    const file = document.getElementById("avatar_file").files[0];
+  /* -------------------------
+     SAVE
+  ------------------------- */
+  save_btn.onclick = async ()=>{
+    status.textContent="Saving…";
 
+    let avatar_url = draft?.avatar_url || null;
+    const file = avatar_file.files[0];
     if(file){
-      const path = slug + "/" + Date.now() + "-" + file.name;
-      const { error } = await supabase
-        .storage
-        .from(AVATAR_BUCKET)
-        .upload(path,file,{upsert:true});
-
-      if(error) throw error;
-
-      avatar_url = supabase
-        .storage
-        .from(AVATAR_BUCKET)
-        .getPublicUrl(path).data.publicUrl;
+      const path = user.id+"/"+Date.now()+"-"+file.name;
+      await supabase.storage.from(AVATAR_BUCKET).upload(path,file,{upsert:true});
+      avatar_url = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
     }
 
-    const row = {
-      slug,
-      alias: document.getElementById("alias").value.trim() || null,
-      quote: document.getElementById("quote").value.trim() || null,
-      store: document.getElementById("store").value || null,
-      remote_mtgo: document.getElementById("remote_mtgo").checked,
-      remote_webcam: document.getElementById("remote_webcam").checked,
+    await supabase.from("user_profiles").upsert({
+      user_id:user.id,
+      alias:alias.value.trim()||null,
+      quote:quote.value.trim()||null,
+      store:store.value||null,
+      remote_mtgo:remote_mtgo.checked,
+      remote_webcam:remote_webcam.checked,
       avatar_url,
-      updated_at: new Date().toISOString()
-    };
+      is_public:is_public.value==="true",
+      updated_at:new Date().toISOString()
+    });
 
-    await supabase.from("player_profiles").upsert(row);
+    if(slugSelect.value && !claim){
+      await supabase.from("player_claims").insert({
+        slug:slugSelect.value,
+        user_id:user.id,
+        status:"pending"
+      });
+      slugSelect.disabled=true;
+      stateMsg.textContent="Verification pending";
+      stateMsg.className="notice pending";
+    }
 
-    existingProfile = row;
-    status.textContent = "Saved.";
-  }catch(e){
-    console.error(e);
-    status.textContent = "Save failed. Check console.";
-  }
+    status.textContent="Saved.";
+  };
 }
 
-async function deleteAvatar(){
-  const supabase = auth._client;
-  const status = document.getElementById("status");
-
-  if(!existingProfile?.avatar_url){
-    status.textContent = "No avatar to delete.";
-    return;
-  }
-
-  try{
-    await supabase.from("player_profiles").update({
-      avatar_url: null
-    }).eq("slug", slug);
-
-    document.getElementById("avatar_preview").removeAttribute("src");
-    existingProfile.avatar_url = null;
-
-    status.textContent = "Avatar removed.";
-  }catch(e){
-    console.error(e);
-    status.textContent = "Failed to delete avatar.";
-  }
-}
-
-window.addEventListener("load", init);
+window.addEventListener("load",init);
 </script>
 
 <script src="/js/bcpmm-shell.js"></script>

@@ -47,7 +47,7 @@
   overlay.onclick = closeMenu;
 
   /* =====================================================
-     Theme sync (single source of truth)
+     Theme sync
   ===================================================== */
   function syncIcon() {
     toggle.textContent =
@@ -73,42 +73,94 @@
      AUTH SLOT FILL
   ===================================================== */
   (async () => {
+
     if (!window.auth) return;
 
     const slot = document.getElementById("auth-slot");
     if (!slot) return;
 
+    const supabase = auth._client;
     const user = await auth.getUser();
 
-    // Not signed in
+    /* -------------------------------
+       Not signed in
+    -------------------------------- */
     if (!user) {
       slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
       return;
     }
 
-    // Check if user has an approved claim
-    const { data: approved } = await auth._client
-      .from("player_claims")
-      .select("slug")
-      .eq("user_id", user.id)
-      .eq("status", "approved")
-      .limit(1);
+    /* -------------------------------
+       Check admin role
+    -------------------------------- */
+    let isAdmin = false;
 
-    let profileLink = "";
+    try {
+      const { data: role } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
 
-    if (approved && approved.length > 0) {
-      profileLink = `<a href="/profile-edit.html">Edit Profile</a><br>`;
+      if (role && role.role === "admin") {
+        isAdmin = true;
+      }
+    } catch (e) {
+      console.warn("Admin check failed:", e);
     }
 
+    let adminLink = "";
+    if (isAdmin) {
+      adminLink = `<a href="/admin.html">Admin Panel</a><br>`;
+    }
+
+    /* -------------------------------
+       Check latest verification status
+    -------------------------------- */
+    let verificationNotice = "";
+
+    try {
+      const { data: claim } = await supabase
+        .from("player_claims")
+        .select("status")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (claim && claim.status === "pending") {
+        verificationNotice = `
+          <div style="
+            color:#f44336;
+            font-size:0.85em;
+            margin-top:4px;
+            font-weight:600;
+          ">
+            Verification pending
+          </div>
+        `;
+      }
+    } catch (e) {
+      console.warn("Verification check failed:", e);
+    }
+
+    /* -------------------------------
+       Render
+    -------------------------------- */
     slot.innerHTML = `
       <span style="opacity:.7; font-size:0.9em">${user.email}</span><br>
-      ${profileLink}
+      ${adminLink}
+      <a href="/profile-edit.html">Profile</a><br>
+      ${verificationNotice}
       <a href="#" id="logout-link">Sign out</a>
     `;
 
     document.getElementById("logout-link").onclick = (e) => {
       e.preventDefault();
       auth.signOut();
+      location.reload();
     };
+
   })();
 })();
