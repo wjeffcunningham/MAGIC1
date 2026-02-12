@@ -11,17 +11,12 @@
 <script src="/js/auth.js"></script>
 
 <style>
-/* =====================================================
-   LAYOUT
-===================================================== */
-
 .buylist-wrap {
   max-width: 1100px;
   margin: 6rem auto 4rem;
   padding: 0 1.5rem;
 }
 
-/* Back link (consistent with league + player pages) */
 .back-link {
   display: inline-block;
   margin-bottom: 1.25rem;
@@ -36,305 +31,273 @@
   text-decoration: underline;
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 0.25rem;
-}
+h1 { text-align:center; margin-bottom:0.25rem; }
 
 .subtitle {
-  text-align: center;
-  color: var(--muted);
-  margin-bottom: 1.75rem;
+  text-align:center;
+  color:var(--muted);
+  margin-bottom:1.25rem;
 }
 
-.view-toggle {
-  text-align: center;
-  margin-bottom: 2rem;
+/* SORT BAR */
+.sort-bar {
+  text-align:center;
+  margin-bottom:1.5rem;
 }
 
-.view-toggle button {
-  font-family: inherit;
-  font-weight: 700;
-  padding: 0.4rem 0.8rem;
-  margin: 0 0.25rem;
-  border: 1px solid var(--muted);
-  background: transparent;
-  color: var(--fg);
-  cursor: pointer;
+.sort-bar button {
+  font-weight:700;
+  padding:0.35rem 0.7rem;
+  margin:0 0.25rem;
+  border:1px solid var(--muted);
+  background:transparent;
+  cursor:pointer;
 }
 
-.view-toggle button.active {
-  background: var(--fg);
-  color: var(--bg);
+.sort-bar button.active {
+  background:var(--fg);
+  color:var(--bg);
 }
 
-/* =====================================================
-   GRID VIEW (DENSE / SMALL)
-===================================================== */
-
+/* GRID */
 .card-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 20px;
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:18px;
 }
 
-.card-tile {
-  text-align: center;
-}
+.card-tile { text-align:center; }
 
 .card-tile img {
-  width: 120px;
-  max-width: 100%;
-  height: auto;
-  border-radius: 6px;
-  margin: 0 auto;
-  display: block;
+  width:60px;   /* 1/8 size */
+  height:auto;
+  border-radius:6px;
+  display:block;
+  margin:0 auto;
 }
 
 .card-meta {
-  margin-top: 0.35rem;
-  line-height: 1.25;
+  margin-top:0.35rem;
+  font-size:0.72rem;
 }
 
-.card-name {
-  font-weight: 700;
-  font-size: 0.78rem;
-  margin-bottom: 0.1rem;
-}
+.card-name { font-weight:700; }
+.card-set { color:var(--muted); }
+.card-price { font-weight:700; }
 
-.card-set {
-  font-size: 0.72rem;
-  color: var(--muted);
-}
-
-.card-tag {
-  font-size: 0.7rem;
-  color: var(--muted);
-}
-
-.card-price {
-  font-size: 0.75rem;
-  font-weight: 700;
-  margin-top: 0.15rem;
-}
-
-/* =====================================================
-   LIST VIEW
-===================================================== */
-
+/* LIST */
 table.buylist {
-  width: 100%;
-  border-collapse: collapse;
+  width:100%;
+  border-collapse:collapse;
 }
 
 .buylist th,
 .buylist td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--muted);
+  padding:0.5rem 0.75rem;
+  border-bottom:1px solid var(--muted);
 }
 
-.buylist th {
-  text-align: left;
-  opacity: 0.7;
+.buylist td.num { text-align:right; }
+
+.hidden { display:none; }
+
+@media(max-width:1000px){
+  .card-grid{grid-template-columns:repeat(6,1fr);}
 }
-
-.buylist td.num {
-  text-align: right;
-}
-
-/* =====================================================
-   HIDDEN STATES
-===================================================== */
-
-.hidden {
-  display: none;
-}
-
-/* =====================================================
-   RESPONSIVE
-===================================================== */
-
-@media (max-width: 1100px) {
-  .card-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (max-width: 800px) {
-  .card-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 520px) {
-  .card-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+@media(max-width:700px){
+  .card-grid{grid-template-columns:repeat(4,1fr);}
 }
 </style>
 </head>
 
 <body>
 
-<!-- GLOBAL MENU -->
 <div id="global-menu-root"></div>
 
 <div class="buylist-wrap">
 
-  <a href="/" class="back-link">← Back to main</a>
+<a href="/" class="back-link">← Back to main</a>
 
-  <h1>Buylist</h1>
-  <div class="subtitle">NM only · Prices in CAD</div>
+<h1>Buylist</h1>
+<div class="subtitle">NM only · Prices in CAD</div>
 
-  <div class="view-toggle">
-    <button id="grid-btn" class="active">Images</button>
-    <button id="list-btn">List</button>
-  </div>
+<div class="sort-bar">
+  Sort:
+  <button data-sort="name" class="active">Name</button>
+  <button data-sort="price">Price</button>
+  <button data-sort="date">Set Release</button>
+</div>
 
-  <!-- GRID VIEW -->
-  <div id="grid-view" class="card-grid"></div>
+<div id="grid-view" class="card-grid"></div>
 
-  <!-- LIST VIEW -->
-  <table id="list-view" class="buylist hidden">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Card</th>
-        <th>Set</th>
-        <th>Type</th>
-        <th class="num">Price</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<table id="list-view" class="buylist hidden">
+<thead>
+<tr>
+<th>#</th>
+<th>Card</th>
+<th>Set</th>
+<th>Tag</th>
+<th class="num">Price</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 
 </div>
 
 <script>
+
 /* =====================================================
-   SOURCE DATA
+   SOURCE DATA  (ONLY NAME + SET REQUIRED)
 ===================================================== */
 
-const cards = 
+const cards = [
 
-[
-  { name:"Intuition", set:"tmp", setLabel:"Tempest · #70", tag:"Tutor", price:200 },
+{ name:"Intuition", set:"tmp", tag:"Tutor", price:200 },
+{ name:"Survival of the Fittest", set:"wc98", tag:"Tutor", price:60 },
+{ name:"Eladamri, Lord of Leaves", set:"tmp", tag:"Lord", price:60 },
+{ name:"Aluren", set:"tmp", tag:"Combo", price:50 },
+{ name:"Phyrexian Devourer", set:"all", tag:"Combo", price:40 },
+{ name:"Powder Keg", set:"uds", tag:"Removal", price:30 },
+{ name:"Squee, Goblin Nabob", set:"mmq", tag:"Recursion", price:25 },
+{ name:"City of Brass", set:"chr", tag:"Land", price:20 },
+{ name:"Recurring Nightmare", set:"wc98", tag:"Recursion", price:20 },
+{ name:"Hermit Druid", set:"sth", tag:"Mill", price:12 },
+{ name:"Engineered Plague", set:"ulg", tag:"Removal", price:8 },
+{ name:"Elvish Champion", set:"inv", tag:"Lord", price:8 },
+{ name:"Merchant Scroll", set:"hml", tag:"Tutor", price:5 },
+{ name:"Karplusan Forest", set:"dkm", tag:"Land", price:5 },
+{ name:"Underground River", set:"dkm", tag:"Land", price:5 },
+{ name:"Elvish Spirit Guide", set:"all", tag:"Ramp", price:4 },
+{ name:"Snow-Covered Forest", set:"ice", tag:"Land", price:3 },
+{ name:"Snow-Covered Island", set:"ice", tag:"Land", price:3 },
+{ name:"Snow-Covered Mountain", set:"ice", tag:"Land", price:3 },
+{ name:"Snow-Covered Swamp", set:"ice", tag:"Land", price:3 },
+{ name:"Snow-Covered Plains", set:"ice", tag:"Land", price:2 },
+{ name:"Quirion Dryad", set:"pls", tag:"Creature", price:2 },
+{ name:"Fyndhorn Elves", set:"ice", tag:"Creature", price:1 },
+{ name:"Grim Lavamancer", set:"tor", tag:"Creature", price:12 },
+{ name:"Academy Rector", set:"wc99", tag:"Tutor", price:150 },
+{ name:"Shallow Grave", set:"mir", tag:"Recursion", price:25 },
+{ name:"Deranged Hermit", set:"ulg", tag:"Creature", price:18 },
+{ name:"Replenish", set:"uds", tag:"Recursion", price:120 },
+{ name:"Humility", set:"tmp", tag:"Control", price:90 },
+{ name:"Palinchron", set:"ulg", tag:"Combo", price:80 },
+{ name:"Mind Over Matter", set:"exo", tag:"Combo", price:70 },
+{ name:"Lotus Vale", set:"wth", tag:"Land", price:40 },
+{ name:"Abeyance", set:"wth", tag:"Control", price:15 },
+{ name:"Krovikan Horror", set:"all", tag:"Recursion", price:10 },
+{ name:"Volrath’s Shapeshifter", set:"sth", tag:"Combo", price:35 },
+{ name:"Opalescence", set:"uds", tag:"Combo", price:60 },
+{ name:"Meditate", set:"tmp", tag:"Draw", price:20 },
+{ name:"Sarcomancy", set:"tmp", tag:"Enchantment", price:12 }
 
-  { name:"Survival of the Fittest", set:"wc98", setLabel:"World Championship 1998", tag:"Tutor", price:60 },
-  { name:"Eladamri, Lord of Leaves", set:"tmp", setLabel:"Tempest · #224", tag:"Lord", price:60 },
-
-  { name:"Aluren", set:"tmp", setLabel:"Tempest · #213", tag:"Combo", price:50 },
-    { name:"Phyrexian Devourer", set:"all", setLabel:"Alliances · #131", tag:"Combo", price:40 },
-  { name:"Powder Keg", set:"p04", setLabel:"DCI Promo · #4 (Foil)", tag:"Removal", price:30 },
-
-  { name:"Squee, Goblin Nabob", set:"mmq", setLabel:"Mercadian Masques · #214", tag:"Recursion", price:25 },
-
-  { name:"City of Brass", set:"chr", setLabel:"Chronicles · #112", tag:"Land", price:20 },
-  { name:"Recurring Nightmare", set:"wc98", setLabel:"World Championship 1998", tag:"Recursion", price:20 },
-
-  { name:"Hermit Druid", set:"sth", setLabel:"Stronghold · #108", tag:"Mill", price:12 },
-
-  { name:"Engineered Plague", set:"ulg", setLabel:"Urza’s Legacy · #51", tag:"Removal", price:8 },
-  { name:"Elvish Champion", set:"10e", setLabel:"10th Edition · #261", tag:"Lord", price:8 },
-
-  { name:"Merchant Scroll", set:"hml", setLabel:"Homelands · #33", tag:"Tutor", price:5 },
-  { name:"Karplusan Forest", set:"dkm", setLabel:"Deckmasters · #39", tag:"Land", price:5 },
-  { name:"Underground River", set:"dkm", setLabel:"Deckmasters · #41", tag:"Land", price:5 },
-
-  { name:"Elvish Spirit Guide", set:"all", setLabel:"Alliances · #89", tag:"Ramp", price:4 },
-
-  { name:"Snow-Covered Forest", set:"ice", setLabel:"Ice Age · #383", tag:"Land", price:3 },
-  { name:"Snow-Covered Island", set:"ice", setLabel:"Ice Age · #371", tag:"Land", price:3 },
-
-  { name:"Quirion Dryad", set:"pls", setLabel:"Planeshift · #89", tag:"Creature", price:2 },
-
-  { name:"Fyndhorn Elves", set:"dkm", setLabel:"Deckmasters · #26", tag:"Creature", price:1 },
-  { name:"Grim Lavamancer", set:"tor", setLabel:"Torment · #100", tag:"Creature", price:12 },
 ];
 
-
-
-
-
+let enriched = [];
 
 /* =====================================================
-   SCRYFALL IMAGE LOADER
+   FETCH SCRYFALL DATA (SET NAME + DATE + IMAGE)
 ===================================================== */
 
-async function loadImage(card, imgEl) {
-  const q = encodeURIComponent(`!"${card.name}" set:${card.set}`);
-  const res = await fetch(`https://api.scryfall.com/cards/search?q=${q}`);
-  const data = await res.json();
-  const image = data?.data?.[0]?.image_uris?.large;
-  if (image) imgEl.src = image;
+async function enrichCards() {
+  for (let card of cards) {
+    const q = encodeURIComponent(`!"${card.name}" set:${card.set}`);
+    const res = await fetch(`https://api.scryfall.com/cards/search?q=${q}`);
+    const data = await res.json();
+    const c = data.data[0];
+
+    enriched.push({
+      ...card,
+      image: c.image_uris?.small,
+      setName: c.set_name,
+      collector: c.collector_number,
+      release: new Date(c.released_at)
+    });
+  }
+
+  render();
+}
+
+function render() {
+  renderGrid();
+  renderList();
 }
 
 /* =====================================================
-   RENDER GRID
+   GRID
 ===================================================== */
 
-const gridView = document.getElementById("grid-view");
+function renderGrid() {
+  const grid = document.getElementById("grid-view");
+  grid.innerHTML = "";
 
-cards.forEach(card => {
-  const tile = document.createElement("div");
-  tile.className = "card-tile";
+  enriched.forEach(card => {
+    const tile = document.createElement("div");
+    tile.className="card-tile";
 
-  const img = document.createElement("img");
-  img.alt = card.name;
-  loadImage(card, img);
+    tile.innerHTML = `
+      <img src="${card.image}" />
+      <div class="card-meta">
+        <div class="card-name">${card.name}</div>
+        <div class="card-set">${card.setName} · #${card.collector}</div>
+        <div>${card.tag}</div>
+        <div class="card-price">$${card.price}</div>
+      </div>
+    `;
 
-  tile.innerHTML = `
-    <div class="card-meta">
-      <div class="card-name">${card.name}</div>
-      <div class="card-set">${card.setLabel}</div>
-      <div class="card-tag">${card.tag}</div>
-      <div class="card-price">${card.price}</div>
-    </div>
-  `;
-
-  tile.prepend(img);
-  gridView.appendChild(tile);
-});
+    grid.appendChild(tile);
+  });
+}
 
 /* =====================================================
-   RENDER LIST
+   LIST
 ===================================================== */
 
-const listBody = document.querySelector("#list-view tbody");
+function renderList() {
+  const body = document.querySelector("#list-view tbody");
+  body.innerHTML="";
 
-cards.forEach((card, i) => {
-  listBody.insertAdjacentHTML("beforeend", `
-    <tr>
-      <td>${i + 1}</td>
-      <td>${card.name}</td>
-      <td>${card.setLabel}</td>
-      <td>${card.tag}</td>
-      <td class="num">${card.price}</td>
-    </tr>
-  `);
-});
+  enriched.forEach((card,i)=>{
+    body.insertAdjacentHTML("beforeend",`
+      <tr>
+        <td>${i+1}</td>
+        <td>${card.name}</td>
+        <td>${card.setName}</td>
+        <td>${card.tag}</td>
+        <td class="num">$${card.price}</td>
+      </tr>
+    `);
+  });
+}
 
 /* =====================================================
-   VIEW TOGGLE
+   SORTING
 ===================================================== */
 
-const gridBtn = document.getElementById("grid-btn");
-const listBtn = document.getElementById("list-btn");
-const listView = document.getElementById("list-view");
+document.querySelectorAll(".sort-bar button").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".sort-bar button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
 
-gridBtn.onclick = () => {
-  gridView.classList.remove("hidden");
-  listView.classList.add("hidden");
-  gridBtn.classList.add("active");
-  listBtn.classList.remove("active");
-};
+    const type = btn.dataset.sort;
 
-listBtn.onclick = () => {
-  gridView.classList.add("hidden");
-  listView.classList.remove("hidden");
-  listBtn.classList.add("active");
-  gridBtn.classList.remove("active");
-};
+    if(type==="name"){
+      enriched.sort((a,b)=>a.name.localeCompare(b.name));
+    }
+    if(type==="price"){
+      enriched.sort((a,b)=>b.price-a.price);
+    }
+    if(type==="date"){
+      enriched.sort((a,b)=>a.release-b.release);
+    }
+
+    render();
+  };
+});
+
+enrichCards();
+
 </script>
 
 <script src="/js/bcpmm-shell.js"></script>
