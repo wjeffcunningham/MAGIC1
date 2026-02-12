@@ -63,6 +63,13 @@ textarea { min-height:90px; }
   margin-top:8px;
 }
 
+.buttons {
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-top:22px;
+}
+
 button {
   padding:12px 20px;
   border-radius:14px;
@@ -71,17 +78,15 @@ button {
   color:inherit;
   font-weight:800;
   cursor:pointer;
-  margin-top:22px;
   letter-spacing:0.5px;
 }
 
 button.secondary {
   border-color: var(--muted);
-  margin-left:12px;
 }
 
 .status {
-  margin-top:12px;
+  margin-top:14px;
   opacity:.8;
   font-size:0.9rem;
 }
@@ -119,8 +124,11 @@ button.secondary {
     <img id="avatar_preview" class="avatar-preview">
     <input type="file" id="avatar_file" accept="image/*">
 
-    <button id="save_btn">Save Profile</button>
-    <button id="delete_avatar_btn" class="secondary" type="button">Delete Avatar</button>
+    <div class="buttons">
+      <button id="save_btn">Save Profile</button>
+      <button id="view_btn" class="secondary" type="button">View My Player Page</button>
+      <button id="delete_avatar_btn" class="secondary" type="button">Delete Avatar</button>
+    </div>
 
     <div class="status" id="status"></div>
   </div>
@@ -163,6 +171,10 @@ async function init(){
   }
 
   slug = normalizeSlug(claim.slug);
+
+  document.getElementById("view_btn").onclick = () => {
+    window.location.href = `/leaguetracker/player.html?player=${encodeURIComponent(slug)}`;
+  };
 
   const { data: profile } = await supabase
     .from("player_profiles")
