@@ -143,31 +143,29 @@ table.buylist {
 <tbody></tbody>
 </table>
 
-</div>
-
-<script>
+</div><script>
 
 /* =====================================================
-   SOURCE DATA  (ONLY NAME + SET REQUIRED)
+   SOURCE DATA
 ===================================================== */
 
 const cards = [
 
-{ name:"Intuition", set:"tmp", tag:"Tutor", price:200 },
-{ name:"Survival of the Fittest", set:"wc98", tag:"Tutor", price:60 },
-{ name:"Eladamri, Lord of Leaves", set:"tmp", tag:"Lord", price:60 },
+{ name:"Intuition", set:"tmp", tag:"Tutor", price:220 },
+{ name:"Survival of the Fittest", set:"wc98", tag:"Tutor", price:80 },
+{ name:"Eladamri, Lord of Leaves", set:"tmp", tag:"Lord", price:80 },
 { name:"Aluren", set:"tmp", tag:"Combo", price:50 },
-{ name:"Phyrexian Devourer", set:"all", tag:"Combo", price:40 },
-{ name:"Powder Keg", set:"uds", tag:"Removal", price:30 },
-{ name:"Squee, Goblin Nabob", set:"mmq", tag:"Recursion", price:25 },
-{ name:"City of Brass", set:"chr", tag:"Land", price:20 },
-{ name:"Recurring Nightmare", set:"wc98", tag:"Recursion", price:20 },
-{ name:"Hermit Druid", set:"sth", tag:"Mill", price:12 },
-{ name:"Engineered Plague", set:"ulg", tag:"Removal", price:8 },
-{ name:"Elvish Champion", set:"inv", tag:"Lord", price:8 },
+{ name:"Phyrexian Devourer", set:"all", tag:"Combo", price:50 },
+{ name:"Powder Keg", set:"uds", tag:"Removal", price:80 },
+{ name:"Squee, Goblin Nabob", set:"mmq", tag:"Recursion", price:40 },
+{ name:"City of Brass", set:"chr", tag:"Land", price:30 },
+{ name:"Recurring Nightmare", set:"wc98", tag:"Recursion", price:25 },
+{ name:"Hermit Druid", set:"sth", tag:"Mill", price:20 },
+{ name:"Engineered Plague", set:"ulg", tag:"Removal", price:10 },
+{ name:"Elvish Champion", set:"inv", tag:"Lord", price:20 },
 { name:"Merchant Scroll", set:"hml", tag:"Tutor", price:5 },
-{ name:"Karplusan Forest", set:"dkm", tag:"Land", price:5 },
-{ name:"Underground River", set:"dkm", tag:"Land", price:5 },
+{ name:"Karplusan Forest", set:"dkm", tag:"Land", price:7 },
+{ name:"Underground River", set:"dkm", tag:"Land", price:7 },
 { name:"Elvish Spirit Guide", set:"all", tag:"Ramp", price:4 },
 { name:"Snow-Covered Forest", set:"ice", tag:"Land", price:3 },
 { name:"Snow-Covered Island", set:"ice", tag:"Land", price:3 },
@@ -175,19 +173,19 @@ const cards = [
 { name:"Snow-Covered Swamp", set:"ice", tag:"Land", price:3 },
 { name:"Snow-Covered Plains", set:"ice", tag:"Land", price:2 },
 { name:"Quirion Dryad", set:"pls", tag:"Creature", price:2 },
-{ name:"Fyndhorn Elves", set:"ice", tag:"Creature", price:1 },
+{ name:"Fyndhorn Elves", set:"dkm", tag:"Creature", price:2 },
 { name:"Grim Lavamancer", set:"tor", tag:"Creature", price:12 },
-{ name:"Academy Rector", set:"wc99", tag:"Tutor", price:150 },
-{ name:"Shallow Grave", set:"mir", tag:"Recursion", price:25 },
-{ name:"Deranged Hermit", set:"ulg", tag:"Creature", price:18 },
-{ name:"Replenish", set:"uds", tag:"Recursion", price:120 },
+{ name:"Academy Rector", set:"wc99", tag:"Tutor", price:25 },
+{ name:"Shallow Grave", set:"mir", tag:"Recursion", price:60 },
+{ name:"Deranged Hermit", set:"ulg", tag:"Creature", price:70 },
+{ name:"Replenish", set:"wc99", tag:"Recursion", price:40 },
 { name:"Humility", set:"tmp", tag:"Control", price:90 },
 { name:"Palinchron", set:"ulg", tag:"Combo", price:80 },
 { name:"Mind Over Matter", set:"exo", tag:"Combo", price:70 },
 { name:"Lotus Vale", set:"wth", tag:"Land", price:40 },
 { name:"Abeyance", set:"wth", tag:"Control", price:15 },
 { name:"Krovikan Horror", set:"all", tag:"Recursion", price:10 },
-{ name:"Volrath’s Shapeshifter", set:"sth", tag:"Combo", price:35 },
+{ name:"Volrath's Shapeshifter", set:"sth", tag:"Combo", price:35 },
 { name:"Opalescence", set:"uds", tag:"Combo", price:60 },
 { name:"Meditate", set:"tmp", tag:"Draw", price:20 },
 { name:"Sarcomancy", set:"tmp", tag:"Enchantment", price:12 }
@@ -197,27 +195,45 @@ const cards = [
 let enriched = [];
 
 /* =====================================================
-   FETCH SCRYFALL DATA (SET NAME + DATE + IMAGE)
+   FETCH SCRYFALL DATA (SAFE VERSION)
 ===================================================== */
 
 async function enrichCards() {
-  for (let card of cards) {
-    const q = encodeURIComponent(`!"${card.name}" set:${card.set}`);
-    const res = await fetch(`https://api.scryfall.com/cards/search?q=${q}`);
-    const data = await res.json();
-    const c = data.data[0];
 
-    enriched.push({
-      ...card,
-      image: c.image_uris?.small,
-      setName: c.set_name,
-      collector: c.collector_number,
-      release: new Date(c.released_at)
-    });
+  enriched = [];
+
+  for (let card of cards) {
+
+    try {
+
+      const url = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(card.name)}&set=${card.set}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.object === "error") {
+        console.warn("Not found:", card.name, card.set);
+        continue;
+      }
+
+      enriched.push({
+        ...card,
+        image: data.image_uris?.small ?? "",
+        setName: data.set_name ?? card.set,
+        collector: data.collector_number ?? "",
+        release: data.released_at ? new Date(data.released_at) : new Date(0)
+      });
+
+    } catch (err) {
+      console.error("Fetch failed:", card.name, err);
+    }
   }
 
   render();
 }
+
+/* =====================================================
+   RENDER
+===================================================== */
 
 function render() {
   renderGrid();
@@ -229,12 +245,14 @@ function render() {
 ===================================================== */
 
 function renderGrid() {
+
   const grid = document.getElementById("grid-view");
   grid.innerHTML = "";
 
   enriched.forEach(card => {
+
     const tile = document.createElement("div");
-    tile.className="card-tile";
+    tile.className = "card-tile";
 
     tile.innerHTML = `
       <img src="${card.image}" />
@@ -255,19 +273,22 @@ function renderGrid() {
 ===================================================== */
 
 function renderList() {
-  const body = document.querySelector("#list-view tbody");
-  body.innerHTML="";
 
-  enriched.forEach((card,i)=>{
-    body.insertAdjacentHTML("beforeend",`
+  const body = document.querySelector("#list-view tbody");
+  body.innerHTML = "";
+
+  enriched.forEach((card, i) => {
+
+    body.insertAdjacentHTML("beforeend", `
       <tr>
-        <td>${i+1}</td>
+        <td>${i + 1}</td>
         <td>${card.name}</td>
         <td>${card.setName}</td>
         <td>${card.tag}</td>
         <td class="num">$${card.price}</td>
       </tr>
     `);
+
   });
 }
 
@@ -275,25 +296,32 @@ function renderList() {
    SORTING
 ===================================================== */
 
-document.querySelectorAll(".sort-bar button").forEach(btn=>{
-  btn.onclick = ()=>{
-    document.querySelectorAll(".sort-bar button").forEach(b=>b.classList.remove("active"));
+document.querySelectorAll(".sort-bar button").forEach(btn => {
+
+  btn.onclick = () => {
+
+    document.querySelectorAll(".sort-bar button")
+      .forEach(b => b.classList.remove("active"));
+
     btn.classList.add("active");
 
     const type = btn.dataset.sort;
 
-    if(type==="name"){
-      enriched.sort((a,b)=>a.name.localeCompare(b.name));
+    if (type === "name") {
+      enriched.sort((a, b) => a.name.localeCompare(b.name));
     }
-    if(type==="price"){
-      enriched.sort((a,b)=>b.price-a.price);
+
+    if (type === "price") {
+      enriched.sort((a, b) => b.price - a.price);
     }
-    if(type==="date"){
-      enriched.sort((a,b)=>a.release-b.release);
+
+    if (type === "date") {
+      enriched.sort((a, b) => a.release - b.release);
     }
 
     render();
   };
+
 });
 
 enrichCards();
