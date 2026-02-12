@@ -1,261 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Edit Profile · B.C. Premodern Masters</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8" />
+<title>Edit Profile · B.C. Premodern Masters</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="stylesheet" href="/css/bcpmm-shell.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/auth.js"></script>
+<link rel="stylesheet" href="/css/bcpmm-shell.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/auth.js"></script>
 
-  <style>
-    body { background: var(--bg); color: var(--fg); }
+<style>
+body { background: var(--bg); color: var(--fg); }
 
-    .wrap {
-      max-width: 900px;
-      margin: 6rem auto 4rem;
-      padding: 0 1.5rem;
-    }
+.wrap {
+  max-width: 760px;
+  margin: 6rem auto 4rem;
+  padding: 0 1.5rem;
+}
 
-    h1 { margin: 0 0 0.75rem; }
-    .meta { opacity: 0.75; margin-bottom: 1.25rem; color: var(--muted); }
+.card {
+  border: 1px solid var(--muted);
+  border-radius: 16px;
+  padding: 28px;
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(6px);
+}
 
-    .card {
-      border: 1px solid var(--muted);
-      border-radius: 12px;
-      padding: 16px;
-      margin: 14px 0;
-      background: rgba(255,255,255,0.02);
-    }
+h1 { margin-bottom: 1.5rem; }
 
-    label { display:block; font-weight: 700; margin: 10px 0 6px; }
+label {
+  display:block;
+  font-weight:700;
+  margin:18px 0 6px;
+}
 
-    input[type="text"], textarea, select {
-      width: 100%;
-      max-width: 520px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--muted);
-      background: transparent;
-      color: inherit;
-      outline: none;
-    }
+input, textarea, select {
+  width:100%;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid var(--muted);
+  background:transparent;
+  color:inherit;
+  font-size:0.95rem;
+}
 
-    textarea { min-height: 90px; resize: vertical; }
+textarea { min-height:90px; }
 
-    .row {
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-      align-items: flex-start;
-    }
+.avatar-preview {
+  width:120px;
+  height:120px;
+  object-fit:cover;
+  border-radius:14px;
+  border:1px solid var(--muted);
+  display:block;
+  margin-bottom:12px;
+  background:rgba(0,0,0,0.15);
+}
 
-    .col { flex: 1 1 320px; }
+.checks {
+  display:flex;
+  gap:20px;
+  margin-top:8px;
+}
 
-    .checks {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
+button {
+  padding:12px 20px;
+  border-radius:14px;
+  border:1px solid var(--fg);
+  background:transparent;
+  color:inherit;
+  font-weight:800;
+  cursor:pointer;
+  margin-top:22px;
+  letter-spacing:0.5px;
+}
 
-    .checks label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 600;
-      margin: 0;
-    }
+button.secondary {
+  border-color: var(--muted);
+  margin-left:12px;
+}
 
-    .btns {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-top: 14px;
-    }
-
-    button {
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--muted);
-      background: transparent;
-      color: inherit;
-      cursor: pointer;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-size: 0.95em;
-    }
-
-    button.primary {
-      border-color: var(--fg);
-    }
-
-    .status {
-      margin-top: 10px;
-      opacity: 0.85;
-      color: var(--muted);
-      white-space: pre-wrap;
-    }
-
-    .avatar-preview {
-      width: 110px;
-      height: 110px;
-      border-radius: 12px;
-      border: 1px solid var(--muted);
-      object-fit: cover;
-      display: block;
-      background: rgba(0,0,0,0.12);
-    }
-
-    .small { font-size: 0.9em; opacity: 0.8; }
-
-    .back a {
-      color: inherit;
-      text-decoration: none;
-      border-bottom: 1px solid var(--muted);
-    }
-
-    .back a:hover { border-bottom-color: var(--fg); }
-  </style>
+.status {
+  margin-top:12px;
+  opacity:.8;
+  font-size:0.9rem;
+}
+</style>
 </head>
 
 <body>
-  <div id="global-menu-root"></div>
+<div id="global-menu-root"></div>
 
-  <div class="wrap">
-    <div class="back" style="margin-bottom: 1rem;">
-      <a href="/leaguetracker/">← Back to League Tracker</a>
+<div class="wrap">
+  <h1>Edit Profile</h1>
+
+  <div class="card">
+    <label>Alias (optional)</label>
+    <input id="alias" placeholder="Displayed instead of slug" />
+
+    <label>Quote</label>
+    <textarea id="quote"></textarea>
+
+    <label>Local Store</label>
+    <select id="store">
+      <option value="">—</option>
+      <option>Magic Stronghold</option>
+      <option>Connections Renfrew</option>
+      <option>Freelance Mage</option>
+    </select>
+
+    <label>Remote Play</label>
+    <div class="checks">
+      <label><input type="checkbox" id="remote_mtgo"> MTGO</label>
+      <label><input type="checkbox" id="remote_webcam"> Webcam</label>
     </div>
 
-    <h1>Edit Profile</h1>
-    <div class="meta" id="meta">Checking sign-in…</div>
+    <label>Avatar</label>
+    <img id="avatar_preview" class="avatar-preview">
+    <input type="file" id="avatar_file" accept="image/*">
 
-    <div class="card" id="gate-card" style="display:none;">
-      <div id="gate-msg"></div>
-    </div>
+    <button id="save_btn">Save Profile</button>
+    <button id="delete_avatar_btn" class="secondary" type="button">Delete Avatar</button>
 
-    <div class="card" id="form-card" style="display:none;">
-      <div class="row">
-        <div class="col">
-          <label>Name (public)</label>
-          <input id="display_name" type="text" />
-
-          <label>Quote (public)</label>
-          <textarea id="quote"></textarea>
-
-          <label>Local store</label>
-          <select id="store">
-            <option value="">—</option>
-            <option value="Magic Stronghold">Magic Stronghold</option>
-            <option value="Connections Renfrew">Connections Renfrew</option>
-            <option value="Freelance Mage">Freelance Mage</option>
-          </select>
-
-          <label>Remote play</label>
-          <div class="checks">
-            <label><input id="remote_mtgo" type="checkbox" /> MTGO</label>
-            <label><input id="remote_webcam" type="checkbox" /> Webcam</label>
-          </div>
-        </div>
-
-        <div class="col">
-          <label>Avatar</label>
-          <img id="avatar_preview" class="avatar-preview" />
-          <div class="small">Square images look best.</div>
-
-          <div style="margin-top:10px;">
-            <input id="avatar_file" type="file" accept="image/*" />
-          </div>
-
-          <div class="btns">
-            <button class="primary" id="save_btn">Save</button>
-            <button id="delete_avatar_btn" type="button">Delete Avatar</button>
-            <button id="view_btn" type="button">View Player Page</button>
-          </div>
-
-          <div class="status" id="status"></div>
-        </div>
-      </div>
-    </div>
+    <div class="status" id="status"></div>
   </div>
+</div>
 
 <script>
 const AVATAR_BUCKET = "avatars";
 
-function normalizeSlug(input) {
-  return (input || "")
-    .toString()
-    .trim()
-    .normalize("NFKD")
+function normalizeSlug(s){
+  return (s||"")
     .toLowerCase()
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/[^a-z0-9]+/g,"-")
+    .replace(/^-|-$/g,"");
 }
 
-function setStatus(msg) {
-  document.getElementById("status").textContent = msg || "";
-}
+let existingProfile = null;
+let slug = null;
 
-async function uploadAvatar(supabase, slug, file) {
-  const path = `${slug}/avatar.png`;
-
-  const { error } = await supabase
-    .storage
-    .from(AVATAR_BUCKET)
-    .upload(path, file, { upsert: true });
-
-  if (error) throw error;
-
-  const { data } = supabase
-    .storage
-    .from(AVATAR_BUCKET)
-    .getPublicUrl(path);
-
-  return data.publicUrl;
-}
-
-async function deleteAvatar(supabase, slug) {
-  const path = `${slug}/avatar.png`;
-  await supabase.storage.from(AVATAR_BUCKET).remove([path]);
-}
-
-async function init() {
+async function init(){
   const supabase = auth._client;
   const user = await auth.getUser();
 
-  if (!user) {
-    document.getElementById("gate-card").style.display = "block";
-    document.getElementById("gate-msg").innerHTML =
-      `Sign in required. <a href="/join.html">Sign in</a>`;
+  if(!user){
+    document.querySelector(".wrap").innerHTML = 'Sign in first.';
     return;
   }
-
-  document.getElementById("meta").textContent =
-    `Signed in as ${user.email}`;
 
   const { data: claim } = await supabase
     .from("player_claims")
     .select("slug")
     .eq("user_id", user.id)
-    .eq("status", "approved")
-    .limit(1);
+    .eq("status","approved")
+    .limit(1)
+    .maybeSingle();
 
-  if (!claim || claim.length === 0) {
-    document.getElementById("gate-card").style.display = "block";
-    document.getElementById("gate-msg").textContent =
-      "You must have an approved claim.";
+  if(!claim){
+    document.querySelector(".wrap").innerHTML =
+      'You must have an approved claim first.';
     return;
   }
 
-  const slug = normalizeSlug(claim[0].slug);
-
-  document.getElementById("form-card").style.display = "block";
+  slug = normalizeSlug(claim.slug);
 
   const { data: profile } = await supabase
     .from("player_profiles")
@@ -263,67 +170,98 @@ async function init() {
     .eq("slug", slug)
     .maybeSingle();
 
-  if (profile) {
-    document.getElementById("display_name").value = profile.display_name || "";
-    document.getElementById("quote").value = profile.quote || "";
-    document.getElementById("store").value = profile.store || "";
-    document.getElementById("remote_mtgo").checked = !!profile.remote_mtgo;
-    document.getElementById("remote_webcam").checked = !!profile.remote_webcam;
+  existingProfile = profile || null;
 
-    if (profile.avatar_url) {
-      document.getElementById("avatar_preview").src = profile.avatar_url;
+  if(existingProfile){
+    document.getElementById("alias").value = existingProfile.alias || "";
+    document.getElementById("quote").value = existingProfile.quote || "";
+    document.getElementById("store").value = existingProfile.store || "";
+    document.getElementById("remote_mtgo").checked = !!existingProfile.remote_mtgo;
+    document.getElementById("remote_webcam").checked = !!existingProfile.remote_webcam;
+    if(existingProfile.avatar_url){
+      document.getElementById("avatar_preview").src = existingProfile.avatar_url;
     }
   }
 
-  document.getElementById("view_btn").onclick = () => {
-    window.location.href =
-      `/leaguetracker/player.html?player=${encodeURIComponent(slug)}`;
-  };
-
-  document.getElementById("save_btn").onclick = async () => {
-    try {
-      setStatus("Saving...");
-
-      let avatar_url = profile?.avatar_url || null;
-      const file = document.getElementById("avatar_file").files[0];
-
-      if (file) {
-        avatar_url = await uploadAvatar(supabase, slug, file);
-      }
-
-      await supabase.from("player_profiles").upsert({
-        slug,
-        display_name: document.getElementById("display_name").value || null,
-        quote: document.getElementById("quote").value || null,
-        store: document.getElementById("store").value || null,
-        remote_mtgo: document.getElementById("remote_mtgo").checked,
-        remote_webcam: document.getElementById("remote_webcam").checked,
-        avatar_url,
-        updated_at: new Date().toISOString()
-      });
-
-      setStatus("Saved.");
-    } catch (e) {
-      console.error(e);
-      setStatus("Error saving profile.");
+  document.getElementById("avatar_file").addEventListener("change", e=>{
+    const file = e.target.files[0];
+    if(file){
+      const preview = URL.createObjectURL(file);
+      document.getElementById("avatar_preview").src = preview;
     }
-  };
+  });
 
-  document.getElementById("delete_avatar_btn").onclick = async () => {
-    try {
-      await deleteAvatar(supabase, slug);
+  document.getElementById("save_btn").onclick = saveProfile;
+  document.getElementById("delete_avatar_btn").onclick = deleteAvatar;
+}
 
-      await supabase.from("player_profiles").update({
-        avatar_url: null
-      }).eq("slug", slug);
+async function saveProfile(){
+  const supabase = auth._client;
+  const status = document.getElementById("status");
+  status.textContent = "Saving...";
 
-      document.getElementById("avatar_preview").removeAttribute("src");
-      setStatus("Avatar deleted.");
-    } catch (e) {
-      console.error(e);
-      setStatus("Error deleting avatar.");
+  try{
+    let avatar_url = existingProfile?.avatar_url || null;
+    const file = document.getElementById("avatar_file").files[0];
+
+    if(file){
+      const path = slug + "/" + Date.now() + "-" + file.name;
+      const { error } = await supabase
+        .storage
+        .from(AVATAR_BUCKET)
+        .upload(path,file,{upsert:true});
+
+      if(error) throw error;
+
+      avatar_url = supabase
+        .storage
+        .from(AVATAR_BUCKET)
+        .getPublicUrl(path).data.publicUrl;
     }
-  };
+
+    const row = {
+      slug,
+      alias: document.getElementById("alias").value.trim() || null,
+      quote: document.getElementById("quote").value.trim() || null,
+      store: document.getElementById("store").value || null,
+      remote_mtgo: document.getElementById("remote_mtgo").checked,
+      remote_webcam: document.getElementById("remote_webcam").checked,
+      avatar_url,
+      updated_at: new Date().toISOString()
+    };
+
+    await supabase.from("player_profiles").upsert(row);
+
+    existingProfile = row;
+    status.textContent = "Saved.";
+  }catch(e){
+    console.error(e);
+    status.textContent = "Save failed. Check console.";
+  }
+}
+
+async function deleteAvatar(){
+  const supabase = auth._client;
+  const status = document.getElementById("status");
+
+  if(!existingProfile?.avatar_url){
+    status.textContent = "No avatar to delete.";
+    return;
+  }
+
+  try{
+    await supabase.from("player_profiles").update({
+      avatar_url: null
+    }).eq("slug", slug);
+
+    document.getElementById("avatar_preview").removeAttribute("src");
+    existingProfile.avatar_url = null;
+
+    status.textContent = "Avatar removed.";
+  }catch(e){
+    console.error(e);
+    status.textContent = "Failed to delete avatar.";
+  }
 }
 
 window.addEventListener("load", init);

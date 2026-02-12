@@ -20,7 +20,6 @@
 
     h1 { margin: 0 0 0.5rem; }
     .meta { opacity: 0.75; margin-bottom: 1.75rem; color: var(--muted); }
-
     .back { margin: 0 0 1.5rem; opacity: 0.9; }
 
     table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
@@ -31,22 +30,39 @@
     }
 
     td.num, th.num { text-align: right; }
-
     #claim-slot { margin-bottom: 1rem; }
 
+    /* Profile Card */
+
     .profile-card {
-      margin-bottom: 1.25rem;
-      padding: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1.25rem;
       border: 1px solid var(--muted);
-      border-radius: 6px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.02);
     }
 
-    .profile-card img {
-      width: 96px;
-      height: 96px;
+    .profile-avatar {
+      width: 110px;
+      height: 110px;
       object-fit: cover;
-      border-radius: 50%;
-      margin-bottom: 0.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--muted);
+      margin-bottom: 0.75rem;
+      display:block;
+    }
+
+    .profile-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .verified {
+      font-size: 0.9rem;
+      opacity: 0.7;
     }
 
     .profile-quote {
@@ -58,7 +74,7 @@
     .profile-meta {
       font-size: 0.9em;
       opacity: 0.75;
-      margin-top: 0.5rem;
+      margin-top: 0.75rem;
     }
   </style>
 </head>
@@ -104,7 +120,6 @@
   </table>
 </div>
 
-<!-- Load canonical league engine -->
 <script src="/leaguetracker/js/player.js"></script>
 
 <script>
@@ -118,6 +133,13 @@ function normalizeSlug(input) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function prettifySlug(slug) {
+  return slug
+    .split("-")
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
 /* --------------------------------------------------
@@ -136,22 +158,34 @@ async function renderProfile(slugRaw) {
     .from("player_profiles")
     .select("*")
     .eq("slug", slug)
-    .single();
+    .maybeSingle();
+
+  const prettySlug = prettifySlug(slug);
+  const displayName = data?.alias || prettySlug;
 
   if (!data) {
     container.innerHTML = "";
     return;
   }
 
+  const remoteList = [
+    data.remote_mtgo ? "MTGO" : null,
+    data.remote_webcam ? "Webcam" : null
+  ].filter(Boolean);
+
   container.innerHTML = `
     <div class="profile-card">
-      ${data.avatar_url ? `<img src="${data.avatar_url}" alt="Avatar">` : ""}
-      <div><strong>${data.display_name || slug}</strong></div>
+      ${data.avatar_url ? `<img src="${data.avatar_url}" class="profile-avatar">` : ""}
+      <div class="profile-name">
+        ${displayName}
+        <span class="verified">✓</span>
+      </div>
+
       ${data.quote ? `<div class="profile-quote">"${data.quote}"</div>` : ""}
+
       <div class="profile-meta">
-        ${data.remote_mtgo ? "MTGO " : ""}
-        ${data.remote_webcam ? "Webcam " : ""}
-        ${data.store ? `<div>Local Store: ${data.store}</div>` : ""}
+        ${remoteList.length ? `<div>Remote: ${remoteList.join(" · ")}</div>` : ""}
+        ${data.store ? `<div>Local: ${data.store}</div>` : ""}
       </div>
     </div>
   `;
@@ -219,8 +253,10 @@ async function renderClaimUI(slugRaw) {
     }
 
     if (latest.status === "rejected") {
-      slot.innerHTML = `<em>Your previous claim was rejected. You may submit again.</em><br>
-      <button id="claim-btn">Request Claim Again</button>`;
+      slot.innerHTML = `
+        <em>Your previous claim was rejected. You may submit again.</em><br>
+        <button id="claim-btn">Request Claim Again</button>
+      `;
 
       document.getElementById("claim-btn").onclick = async () => {
         await supabase.from("player_claims").insert({
