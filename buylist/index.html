@@ -39,13 +39,13 @@ h1 { text-align:center; margin-bottom:0.25rem; }
   margin-bottom:1.25rem;
 }
 
-/* SORT BAR */
-.sort-bar {
+/* VIEW TOGGLE */
+.view-bar {
   text-align:center;
   margin-bottom:1.5rem;
 }
 
-.sort-bar button {
+.view-bar button {
   font-weight:700;
   padding:0.35rem 0.7rem;
   margin:0 0.25rem;
@@ -54,7 +54,7 @@ h1 { text-align:center; margin-bottom:0.25rem; }
   cursor:pointer;
 }
 
-.sort-bar button.active {
+.view-bar button.active {
   background:var(--fg);
   color:var(--bg);
 }
@@ -69,7 +69,7 @@ h1 { text-align:center; margin-bottom:0.25rem; }
 .card-tile { text-align:center; }
 
 .card-tile img {
-  width:60px;   /* 1/8 size */
+  width:60px;
   height:auto;
   border-radius:6px;
   display:block;
@@ -101,6 +101,13 @@ table.buylist {
 
 .hidden { display:none; }
 
+.footer-email {
+  margin-top:3rem;
+  text-align:center;
+  font-size:0.9rem;
+  color:var(--muted);
+}
+
 @media(max-width:1000px){
   .card-grid{grid-template-columns:repeat(6,1fr);}
 }
@@ -121,11 +128,10 @@ table.buylist {
 <h1>Buylist</h1>
 <div class="subtitle">NM only · Prices in CAD</div>
 
-<div class="sort-bar">
-  Sort:
-  <button data-sort="name" class="active">Name</button>
-  <button data-sort="price">Price</button>
-  <button data-sort="date">Set Release</button>
+<div class="view-bar">
+  View:
+  <button id="tile-btn" class="active">Tile</button>
+  <button id="list-btn">List</button>
 </div>
 
 <div id="grid-view" class="card-grid"></div>
@@ -143,7 +149,13 @@ table.buylist {
 <tbody></tbody>
 </table>
 
-</div><script>
+<div class="footer-email">
+  Contact: <a href="mailto:bcpremodermasters@gmail.com">bcpremodermasters@gmail.com</a>
+</div>
+
+</div>
+
+<script>
 
 /* =====================================================
    SOURCE DATA
@@ -195,7 +207,7 @@ const cards = [
 let enriched = [];
 
 /* =====================================================
-   FETCH SCRYFALL DATA (SAFE VERSION)
+   FETCH SCRYFALL DATA
 ===================================================== */
 
 async function enrichCards() {
@@ -210,17 +222,13 @@ async function enrichCards() {
       const res = await fetch(url);
       const data = await res.json();
 
-      if (data.object === "error") {
-        console.warn("Not found:", card.name, card.set);
-        continue;
-      }
+      if (data.object === "error") continue;
 
       enriched.push({
         ...card,
         image: data.image_uris?.small ?? "",
         setName: data.set_name ?? card.set,
-        collector: data.collector_number ?? "",
-        release: data.released_at ? new Date(data.released_at) : new Date(0)
+        collector: data.collector_number ?? ""
       });
 
     } catch (err) {
@@ -240,10 +248,6 @@ function render() {
   renderList();
 }
 
-/* =====================================================
-   GRID
-===================================================== */
-
 function renderGrid() {
 
   const grid = document.getElementById("grid-view");
@@ -251,33 +255,29 @@ function renderGrid() {
 
   enriched.forEach(card => {
 
-    const tile = document.createElement("div");
-    tile.className = "card-tile";
-
-    tile.innerHTML = `
-      <img src="${card.image}" />
-      <div class="card-meta">
-        <div class="card-name">${card.name}</div>
-        <div class="card-set">${card.setName} · #${card.collector}</div>
-        <div>${card.tag}</div>
-        <div class="card-price">$${card.price}</div>
+    grid.insertAdjacentHTML("beforeend", `
+      <div class="card-tile">
+        <img src="${card.image}" />
+        <div class="card-meta">
+          <div class="card-name">${card.name}</div>
+          <div class="card-set">${card.setName} · #${card.collector}</div>
+          <div>${card.tag}</div>
+          <div class="card-price">$${card.price}</div>
+        </div>
       </div>
-    `;
+    `);
 
-    grid.appendChild(tile);
   });
 }
-
-/* =====================================================
-   LIST
-===================================================== */
 
 function renderList() {
 
   const body = document.querySelector("#list-view tbody");
   body.innerHTML = "";
 
-  enriched.forEach((card, i) => {
+  const sorted = [...enriched].sort((a,b)=> b.price - a.price);
+
+  sorted.forEach((card, i) => {
 
     body.insertAdjacentHTML("beforeend", `
       <tr>
@@ -293,36 +293,22 @@ function renderList() {
 }
 
 /* =====================================================
-   SORTING
+   VIEW TOGGLE
 ===================================================== */
 
-document.querySelectorAll(".sort-bar button").forEach(btn => {
+document.getElementById("tile-btn").onclick = () => {
+  document.getElementById("grid-view").classList.remove("hidden");
+  document.getElementById("list-view").classList.add("hidden");
+  document.getElementById("tile-btn").classList.add("active");
+  document.getElementById("list-btn").classList.remove("active");
+};
 
-  btn.onclick = () => {
-
-    document.querySelectorAll(".sort-bar button")
-      .forEach(b => b.classList.remove("active"));
-
-    btn.classList.add("active");
-
-    const type = btn.dataset.sort;
-
-    if (type === "name") {
-      enriched.sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    if (type === "price") {
-      enriched.sort((a, b) => b.price - a.price);
-    }
-
-    if (type === "date") {
-      enriched.sort((a, b) => a.release - b.release);
-    }
-
-    render();
-  };
-
-});
+document.getElementById("list-btn").onclick = () => {
+  document.getElementById("grid-view").classList.add("hidden");
+  document.getElementById("list-view").classList.remove("hidden");
+  document.getElementById("tile-btn").classList.remove("active");
+  document.getElementById("list-btn").classList.add("active");
+};
 
 enrichCards();
 
