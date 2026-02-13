@@ -78,31 +78,26 @@ input, select {
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/auth.js"></script>
+
 <script>
-
-const supabase = window.supabase.createClient(
-  "https://dkzdfhzlewlvfmunywal.supabase.co",
-  "YOUR_PUBLIC_ANON_KEY"
-);
-
-const params = new URLSearchParams(window.location.search);
-const claimSlug = params.get("claim");
 
 async function render() {
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const authSection = document.getElementById("auth-section");
+  if (!window.auth) return;
 
+  const supabase = auth._client;
+  const user = await auth.getUser();
+
+  const authSection = document.getElementById("auth-section");
   authSection.innerHTML = "";
 
   if (!user) {
-
     authSection.innerHTML = `
       <button onclick="login('google')">Google</button>
       <button onclick="login('discord')">Discord</button>
       <button onclick="login('facebook')">Facebook</button>
     `;
-
     return;
   }
 
@@ -111,47 +106,90 @@ async function render() {
     <button onclick="logout()">Sign out</button>
   `;
 
-  loadClaimOptions(user);
-  loadProfile(user);
+  await loadClaimSection(user, supabase);
+  await loadProfileSection(user, supabase);
 }
 
 async function login(provider) {
-  await supabase.auth.signInWithOAuth({
+  await auth._client.auth.signInWithOAuth({
     provider,
     options: { redirectTo: window.location.href }
   });
 }
 
 async function logout() {
-  await supabase.auth.signOut();
+  await auth.signOut();
   location.reload();
 }
 
-async function loadClaimOptions(user) {
+/* ===============================
+   CLAIM SECTION
+================================ */
+
+async function loadClaimSection(user, supabase) {
 
   const claimSection = document.getElementById("claim-section");
   const dropdown = document.getElementById("claim-dropdown");
+  const statusBox = document.getElementById("claim-status");
 
   claimSection.classList.remove("hidden");
 
-  const { data: players } = await supabase
+  /* Check existing claim */
+  const { data: existingClaim } = await supabase
+    .from("player_claims")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingClaim) {
+
+    dropdown.disabled = true;
+    document.getElementById("submit-claim").disabled = true;
+
+    statusBox.classList.remove("hidden");
+
+    if (existingClaim.status === "approved") {
+      statusBox.textContent = "Verified ✓";
+    } else if (existingClaim.status === "pending") {
+      statusBox.textContent = "Verification pending.";
+    } else {
+      statusBox.textContent = "Claim rejected.";
+      dropdown.disabled = false;
+      document.getElementById("submit-claim").disabled = false;
+    }
+
+    return;
+  }
+
+  /* Load available slugs */
+  const { data: allProfiles } = await supabase
     .from("player_profiles")
     .select("slug");
 
+  const { data: approvedClaims } = await supabase
+    .from("player_claims")
+    .select("slug")
+    .eq("status", "approved");
+
+  const taken = new Set((approvedClaims || []).map(c => c.slug));
+
   dropdown.innerHTML = "";
 
-  players.forEach(p => {
+  (allProfiles || []).forEach(p => {
+    if (taken.has(p.slug)) return;
+
     const opt = document.createElement("option");
     opt.value = p.slug;
     opt.textContent = p.slug;
     dropdown.appendChild(opt);
   });
 
-  if (claimSlug) dropdown.value = claimSlug;
-
   document.getElementById("submit-claim").onclick = async () => {
 
     const slug = dropdown.value;
+    if (!slug) return;
 
     await supabase.from("player_claims").insert({
       user_id: user.id,
@@ -159,13 +197,19 @@ async function loadClaimOptions(user) {
       status: "pending"
     });
 
-    const status = document.getElementById("claim-status");
-    status.textContent = "Claim submitted. Awaiting verification.";
-    status.classList.remove("hidden");
+    statusBox.textContent = "Claim submitted. Awaiting verification.";
+    statusBox.classList.remove("hidden");
+
+    dropdown.disabled = true;
+    document.getElementById("submit-claim").disabled = true;
   };
 }
 
-async function loadProfile(user) {
+/* ===============================
+   PROFILE SECTION
+================================ */
+
+async function loadProfileSection(user, supabase) {
 
   const profileSection = document.getElementById("profile-section");
   profileSection.classList.remove("hidden");
@@ -174,7 +218,7 @@ async function loadProfile(user) {
     .from("player_profiles")
     .select("*")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
   if (profile) {
     document.getElementById("display_name").value = profile.display_name || "";
@@ -185,14 +229,13 @@ async function loadProfile(user) {
   document.getElementById("profile-form").onsubmit = async (e) => {
     e.preventDefault();
 
-    const updates = {
+    await supabase.from("player_profiles").upsert({
       user_id: user.id,
-      display_name: document.getElementById("display_name").value,
-      location: document.getElementById("location").value,
-      archetype: document.getElementById("archetype").value
-    };
-
-    await supabase.from("player_profiles").upsert(updates);
+      display_name: document.getElementById("display_name").value.trim(),
+      location: document.getElementById("location").value.trim(),
+      archetype: document.getElementById("archetype").value.trim(),
+      updated_at: new Date().toISOString()
+    });
 
     const status = document.getElementById("profile-status");
     status.textContent = "Profile saved.";
@@ -200,7 +243,8 @@ async function loadProfile(user) {
   };
 }
 
-render();
+window.addEventListener("load", render);
 
 </script>
 </body>
+</html>
