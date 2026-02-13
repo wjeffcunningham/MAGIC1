@@ -7,8 +7,6 @@
 
 <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg" />
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/auth.js"></script>
 
 <style>
 .buylist-wrap {
@@ -35,6 +33,13 @@ h1 { text-align:center; margin-bottom:0.25rem; }
 
 .subtitle {
   text-align:center;
+  color:var(--muted);
+  margin-bottom:0.25rem;
+}
+
+.note {
+  text-align:center;
+  font-size:0.85rem;
   color:var(--muted);
   margin-bottom:0.5rem;
 }
@@ -88,17 +93,35 @@ h1 { text-align:center; margin-bottom:0.25rem; }
   height:auto;
   border-radius:6px;
   display:block;
-  margin:0 auto;
+  margin:0 auto 0.35rem;
 }
 
-.card-meta {
-  margin-top:0.35rem;
-  font-size:0.72rem;
-}
+.card-meta { font-size:0.72rem; }
 
 .card-name { font-weight:700; }
-.card-set { color:var(--muted); }
+
 .card-price { font-weight:700; }
+
+.market {
+  font-size:0.65rem;
+  color:var(--muted);
+}
+
+.arrow-up { color:green; font-weight:700; }
+.arrow-down { color:red; font-weight:700; }
+
+table.buylist {
+  width:100%;
+  border-collapse:collapse;
+}
+
+.buylist th,
+.buylist td {
+  padding:0.5rem 0.75rem;
+  border-bottom:1px solid var(--muted);
+}
+
+.buylist th.sortable { cursor:pointer; }
 
 .hidden { display:none; }
 
@@ -108,19 +131,10 @@ h1 { text-align:center; margin-bottom:0.25rem; }
   font-size:0.9rem;
   color:var(--muted);
 }
-
-@media(max-width:1000px){
-  .card-grid{grid-template-columns:repeat(6,1fr);}
-}
-@media(max-width:700px){
-  .card-grid{grid-template-columns:repeat(4,1fr);}
-}
 </style>
 </head>
 
 <body>
-
-<div id="global-menu-root"></div>
 
 <div class="buylist-wrap">
 
@@ -128,7 +142,8 @@ h1 { text-align:center; margin-bottom:0.25rem; }
 
 <h1>Buylist</h1>
 <div class="subtitle">NM only · Prices in CAD</div>
-<div class="edition-flag">March 2026 Update</div>
+<div class="note">Also buying Premodern legal Full Art Promos, FNM foils.</div>
+<div class="edition-flag">Feb 12 Update</div>
 
 <div class="view-bar">
   View:
@@ -142,147 +157,188 @@ h1 { text-align:center; margin-bottom:0.25rem; }
 <div class="section-title">All Other Buys</div>
 <div id="normal-grid" class="card-grid"></div>
 
+<table id="list-view" class="buylist hidden">
+<thead>
+<tr>
+<th>#</th>
+<th>Card</th>
+<th>Set</th>
+<th id="price-header" class="sortable">Buy Price ↓</th>
+<th>Market (USD)</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
 <div class="footer-email">
-  Contact: <a href="mailto:bcpremodermasters@gmail.com">bcpremodermasters@gmail.com</a>
+Contact: <a href="mailto:bcpremodermasters@gmail.com">bcpremodermasters@gmail.com</a>
 </div>
 
 </div>
 
 <script>
 
-/* =====================================================
-   FULL SOURCE LIST (UNCHANGED)
-===================================================== */
-
 const cards = [
 
-{ name:"Intuition", set:"tmp", tag:"Tutor", price:220, previous:200 },
-{ name:"Survival of the Fittest", set:"wc98", tag:"Tutor", price:80, previous:75 },
-{ name:"Eladamri, Lord of Leaves", set:"tmp", tag:"Lord", price:80, previous:80 },
-{ name:"Aluren", set:"tmp", tag:"Combo", price:50, previous:40 },
-{ name:"Phyrexian Devourer", set:"all", tag:"Combo", price:50, previous:50 },
-{ name:"Powder Keg", set:"uds", tag:"Removal", price:80, previous:80 },
-{ name:"Squee, Goblin Nabob", set:"mmq", tag:"Recursion", price:40, previous:40 },
-{ name:"City of Brass", set:"chr", tag:"Land", price:30, previous:30 },
-{ name:"Recurring Nightmare", set:"wc98", tag:"Recursion", price:25, previous:20 },
-{ name:"Hermit Druid", set:"sth", tag:"Mill", price:10, previous:20 },
-{ name:"Engineered Plague", set:"ulg", tag:"Removal", price:10, previous:10 },
-{ name:"Elvish Champion", set:"inv", tag:"Lord", price:20, previous:20 },
-{ name:"Merchant Scroll", set:"hml", tag:"Tutor", price:5, previous:5 },
-{ name:"Karplusan Forest", set:"dkm", tag:"Land", price:7, previous:7 },
-{ name:"Underground River", set:"dkm", tag:"Land", price:7, previous:7 },
-{ name:"Elvish Spirit Guide", set:"all", tag:"Ramp", price:4, previous:4 },
-{ name:"Snow-Covered Forest", set:"ice", tag:"Land", price:3, previous:3 },
-{ name:"Snow-Covered Island", set:"ice", tag:"Land", price:3, previous:3 },
-{ name:"Snow-Covered Mountain", set:"ice", tag:"Land", price:3, previous:3 },
-{ name:"Snow-Covered Swamp", set:"ice", tag:"Land", price:3, previous:3 },
-{ name:"Snow-Covered Plains", set:"ice", tag:"Land", price:2, previous:2 },
-{ name:"Quirion Dryad", set:"pls", tag:"Creature", price:2, previous:2 },
-{ name:"Fyndhorn Elves", set:"dkm", tag:"Creature", price:2, previous:2 },
-{ name:"Grim Lavamancer", set:"tor", tag:"Creature", price:12, previous:12 },
-{ name:"Academy Rector", set:"wc99", tag:"Tutor", price:25, previous:25 },
-{ name:"Shallow Grave", set:"mir", tag:"Recursion", price:60, previous:40 },
-{ name:"Deranged Hermit", set:"ulg", tag:"Creature", price:70, previous:70 },
-{ name:"Replenish", set:"wc99", tag:"Recursion", price:40, previous:35 },
-{ name:"Humility", set:"tmp", tag:"Control", price:90, previous:60 },
-{ name:"Palinchron", set:"ulg", tag:"Combo", price:80, previous:70 },
-{ name:"Mind Over Matter", set:"exo", tag:"Combo", price:70, previous:65 },
-{ name:"Lotus Vale", set:"wth", tag:"Land", price:40, previous:30 },
-{ name:"Abeyance", set:"wth", tag:"Control", price:15, previous:15 },
-{ name:"Krovikan Horror", set:"all", tag:"Recursion", price:10, previous:10 },
-{ name:"Volrath's Shapeshifter", set:"sth", tag:"Combo", price:35, previous:20 },
-{ name:"Opalescence", set:"uds", tag:"Combo", price:60, previous:50 },
-{ name:"Meditate", set:"tmp", tag:"Draw", price:20, previous:20 },
-{ name:"Sarcomancy", set:"tmp", tag:"Enchantment", price:12, previous:12 }
+{ name:"Intuition", set:"tmp" },
+{ name:"Survival of the Fittest", set:"wc98" },
+{ name:"Recurring Nightmare", set:"wc98" },
+{ name:"Humility", set:"tmp" },
+{ name:"Palinchron", set:"ulg" },
+{ name:"Mind Over Matter", set:"exo" },
+{ name:"Lotus Vale", set:"wth" },
+
+// Snow lands bundled
+{
+  group:"Snow-Covered Lands",
+  override:3,
+  members:[
+    { name:"Snow-Covered Forest", set:"ice" },
+    { name:"Snow-Covered Island", set:"ice" },
+    { name:"Snow-Covered Mountain", set:"ice" },
+    { name:"Snow-Covered Swamp", set:"ice" },
+    { name:"Snow-Covered Plains", set:"ice" }
+  ]
+}
 
 ];
 
 let enriched = [];
+let listSortDesc = true;
 
-function fireIcons(card) {
-  const delta = card.price - card.previous;
-  if (delta >= 25) return " 🔥🔥";
-  if (delta >= 5) return " 🔥";
-  return "";
-}
-
-async function enrichCards() {
+async function enrichCards(){
 
   enriched = [];
 
-  for (let card of cards) {
+  for(let card of cards){
 
-    try {
-
-      const url = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(card.name)}&set=${card.set}`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.object === "error") continue;
-
+    if(card.group){
       enriched.push({
-        ...card,
-        image: data.image_uris?.small ?? "",
-        setName: data.set_name ?? card.set,
-        collector: data.collector_number ?? "",
-        reserved: data.reserved
+        name: card.group,
+        group: true,
+        buyPrice: card.override,
+        market: null,
+        reserved: false
       });
-
-    } catch (err) {
-      console.error("Fetch failed:", card.name, err);
+      continue;
     }
+
+    const url = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(card.name)}&set=${card.set}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.object==="error") continue;
+
+    const marketRaw = parseFloat(data.prices.usd || 0);
+    const market = Math.round(marketRaw);
+    const rulePrice = Math.round(market * 0.80);
+
+    const override = card.override ?? null;
+    const buyPrice = override ?? rulePrice;
+
+    let arrow = "";
+    if(override !== null){
+      if(override > rulePrice) arrow = "<span class='arrow-up'>▲</span>";
+      if(override < rulePrice) arrow = "<span class='arrow-down'>▼</span>";
+    }
+
+    enriched.push({
+      name: card.name,
+      setName: data.set_name,
+      image: data.image_uris?.small ?? "",
+      reserved: data.reserved,
+      market,
+      buyPrice,
+      arrow
+    });
   }
 
-  render();
+  renderTile();
+  renderList();
 }
 
-function render() {
+function renderTile(){
 
   const reservedGrid = document.getElementById("reserved-grid");
   const normalGrid = document.getElementById("normal-grid");
 
-  reservedGrid.innerHTML = "";
-  normalGrid.innerHTML = "";
+  reservedGrid.innerHTML="";
+  normalGrid.innerHTML="";
 
-  enriched.forEach(card => {
+  const reserved = enriched.filter(c=>c.reserved).sort((a,b)=>b.buyPrice-a.buyPrice);
+  const normal = enriched.filter(c=>!c.reserved).sort((a,b)=>b.buyPrice-a.buyPrice);
 
-    const fire = fireIcons(card);
+  function draw(group,target){
+    group.forEach(card=>{
+      if(card.group){
+        target.insertAdjacentHTML("beforeend",`
+          <div class="card-tile">
+            <div class="card-meta">
+              <div class="card-name">${card.name}</div>
+              <div class="card-price">$${card.buyPrice} CAD each</div>
+              <div class="market">5 Ice Age Snow Basics</div>
+            </div>
+          </div>
+        `);
+      } else {
+        target.insertAdjacentHTML("beforeend",`
+          <div class="card-tile">
+            <img src="${card.image}">
+            <div class="card-meta">
+              <div class="card-name">${card.name}</div>
+              <div class="card-price">$${card.buyPrice} ${card.arrow}</div>
+              <div class="market">Market: $${card.market}</div>
+            </div>
+          </div>
+        `);
+      }
+    });
+  }
 
-    const tile = `
-      <div class="card-tile">
-        <img src="${card.image}" />
-        <div class="card-meta">
-          <div class="card-name">${card.name}${fire}</div>
-          <div class="card-set">${card.setName} · #${card.collector}</div>
-          <div>${card.tag}</div>
-          <div class="card-price">$${card.price}</div>
-        </div>
-      </div>
-    `;
+  draw(reserved,reservedGrid);
+  draw(normal,normalGrid);
+}
 
-    if (card.reserved) {
-      reservedGrid.insertAdjacentHTML("beforeend", tile);
-    } else {
-      normalGrid.insertAdjacentHTML("beforeend", tile);
-    }
+function renderList(){
 
+  const body=document.querySelector("#list-view tbody");
+  body.innerHTML="";
+
+  const sorted=[...enriched].sort((a,b)=>listSortDesc?b.buyPrice-a.buyPrice:a.buyPrice-b.buyPrice);
+
+  sorted.forEach((card,i)=>{
+    body.insertAdjacentHTML("beforeend",`
+      <tr>
+        <td>${i+1}</td>
+        <td>${card.name}</td>
+        <td>${card.setName ?? ""}</td>
+        <td>$${card.buyPrice} ${card.arrow ?? ""}</td>
+        <td>${card.market ?? ""}</td>
+      </tr>
+    `);
   });
 }
 
-document.getElementById("tile-btn").onclick = () => {
-  document.getElementById("reserved-grid").classList.remove("hidden");
-  document.getElementById("normal-grid").classList.remove("hidden");
+document.getElementById("price-header").onclick=()=>{
+  listSortDesc=!listSortDesc;
+  document.getElementById("price-header").textContent=listSortDesc?"Buy Price ↓":"Buy Price ↑";
+  renderList();
 };
 
-document.getElementById("list-btn").onclick = () => {
+document.getElementById("tile-btn").onclick=()=>{
+  document.getElementById("reserved-grid").classList.remove("hidden");
+  document.getElementById("normal-grid").classList.remove("hidden");
+  document.getElementById("list-view").classList.add("hidden");
+};
+
+document.getElementById("list-btn").onclick=()=>{
   document.getElementById("reserved-grid").classList.add("hidden");
   document.getElementById("normal-grid").classList.add("hidden");
+  document.getElementById("list-view").classList.remove("hidden");
 };
 
 enrichCards();
 
 </script>
 
-<script src="/js/bcpmm-shell.js"></script>
 </body>
 </html>

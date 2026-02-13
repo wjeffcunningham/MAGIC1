@@ -1,97 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Join · Magic1</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8" />
+<title>Join · Magic1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, Helvetica, Arial, sans-serif;
-      padding: 2rem;
-      max-width: 640px;
-      margin: 0 auto;
-    }
+<style>
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  padding: 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
 
-    h1 {
-      margin-bottom: 0.5rem;
-    }
+h1 { margin-bottom: 0.25rem; }
+section { margin-top: 2rem; }
 
-    button {
-      font-size: 1rem;
-      padding: 0.6rem 1rem;
-      cursor: pointer;
-    }
+button {
+  font-size: 0.95rem;
+  padding: 0.6rem 1rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
 
-    #user {
-      margin-top: 1.5rem;
-    }
-  </style>
+input, select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.3rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.notice {
+  background: #f2f2f2;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.hidden { display: none; }
+</style>
 </head>
+
 <body>
 
 <h1>Join Magic1.ca</h1>
 <p>Create an account or sign in to claim your player profile.</p>
 
-<div id="auth"></div>
-<div id="user"></div>
+<section id="auth-section"></section>
 
-<!-- Supabase JS -->
+<section id="claim-section" class="hidden">
+  <h2>Claim a Player Profile</h2>
+  <div id="claim-status" class="notice hidden"></div>
+  <select id="claim-dropdown"></select>
+  <button id="submit-claim">Submit Claim</button>
+</section>
+
+<section id="profile-section" class="hidden">
+  <h2>Edit Profile</h2>
+  <form id="profile-form">
+    <label>Display Name
+      <input id="display_name" required />
+    </label>
+
+    <label>Location
+      <input id="location" />
+    </label>
+
+    <label>Deck Archetype
+      <input id="archetype" />
+    </label>
+
+    <button type="submit">Save Profile</button>
+  </form>
+  <div id="profile-status" class="notice hidden"></div>
+</section>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  console.log("join.html script loaded");
 
-  // -----------------------------------------------------
-  // Supabase client (renamed to avoid collisions)
-  // -----------------------------------------------------
-  const supabaseClient = window.supabase.createClient(
-    "https://dkzdfhzlewlvfmunywal.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI"
-  );
+const supabase = window.supabase.createClient(
+  "https://dkzdfhzlewlvfmunywal.supabase.co",
+  "YOUR_PUBLIC_ANON_KEY"
+);
 
-  // -----------------------------------------------------
-  // Render auth state
-  // -----------------------------------------------------
-  async function render() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
+const params = new URLSearchParams(window.location.search);
+const claimSlug = params.get("claim");
 
-    const authDiv = document.getElementById("auth");
-    const userDiv = document.getElementById("user");
+async function render() {
 
-    authDiv.innerHTML = "";
-    userDiv.innerHTML = "";
+  const { data: { user } } = await supabase.auth.getUser();
+  const authSection = document.getElementById("auth-section");
 
-    if (!user) {
-      authDiv.innerHTML = `
-        <button id="google">Sign in with Google</button>
-      `;
+  authSection.innerHTML = "";
 
-      document.getElementById("google").onclick = () => {
-        supabaseClient.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            // stay on this page
-            redirectTo: window.location.href
-          }
-        });
-      };
-    } else {
-      userDiv.innerHTML = `
-        <p>Signed in as <strong>${user.email}</strong></p>
-        <button id="logout">Sign out</button>
-      `;
+  if (!user) {
 
-      document.getElementById("logout").onclick = async () => {
-        await supabaseClient.auth.signOut();
-        render();
-      };
-    }
+    authSection.innerHTML = `
+      <button onclick="login('google')">Google</button>
+      <button onclick="login('discord')">Discord</button>
+      <button onclick="login('facebook')">Facebook</button>
+    `;
+
+    return;
   }
 
-  // Initial render + post-OAuth return
-  render();
-</script>
+  authSection.innerHTML = `
+    <p>Signed in as <strong>${user.email}</strong></p>
+    <button onclick="logout()">Sign out</button>
+  `;
 
+  loadClaimOptions(user);
+  loadProfile(user);
+}
+
+async function login(provider) {
+  await supabase.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: window.location.href }
+  });
+}
+
+async function logout() {
+  await supabase.auth.signOut();
+  location.reload();
+}
+
+async function loadClaimOptions(user) {
+
+  const claimSection = document.getElementById("claim-section");
+  const dropdown = document.getElementById("claim-dropdown");
+
+  claimSection.classList.remove("hidden");
+
+  const { data: players } = await supabase
+    .from("player_profiles")
+    .select("slug");
+
+  dropdown.innerHTML = "";
+
+  players.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.slug;
+    opt.textContent = p.slug;
+    dropdown.appendChild(opt);
+  });
+
+  if (claimSlug) dropdown.value = claimSlug;
+
+  document.getElementById("submit-claim").onclick = async () => {
+
+    const slug = dropdown.value;
+
+    await supabase.from("player_claims").insert({
+      user_id: user.id,
+      slug,
+      status: "pending"
+    });
+
+    const status = document.getElementById("claim-status");
+    status.textContent = "Claim submitted. Awaiting verification.";
+    status.classList.remove("hidden");
+  };
+}
+
+async function loadProfile(user) {
+
+  const profileSection = document.getElementById("profile-section");
+  profileSection.classList.remove("hidden");
+
+  const { data: profile } = await supabase
+    .from("player_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profile) {
+    document.getElementById("display_name").value = profile.display_name || "";
+    document.getElementById("location").value = profile.location || "";
+    document.getElementById("archetype").value = profile.archetype || "";
+  }
+
+  document.getElementById("profile-form").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const updates = {
+      user_id: user.id,
+      display_name: document.getElementById("display_name").value,
+      location: document.getElementById("location").value,
+      archetype: document.getElementById("archetype").value
+    };
+
+    await supabase.from("player_profiles").upsert(updates);
+
+    const status = document.getElementById("profile-status");
+    status.textContent = "Profile saved.";
+    status.classList.remove("hidden");
+  };
+}
+
+render();
+
+</script>
 </body>
-</html>

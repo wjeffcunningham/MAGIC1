@@ -120,15 +120,15 @@ async function init() {
     return;
   }
 
-  // ✅ Enforce admin via DB role
-  const { data: role, error: roleErr } = await supabase
+  // Enforce admin role
+  const { data: role } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", user.id)
     .eq("role", "admin")
     .maybeSingle();
 
-  if (roleErr || !role) {
+  if (!role) {
     document.body.innerHTML = "Admin access required.";
     return;
   }
@@ -178,13 +178,27 @@ async function loadPendingClaims(supabase, adminUser) {
 
       if (!confirm("Approve this claim?")) return;
 
-      // Reject other pending claims for this slug
+      // Prevent duplicate approved slug
+      const { data: existingApproved } = await supabase
+        .from("player_claims")
+        .select("id")
+        .eq("slug", claim.slug)
+        .eq("status", "approved")
+        .maybeSingle();
+
+      if (existingApproved) {
+        alert("This slug already has an approved owner.");
+        return;
+      }
+
+      // Reject other pending claims
       await supabase
         .from("player_claims")
         .update({ status: "rejected" })
         .eq("slug", claim.slug)
         .eq("status", "pending");
 
+      // Approve this claim
       await supabase
         .from("player_claims")
         .update({
@@ -265,7 +279,6 @@ async function loadUsers(supabase, adminUser) {
       </td>
     `;
 
-    /* Promote */
     if (!isAdmin) {
       row.querySelector(".promote").onclick = async () => {
         await supabase.from("user_roles").insert({
@@ -276,7 +289,6 @@ async function loadUsers(supabase, adminUser) {
       };
     }
 
-    /* Demote */
     if (isAdmin) {
       row.querySelector(".demote").onclick = async () => {
         if (!confirm("Remove admin privileges?")) return;
@@ -291,23 +303,28 @@ async function loadUsers(supabase, adminUser) {
       };
     }
 
-    /* Force Verify */
     row.querySelector(".approve").onclick = async () => {
 
       const slug = document.getElementById(`slug-${u.id}`).value.trim();
       if (!slug) return alert("Enter slug first.");
 
-      // Prevent duplicate approved slug
-      const { data: existing } = await supabase
+      const { data: existingApproved } = await supabase
         .from("player_claims")
         .select("id")
         .eq("slug", slug)
         .eq("status", "approved")
-        .limit(1);
+        .maybeSingle();
 
-      if (existing && existing.length > 0) {
-        return alert("That slug is already verified.");
+      if (existingApproved) {
+        alert("Slug already has an approved owner.");
+        return;
       }
+
+      await supabase
+        .from("player_claims")
+        .update({ status: "rejected" })
+        .eq("slug", slug)
+        .eq("status", "pending");
 
       await supabase.from("player_claims").insert({
         slug,
@@ -320,7 +337,6 @@ async function loadUsers(supabase, adminUser) {
       init();
     };
 
-    /* Ban */
     row.querySelector(".ban").onclick = async () => {
 
       if (!confirm("Ban this user?")) return;
