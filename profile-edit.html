@@ -153,6 +153,7 @@ button {
 </div>
 
 <script>
+
 const AVATAR_BUCKET = "avatars";
 
 function normalizeSlug(s){
@@ -188,6 +189,7 @@ async function loadAllSlugs(){
 }
 
 async function init(){
+
   if(!window.auth) return;
 
   const supabase = auth._client;
@@ -197,12 +199,21 @@ async function init(){
     return;
   }
 
-  const stateMsg = document.getElementById("state-msg");
+  /* Explicit bindings */
+  const aliasInput = document.getElementById("alias");
+  const quoteInput = document.getElementById("quote");
+  const storeSelect = document.getElementById("store");
+  const remoteMtgo = document.getElementById("remote_mtgo");
+  const remoteWebcam = document.getElementById("remote_webcam");
+  const isPublic = document.getElementById("is_public");
+  const avatarPreview = document.getElementById("avatar_preview");
+  const avatarFile = document.getElementById("avatar_file");
   const slugSelect = document.getElementById("slug-select");
+  const stateMsg = document.getElementById("state-msg");
+  const saveBtn = document.getElementById("save_btn");
+  const statusDiv = document.getElementById("status");
 
-  /* -------------------------
-     Load draft profile
-  ------------------------- */
+  /* Load draft profile */
   const { data: draft } = await supabase
     .from("user_profiles")
     .select("*")
@@ -210,31 +221,31 @@ async function init(){
     .maybeSingle();
 
   if(draft){
-    alias.value = draft.alias || "";
-    quote.value = draft.quote || "";
-    store.value = draft.store || "";
-    remote_mtgo.checked = !!draft.remote_mtgo;
-    remote_webcam.checked = !!draft.remote_webcam;
-    is_public.value = draft.is_public ? "true":"false";
-    if(draft.avatar_url) avatar_preview.src = draft.avatar_url;
+    aliasInput.value = draft.alias || "";
+    quoteInput.value = draft.quote || "";
+    storeSelect.value = draft.store || "";
+    remoteMtgo.checked = !!draft.remote_mtgo;
+    remoteWebcam.checked = !!draft.remote_webcam;
+    isPublic.value = draft.is_public ? "true":"false";
+    if(draft.avatar_url) avatarPreview.src = draft.avatar_url;
   }
 
-  /* -------------------------
-     Claim status
-  ------------------------- */
-  const { data: claim } = await supabase
+  /* Claim resolution (approved always wins) */
+  const { data: approvedClaim } = await supabase
     .from("player_claims")
-    .select("slug,status")
+    .select("slug")
     .eq("user_id", user.id)
-    .order("created_at",{ascending:false})
-    .limit(1)
+    .eq("status","approved")
     .maybeSingle();
 
-  /* -------------------------
-     Load all tournament slugs
-  ------------------------- */
-  const allSlugs = await loadAllSlugs();
+  const { data: pendingClaim } = await supabase
+    .from("player_claims")
+    .select("slug")
+    .eq("user_id", user.id)
+    .eq("status","pending")
+    .maybeSingle();
 
+  const allSlugs = await loadAllSlugs();
   const { data: approvedClaims } = await supabase
     .from("player_claims")
     .select("slug")
@@ -252,30 +263,36 @@ async function init(){
     slugSelect.appendChild(opt);
   });
 
-  if(claim){
-    slugSelect.value = claim.slug;
+  if(approvedClaim){
+    slugSelect.value = approvedClaim.slug;
     slugSelect.disabled = true;
+    stateMsg.textContent = "Verified ✓";
+    stateMsg.className="notice approved";
+    isPublic.disabled = false;
 
-    if(claim.status === "approved"){
-      stateMsg.textContent = "Verified ✓";
-      stateMsg.className="notice approved";
-    } else {
-      stateMsg.textContent = "Verification pending";
-      stateMsg.className="notice pending";
-    }
+    const viewLink = document.createElement("div");
+    viewLink.innerHTML = `<a href="/players/${approvedClaim.slug}.html">View My Player Page</a>`;
+    stateMsg.appendChild(document.createElement("br"));
+    stateMsg.appendChild(viewLink);
+
+  } else if(pendingClaim){
+    slugSelect.value = pendingClaim.slug;
+    slugSelect.disabled = true;
+    stateMsg.textContent = "Verification pending";
+    stateMsg.className="notice pending";
+    isPublic.disabled = true;
   } else {
     stateMsg.textContent = "Not yet verified";
     stateMsg.className="notice none";
+    isPublic.disabled = true;
   }
 
-  /* -------------------------
-     SAVE
-  ------------------------- */
-  save_btn.onclick = async ()=>{
-    status.textContent="Saving…";
+  /* Save */
+  saveBtn.onclick = async ()=>{
+    statusDiv.textContent="Saving…";
 
     let avatar_url = draft?.avatar_url || null;
-    const file = avatar_file.files[0];
+    const file = avatarFile.files[0];
     if(file){
       const path = user.id+"/"+Date.now()+"-"+file.name;
       await supabase.storage.from(AVATAR_BUCKET).upload(path,file,{upsert:true});
@@ -284,17 +301,17 @@ async function init(){
 
     await supabase.from("user_profiles").upsert({
       user_id:user.id,
-      alias:alias.value.trim()||null,
-      quote:quote.value.trim()||null,
-      store:store.value||null,
-      remote_mtgo:remote_mtgo.checked,
-      remote_webcam:remote_webcam.checked,
+      alias:aliasInput.value.trim()||null,
+      quote:quoteInput.value.trim()||null,
+      store:storeSelect.value||null,
+      remote_mtgo:remoteMtgo.checked,
+      remote_webcam:remoteWebcam.checked,
       avatar_url,
-      is_public:is_public.value==="true",
+      is_public:isPublic.value==="true" && approvedClaim,
       updated_at:new Date().toISOString()
     });
 
-    if(slugSelect.value && !claim){
+    if(slugSelect.value && !approvedClaim && !pendingClaim){
       await supabase.from("player_claims").insert({
         slug:slugSelect.value,
         user_id:user.id,
@@ -305,7 +322,7 @@ async function init(){
       stateMsg.className="notice pending";
     }
 
-    status.textContent="Saved.";
+    statusDiv.textContent="Saved.";
   };
 }
 
