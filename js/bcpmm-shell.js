@@ -86,7 +86,9 @@
        Not signed in
     -------------------------------- */
     if (!user) {
-      slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
+      slot.innerHTML = `
+        <a href="/join.html">Sign in / Join</a>
+      `;
       return;
     }
 
@@ -110,55 +112,81 @@
       console.warn("Admin check failed:", e);
     }
 
+    /* -------------------------------
+       Check claim status
+    -------------------------------- */
+    let claimStatus = null;
+    let approvedSlug = null;
+
+    try {
+      const { data: claim } = await supabase
+        .from("player_claims")
+        .select("slug, status")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (claim) {
+        claimStatus = claim.status;
+        if (claim.status === "approved") {
+          approvedSlug = claim.slug;
+        }
+      }
+    } catch (e) {
+      console.warn("Claim check failed:", e);
+    }
+
+    /* -------------------------------
+       Build claim block
+    -------------------------------- */
+    let claimBlock = "";
+
+    if (claimStatus === "approved" && approvedSlug) {
+      claimBlock = `
+        <a href="/players/${approvedSlug}.html">View My Player Page</a><br>
+      `;
+    } else if (claimStatus === "pending") {
+      claimBlock = `
+        <div style="
+          color:#f44336;
+          font-size:0.85em;
+          margin-top:4px;
+          font-weight:600;
+        ">
+          Verification pending
+        </div>
+      `;
+    } else {
+      claimBlock = `
+        <a href="/join.html">Claim a Profile</a><br>
+      `;
+    }
+
+    /* -------------------------------
+       Admin link
+    -------------------------------- */
     let adminLink = "";
     if (isAdmin) {
       adminLink = `<a href="/admin.html">Admin Panel</a><br>`;
     }
 
     /* -------------------------------
-       Check latest verification status
-    -------------------------------- */
-    let verificationNotice = "";
-
-    try {
-      const { data: claim } = await supabase
-        .from("player_claims")
-        .select("status")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (claim && claim.status === "pending") {
-        verificationNotice = `
-          <div style="
-            color:#f44336;
-            font-size:0.85em;
-            margin-top:4px;
-            font-weight:600;
-          ">
-            Verification pending
-          </div>
-        `;
-      }
-    } catch (e) {
-      console.warn("Verification check failed:", e);
-    }
-
-    /* -------------------------------
-       Render
+       Render slot
     -------------------------------- */
     slot.innerHTML = `
-      <span style="opacity:.7; font-size:0.9em">${user.email}</span><br>
+      <span style="opacity:.7; font-size:0.9em">
+        ${user.email}
+      </span><br>
       ${adminLink}
-      <a href="/profile-edit.html">Profile</a><br>
-      ${verificationNotice}
+      ${claimBlock}
+      <a href="/profile-edit.html">Edit Profile</a><br>
       <a href="#" id="logout-link">Sign out</a>
     `;
 
-    document.getElementById("logout-link").onclick = (e) => {
+    document.getElementById("logout-link").onclick = async (e) => {
       e.preventDefault();
-      auth.signOut();
+      await auth.signOut();
       location.reload();
     };
 
