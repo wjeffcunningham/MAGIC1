@@ -3,6 +3,9 @@
   const root = document.getElementById("global-menu-root");
   if (!root) return;
 
+  /* =====================================================
+     Inject Menu HTML
+  ===================================================== */
   root.innerHTML = `
     <div class="menu-button" id="menu-btn">☰</div>
     <div class="menu-overlay" id="menu-overlay"></div>
@@ -27,6 +30,9 @@
   const overlay = document.getElementById("menu-overlay");
   const toggle = document.getElementById("toggle-theme");
 
+  /* =====================================================
+     Menu Open / Close
+  ===================================================== */
   btn.onclick = () => {
     panel.classList.add("open");
     overlay.classList.add("active");
@@ -40,10 +46,9 @@
   closeBtn.onclick = closeMenu;
   overlay.onclick = closeMenu;
 
-  /* =========================
-     Theme
-  ========================= */
-
+  /* =====================================================
+     Theme Handling
+  ===================================================== */
   function syncIcon() {
     toggle.textContent =
       document.body.classList.contains("dark") ? "☀️" : "🌙";
@@ -62,67 +67,77 @@
   if (saved === "dark") document.body.classList.add("dark");
   syncIcon();
 
-  /* =========================
-     AUTH + ROLE + CLAIM
-  ========================= */
-
+  /* =====================================================
+     AUTH + ROLE + CLAIM STATUS
+  ===================================================== */
   (async () => {
 
     if (!window.auth) return;
 
     const slot = document.getElementById("auth-slot");
     const supabase = auth._client;
+
     const user = await auth.getUser();
 
+    /* -------------------------
+       Not signed in
+    -------------------------- */
     if (!user) {
       slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
       return;
     }
 
     /* -------------------------
-       Admin check
+       Admin Check
     -------------------------- */
-
     let isAdmin = false;
 
-    const { data: role } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (role) isAdmin = true;
-
-    /* -------------------------
-       Claim status
-    -------------------------- */
-
-    let approvedSlug = null;
-    let pending = false;
-
-    const { data: approvedClaim } = await supabase
-      .from("player_claims")
-      .select("slug")
-      .eq("user_id", user.id)
-      .eq("status", "approved")
-      .maybeSingle();
-
-    if (approvedClaim) {
-      approvedSlug = approvedClaim.slug;
-    } else {
-      const { data: pendingClaim } = await supabase
-        .from("player_claims")
-        .select("slug")
+    try {
+      const { data: role } = await supabase
+        .from("user_roles")
+        .select("role")
         .eq("user_id", user.id)
-        .eq("status", "pending")
+        .eq("role", "admin")
         .maybeSingle();
 
-      if (pendingClaim) pending = true;
+      if (role) isAdmin = true;
+    } catch (err) {
+      console.warn("Admin lookup failed:", err);
     }
 
     /* -------------------------
-       Blocks
+       Claim Lookup (Safe)
+    -------------------------- */
+    let approvedSlug = null;
+    let pending = false;
+
+    try {
+      const { data: approvedClaim } = await supabase
+        .from("player_claims")
+        .select("slug")
+        .eq("user_id", user.id)
+        .eq("status", "approved")
+        .maybeSingle();
+
+      if (approvedClaim) {
+        approvedSlug = approvedClaim.slug;
+      } else {
+        const { data: pendingClaim } = await supabase
+          .from("player_claims")
+          .select("slug")
+          .eq("user_id", user.id)
+          .eq("status", "pending")
+          .maybeSingle();
+
+        if (pendingClaim) pending = true;
+      }
+
+    } catch (err) {
+      console.warn("Claim lookup failed:", err);
+    }
+
+    /* -------------------------
+       Build Blocks
     -------------------------- */
 
     let adminBlock = "";
@@ -140,18 +155,33 @@
       `;
     } else if (pending) {
       playerBlock = `
-        <div style="color:#c0392b;font-weight:700;font-size:0.85em;margin-top:4px;">
+        <div style="
+          color:#c0392b;
+          font-weight:700;
+          font-size:0.9em;
+          margin-top:6px;
+          display:flex;
+          align-items:center;
+          gap:6px;
+        ">
+          <span style="
+            width:8px;
+            height:8px;
+            background:#c0392b;
+            border-radius:50%;
+            display:inline-block;
+          "></span>
           Player ID verification pending
         </div>
       `;
     }
 
     /* -------------------------
-       Render
+       Render Menu
     -------------------------- */
 
     slot.innerHTML = `
-      <div style="opacity:.7;font-size:0.9em;margin-bottom:6px;">
+      <div style="opacity:.7;font-size:0.9em;margin-bottom:8px;">
         ${user.email}
       </div>
 
