@@ -10,141 +10,140 @@
 <script src="/js/auth.js"></script>
 
 <style>
-body {
+body{
   background:#ffffff;
   color:#000;
   transition:background 0.4s ease;
 }
 
-.wrap {
-  max-width:720px;
+.wrap{
+  max-width:680px;
   margin:6rem auto 4rem;
   padding:0 1.5rem;
 }
 
-.logo {
-  width:80px;
-  margin-bottom:1.5rem;
+.logo{
+  width:70px;
+  margin-bottom:2rem;
 }
 
-h1 {
+h1{
   margin-bottom:0.5rem;
 }
 
-.email-display {
-  font-size:1.15rem;
-  font-weight:800;
+.email-display{
+  font-size:1.2rem;
+  font-weight:900;
   margin-bottom:2rem;
 }
 
-.welcome-banner {
-  font-size:1.6rem;
-  font-weight:800;
+.welcome-banner{
+  font-size:1.7rem;
+  font-weight:900;
   margin-bottom:2rem;
 }
 
-label {
+label{
   display:block;
   font-weight:700;
-  margin:22px 0 6px;
+  margin:24px 0 6px;
 }
 
-input, textarea, select {
+input, textarea, select{
   width:100%;
-  padding:10px 0;
+  padding:8px 0;
   border:none;
   border-bottom:1px solid #ccc;
   background:transparent;
   font-size:1rem;
 }
 
-textarea {
+textarea{
   min-height:80px;
   resize:vertical;
 }
 
-.avatar-box {
+.avatar-box{
   width:130px;
   height:130px;
-  border:1px solid #ccc;
+  border:1px solid #ddd;
   position:relative;
   overflow:hidden;
-  margin-bottom:10px;
-  background:#f8f8f8;
+  background:#f5f5f5;
 }
 
-.avatar-box img {
+.avatar-box img{
   width:100%;
   height:100%;
   object-fit:cover;
   display:block;
 }
 
-.avatar-remove {
+.avatar-remove{
   position:absolute;
   top:8px;
   right:8px;
-  width:30px;
-  height:30px;
+  width:26px;
+  height:26px;
   border-radius:50%;
   background:#c0392b;
   color:#fff;
   border:none;
-  cursor:pointer;
   font-weight:700;
-  font-size:16px;
+  cursor:pointer;
   display:flex;
   align-items:center;
   justify-content:center;
 }
 
-.hidden { display:none; }
+.hidden{ display:none; }
 
-.slider-labels {
+.slider-labels{
   display:flex;
   justify-content:space-between;
   font-size:0.8rem;
   margin-top:4px;
 }
 
-.remote-checks {
+.remote-checks{
   margin-top:12px;
 }
 
-.remote-checks label {
+.remote-checks label{
   font-weight:600;
   display:block;
   margin-top:6px;
 }
 
-.claim-state {
+.claim-state{
   font-weight:700;
   margin-top:12px;
 }
 
-.claim-state.approved { color:#2e7d32; }
-.claim-state.pending { color:#c0392b; }
-.claim-state.none { color:#888; }
+.claim-state.approved{ color:#2e7d32; }
+.claim-state.pending{ color:#c0392b; }
+.claim-state.none{ color:#888; }
 
-.subtle {
+.subtle{
   font-size:0.85rem;
   opacity:.7;
 }
 
-.save-btn {
+.save-btn{
   margin-top:40px;
-  padding:14px;
-  font-weight:800;
+  padding:16px;
+  font-weight:900;
   border:2px solid #000;
   background:#fff;
   cursor:pointer;
   width:100%;
+  font-size:1rem;
 }
 
-hr {
+hr{
   margin:36px 0;
   border:none;
-  border-top:1px solid #ddd;
+  border-top:1px solid #eee;
 }
 </style>
 </head>
@@ -159,16 +158,16 @@ hr {
 <h1>Your Profile</h1>
 
 <div id="welcome" class="welcome-banner hidden">
-  WELCOME TO MAGIC1.ca!
+WELCOME TO MAGIC1.ca!
 </div>
 
-<div class="email-display" id="email-display"></div>
+<div id="email-display" class="email-display"></div>
 
 <!-- Avatar -->
 <label>Avatar</label>
 <div class="avatar-box">
   <img id="avatar-preview">
-  <button class="avatar-remove hidden" id="remove-avatar">×</button>
+  <button id="remove-avatar" class="avatar-remove hidden">×</button>
 </div>
 <input type="file" id="avatar-file" accept="image/*">
 
@@ -180,7 +179,7 @@ hr {
 <label>Quote</label>
 <textarea id="quote"></textarea>
 
-<!-- Local Store -->
+<!-- Store -->
 <label>Local Store</label>
 <select id="store">
   <option value="">—</option>
@@ -189,7 +188,7 @@ hr {
   <option>Freelance Mage</option>
 </select>
 
-<!-- Remote Preference -->
+<!-- Remote -->
 <label>Remote Play Preference (0–5)</label>
 <input type="range" id="remote-slider" min="0" max="5" value="0">
 
@@ -198,29 +197,30 @@ hr {
   <span>1 Rare</span>
   <span>2 Occasional</span>
   <span>3 Neutral</span>
-  <span>4 Prefer Remote</span>
+  <span>4 Prefer</span>
   <span>5 Remote Only</span>
 </div>
 
-<div class="remote-checks hidden" id="remote-checks">
+<div id="remote-checks" class="remote-checks hidden">
   <label><input type="checkbox" id="remote-mtgo"> MTGO</label>
   <label><input type="checkbox" id="remote-webcam"> Webcam</label>
 </div>
 
 <label>
-  <input type="checkbox" disabled> Sponsored (coming soon)
+<input type="checkbox" disabled> Sponsored (coming soon)
 </label>
 
 <hr>
 
 <h2>Claim Tournament Identity</h2>
 <select id="slug-select"></select>
-<div class="claim-state" id="claim-state"></div>
+<div id="claim-state" class="claim-state"></div>
+
 <div id="cancel-wrap" class="hidden">
   <button id="cancel-claim">Cancel Request</button>
 </div>
 
-<button class="save-btn" id="save-profile">SAVE PROFILE</button>
+<button id="save-profile" class="save-btn">SAVE PROFILE</button>
 <div id="save-status" class="subtle"></div>
 
 </div>
@@ -229,8 +229,8 @@ hr {
 const AVATAR_BUCKET="avatars";
 
 function backgroundForRemote(val){
-  const shade=255-(val*10);
-  return `rgb(${shade},${shade},${shade})`;
+  const base=255-(val*12);
+  return `rgb(${base},${base},${base})`;
 }
 
 function prettify(slug){
@@ -278,6 +278,8 @@ async function init(){
     store.value=draft.store||"";
     slider.value=draft.remote_pref||0;
 
+    document.body.style.background=backgroundForRemote(slider.value);
+
     if(draft.remote_pref>0){
       remoteChecks.classList.remove("hidden");
       mtgo.checked=!!draft.remote_mtgo;
@@ -285,12 +287,10 @@ async function init(){
     }
 
     if(draft.avatar_url){
-      avatarPreview.src=draft.avatar_url;
+      avatarPreview.src=draft.avatar_url+"?t="+Date.now();
       removeAvatar.classList.remove("hidden");
     }
   }
-
-  document.body.style.background=backgroundForRemote(slider.value);
 
   slider.oninput=()=>{
     document.body.style.background=backgroundForRemote(slider.value);
@@ -321,6 +321,7 @@ async function init(){
   const { data:slugs }=await supabase.from("player_profiles").select("slug");
   const slugSelect=document.getElementById("slug-select");
   slugSelect.innerHTML='<option value="">— Select yourself —</option>';
+
   (slugs||[]).forEach(p=>{
     const opt=document.createElement("option");
     opt.value=p.slug;
@@ -335,9 +336,22 @@ async function init(){
     const file=avatarFile.files[0];
 
     if(file){
-      const path=user.id+"/"+Date.now()+"-"+file.name;
-      await supabase.storage.from(AVATAR_BUCKET).upload(path,file,{upsert:true});
-      avatar_url=supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
+      const path=`${user.id}/avatar.png`;
+
+      const { error }=await supabase
+        .storage
+        .from(AVATAR_BUCKET)
+        .upload(path,file,{upsert:true});
+
+      if(error){
+        saveStatus.textContent="Avatar upload failed.";
+        return;
+      }
+
+      avatar_url=supabase
+        .storage
+        .from(AVATAR_BUCKET)
+        .getPublicUrl(path).data.publicUrl;
     }
 
     await supabase.from("user_profiles").upsert({
@@ -351,6 +365,10 @@ async function init(){
       avatar_url,
       updated_at:new Date().toISOString()
     });
+
+    if(avatar_url){
+      avatarPreview.src=avatar_url+"?t="+Date.now();
+    }
 
     saveStatus.textContent="Saved.";
   };
