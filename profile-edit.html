@@ -27,9 +27,7 @@ body{
   margin-bottom:2rem;
 }
 
-h1{
-  margin-bottom:0.5rem;
-}
+h1{ margin-bottom:0.5rem; }
 
 .email-display{
   font-size:1.2rem;
@@ -115,6 +113,19 @@ textarea{
   margin-top:6px;
 }
 
+.claim-section{
+  margin-top:40px;
+}
+
+.claim-state{
+  font-weight:700;
+  margin-top:8px;
+}
+
+.claim-state.approved{ color:#2e7d32; }
+.claim-state.pending{ color:#c0392b; }
+.claim-state.none{ color:#888; }
+
 .save-btn{
   margin-top:40px;
   padding:16px;
@@ -149,6 +160,7 @@ WELCOME TO MAGIC1.ca!
 
 <div id="email-display" class="email-display"></div>
 
+<!-- Avatar -->
 <label>Avatar</label>
 <div class="avatar-box">
   <img id="avatar-preview">
@@ -156,12 +168,15 @@ WELCOME TO MAGIC1.ca!
 </div>
 <input type="file" id="avatar-file" accept="image/*">
 
+<!-- Alias -->
 <label>Alias</label>
 <input id="alias">
 
+<!-- Quote -->
 <label>Quote</label>
 <textarea id="quote"></textarea>
 
+<!-- Store -->
 <label>Local Store</label>
 <select id="store">
   <option value="">—</option>
@@ -170,6 +185,7 @@ WELCOME TO MAGIC1.ca!
   <option>Freelance Mage</option>
 </select>
 
+<!-- Remote -->
 <label>Remote Play Preference (0–5)</label>
 <input type="range" id="remote-slider" min="0" max="5" value="0">
 
@@ -189,6 +205,17 @@ WELCOME TO MAGIC1.ca!
 
 <hr>
 
+<!-- CLAIM SECTION -->
+<div class="claim-section">
+  <h2>Tournament Identity</h2>
+
+  <select id="slug-select"></select>
+  <div id="claim-state" class="claim-state"></div>
+
+  <button id="request-claim" class="hidden">Request Verification</button>
+  <button id="cancel-claim" class="hidden">Cancel Request</button>
+</div>
+
 <button id="save-profile" class="save-btn">SAVE PROFILE</button>
 <div id="save-status"></div>
 
@@ -200,6 +227,10 @@ const AVATAR_BUCKET = "avatars";
 function backgroundForRemote(val){
   const base = 255 - (val * 12);
   return `rgb(${base},${base},${base})`;
+}
+
+function prettify(slug){
+  return slug.split("-").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");
 }
 
 async function init(){
@@ -227,6 +258,12 @@ async function init(){
   const removeAvatar = document.getElementById("remove-avatar");
   const saveStatus = document.getElementById("save-status");
 
+  const slugSelect = document.getElementById("slug-select");
+  const claimState = document.getElementById("claim-state");
+  const requestBtn = document.getElementById("request-claim");
+  const cancelBtn = document.getElementById("cancel-claim");
+
+  /* Load profile */
   const { data:draft } = await supabase
     .from("user_profiles")
     .select("*")
@@ -259,7 +296,6 @@ async function init(){
 
   slider.oninput = ()=>{
     document.body.style.background = backgroundForRemote(slider.value);
-
     if(slider.value > 0){
       remoteChecks.classList.remove("hidden");
     } else {
@@ -269,72 +305,95 @@ async function init(){
     }
   };
 
-  avatarFile.onchange = e=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    avatarPreview.src = URL.createObjectURL(file);
-    removeAvatar.classList.remove("hidden");
+  /* Load slugs */
+  const { data:slugs } = await supabase.from("player_profiles").select("slug");
+  slugSelect.innerHTML='<option value="">— Select yourself —</option>';
+  (slugs||[]).forEach(p=>{
+    const opt=document.createElement("option");
+    opt.value=p.slug;
+    opt.textContent=prettify(p.slug);
+    slugSelect.appendChild(opt);
+  });
+
+  /* Claim state */
+  const { data:approved } = await supabase
+    .from("player_claims")
+    .select("slug")
+    .eq("user_id",user.id)
+    .eq("status","approved")
+    .maybeSingle();
+
+  const { data:pending } = await supabase
+    .from("player_claims")
+    .select("slug")
+    .eq("user_id",user.id)
+    .eq("status","pending")
+    .maybeSingle();
+
+  if(approved){
+    slugSelect.value = approved.slug;
+    slugSelect.disabled = true;
+    claimState.textContent = "Verified ✓";
+    claimState.className="claim-state approved";
+  } else if(pending){
+    slugSelect.value = pending.slug;
+    slugSelect.disabled = true;
+    claimState.textContent = "Verification pending";
+    claimState.className="claim-state pending";
+    cancelBtn.classList.remove("hidden");
+  } else {
+    claimState.textContent = "Not verified";
+    claimState.className="claim-state none";
+    requestBtn.classList.remove("hidden");
+  }
+
+  requestBtn.onclick = async ()=>{
+    if(!slugSelect.value) return;
+    await supabase.from("player_claims").insert({
+      user_id:user.id,
+      slug:slugSelect.value,
+      status:"pending"
+    });
+    location.reload();
   };
 
-  removeAvatar.onclick = async ()=>{
-    const path = `${user.id}/avatar.png`;
-    await supabase.storage.from(AVATAR_BUCKET).remove([path]);
-
-    avatarPreview.src = "";
-    avatarFile.value = "";
-    removeAvatar.classList.add("hidden");
-
-    await supabase.from("user_profiles").update({
-      avatar_url: null
-    }).eq("user_id", user.id);
+  cancelBtn.onclick = async ()=>{
+    await supabase
+      .from("player_claims")
+      .delete()
+      .eq("user_id",user.id)
+      .eq("status","pending");
+    location.reload();
   };
 
+  /* Save profile */
   document.getElementById("save-profile").onclick = async ()=>{
-
-    saveStatus.textContent = "Saving…";
+    saveStatus.textContent="Saving…";
 
     let avatar_url = draft?.avatar_url || null;
     const file = avatarFile.files[0];
 
     if(file){
       const path = `${user.id}/avatar.png`;
-
-      const { error } = await supabase.storage
-        .from(AVATAR_BUCKET)
-        .upload(path, file, {
-          upsert: true,
-          contentType: file.type
-        });
-
-      if(error){
-        console.error(error);
-        saveStatus.textContent = "Avatar upload failed.";
-        return;
-      }
-
-      avatar_url = supabase.storage
-        .from(AVATAR_BUCKET)
+      await supabase.storage.from(AVATAR_BUCKET)
+        .upload(path,file,{upsert:true,contentType:file.type});
+      avatar_url = supabase.storage.from(AVATAR_BUCKET)
         .getPublicUrl(path).data.publicUrl;
     }
 
     await supabase.from("user_profiles").upsert({
-      user_id: user.id,
-      alias: alias.value.trim() || null,
-      quote: quote.value.trim() || null,
-      store: store.value || null,
-      remote_pref: parseInt(slider.value),
-      remote_mtgo: mtgo.checked,
-      remote_webcam: webcam.checked,
+      user_id:user.id,
+      alias:alias.value.trim()||null,
+      quote:quote.value.trim()||null,
+      store:store.value||null,
+      remote_pref:parseInt(slider.value),
+      remote_mtgo:mtgo.checked,
+      remote_webcam:webcam.checked,
       avatar_url,
-      updated_at: new Date().toISOString()
+      updated_at:new Date().toISOString()
     });
 
-    if(avatar_url){
-      avatarPreview.src = avatar_url + "?t=" + Date.now();
-      removeAvatar.classList.remove("hidden");
-    }
-
-    saveStatus.textContent = "Saved.";
+    saveStatus.textContent="Saved.";
   };
 }
 

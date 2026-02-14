@@ -3,9 +3,6 @@
   const root = document.getElementById("global-menu-root");
   if (!root) return;
 
-  /* =====================================================
-     Inject menu HTML
-  ===================================================== */
   root.innerHTML = `
     <div class="menu-button" id="menu-btn">☰</div>
     <div class="menu-overlay" id="menu-overlay"></div>
@@ -43,9 +40,10 @@
   closeBtn.onclick = closeMenu;
   overlay.onclick = closeMenu;
 
-  /* =====================================================
+  /* =========================
      Theme
-  ===================================================== */
+  ========================= */
+
   function syncIcon() {
     toggle.textContent =
       document.body.classList.contains("dark") ? "☀️" : "🌙";
@@ -64,9 +62,10 @@
   if (saved === "dark") document.body.classList.add("dark");
   syncIcon();
 
-  /* =====================================================
+  /* =========================
      AUTH + ROLE + CLAIM
-  ===================================================== */
+  ========================= */
+
   (async () => {
 
     if (!window.auth) return;
@@ -76,15 +75,14 @@
     const user = await auth.getUser();
 
     if (!user) {
-      slot.innerHTML = `
-        <a href="/join.html">Sign in / Join</a>
-      `;
+      slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
       return;
     }
 
-    /* -------------------------------
+    /* -------------------------
        Admin check
-    -------------------------------- */
+    -------------------------- */
+
     let isAdmin = false;
 
     const { data: role } = await supabase
@@ -96,10 +94,10 @@
 
     if (role) isAdmin = true;
 
-    /* -------------------------------
-       Claim resolution
-       Approved always wins
-    -------------------------------- */
+    /* -------------------------
+       Claim status
+    -------------------------- */
+
     let approvedSlug = null;
     let pending = false;
 
@@ -123,55 +121,43 @@
       if (pendingClaim) pending = true;
     }
 
-    /* -------------------------------
-       Build claim UI
-    -------------------------------- */
-    let claimBlock = "";
+    /* -------------------------
+       Blocks
+    -------------------------- */
+
+    let adminBlock = "";
+    if (isAdmin) {
+      adminBlock = `<a href="/admin.html">Admin Panel</a><br>`;
+    }
+
+    let playerBlock = "";
 
     if (approvedSlug) {
-      claimBlock = `
-        <a href="/players/${approvedSlug}.html">
+      playerBlock = `
+        <a href="/player.html?player=${approvedSlug}">
           View My Player Page
         </a><br>
       `;
     } else if (pending) {
-      claimBlock = `
-        <div style="
-          color:#f44336;
-          font-weight:700;
-          font-size:0.85em;
-          margin-top:4px;
-        ">
+      playerBlock = `
+        <div style="color:#c0392b;font-weight:700;font-size:0.85em;margin-top:4px;">
           Player ID verification pending
         </div>
       `;
-    } else {
-      claimBlock = `
-        <a href="/profile-edit.html">
-          Claim Tournament Identity
-        </a><br>
-      `;
     }
 
-    /* -------------------------------
-       Admin link
-    -------------------------------- */
-    let adminBlock = "";
-    if (isAdmin) {
-      adminBlock = `
-        <a href="/admin.html">Admin Panel</a><br>
-      `;
-    }
-
-    /* -------------------------------
+    /* -------------------------
        Render
-    -------------------------------- */
+    -------------------------- */
+
     slot.innerHTML = `
-      <span style="opacity:.7;font-size:0.9em">
+      <div style="opacity:.7;font-size:0.9em;margin-bottom:6px;">
         ${user.email}
-      </span><br>
+      </div>
+
       ${adminBlock}
-      ${claimBlock}
+      ${playerBlock}
+
       <a href="/profile-edit.html">Edit Profile</a><br>
       <a href="#" id="logout-link">Sign out</a>
     `;
