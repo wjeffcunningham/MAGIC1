@@ -1,4 +1,5 @@
 (function () {
+
   const root = document.getElementById("global-menu-root");
   if (!root) return;
 
@@ -15,7 +16,6 @@
         <span class="menu-close" id="menu-close">✕</span>
       </div>
 
-      <!-- AUTH SLOT -->
       <div class="menu-item" id="auth-slot"></div>
 
       <div class="menu-item" id="toggle-theme" title="Toggle light/dark">
@@ -30,9 +30,6 @@
   const overlay = document.getElementById("menu-overlay");
   const toggle = document.getElementById("toggle-theme");
 
-  /* =====================================================
-     Menu open / close
-  ===================================================== */
   btn.onclick = () => {
     panel.classList.add("open");
     overlay.classList.add("active");
@@ -47,7 +44,7 @@
   overlay.onclick = closeMenu;
 
   /* =====================================================
-     Theme sync
+     Theme
   ===================================================== */
   function syncIcon() {
     toggle.textContent =
@@ -65,26 +62,19 @@
 
   const saved = localStorage.getItem("bcpmm-theme");
   if (saved === "dark") document.body.classList.add("dark");
-  else document.body.classList.remove("dark");
-
   syncIcon();
 
   /* =====================================================
-     AUTH SLOT FILL
+     AUTH + ROLE + CLAIM
   ===================================================== */
   (async () => {
 
     if (!window.auth) return;
 
     const slot = document.getElementById("auth-slot");
-    if (!slot) return;
-
     const supabase = auth._client;
     const user = await auth.getUser();
 
-    /* -------------------------------
-       Not signed in
-    -------------------------------- */
     if (!user) {
       slot.innerHTML = `
         <a href="/join.html">Sign in / Join</a>
@@ -93,92 +83,94 @@
     }
 
     /* -------------------------------
-       Check admin role
+       Admin check
     -------------------------------- */
     let isAdmin = false;
 
-    try {
-      const { data: role } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+    const { data: role } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
 
-      if (role && role.role === "admin") {
-        isAdmin = true;
-      }
-    } catch (e) {
-      console.warn("Admin check failed:", e);
-    }
+    if (role) isAdmin = true;
 
     /* -------------------------------
-       Check claim status
+       Claim resolution
+       Approved always wins
     -------------------------------- */
-    let claimStatus = null;
     let approvedSlug = null;
+    let pending = false;
 
-    try {
-      const { data: claim } = await supabase
+    const { data: approvedClaim } = await supabase
+      .from("player_claims")
+      .select("slug")
+      .eq("user_id", user.id)
+      .eq("status", "approved")
+      .maybeSingle();
+
+    if (approvedClaim) {
+      approvedSlug = approvedClaim.slug;
+    } else {
+      const { data: pendingClaim } = await supabase
         .from("player_claims")
-        .select("slug, status")
+        .select("slug")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
+        .eq("status", "pending")
         .maybeSingle();
 
-      if (claim) {
-        claimStatus = claim.status;
-        if (claim.status === "approved") {
-          approvedSlug = claim.slug;
-        }
-      }
-    } catch (e) {
-      console.warn("Claim check failed:", e);
+      if (pendingClaim) pending = true;
     }
 
     /* -------------------------------
-       Build claim block
+       Build claim UI
     -------------------------------- */
     let claimBlock = "";
 
-    if (claimStatus === "approved" && approvedSlug) {
+    if (approvedSlug) {
       claimBlock = `
-        <a href="/players/${approvedSlug}.html">View My Player Page</a><br>
+        <a href="/players/${approvedSlug}.html">
+          View My Player Page
+        </a><br>
       `;
-    } else if (claimStatus === "pending") {
+    } else if (pending) {
       claimBlock = `
         <div style="
           color:#f44336;
+          font-weight:700;
           font-size:0.85em;
           margin-top:4px;
-          font-weight:600;
         ">
-          Verification pending
+          Player ID verification pending
         </div>
       `;
     } else {
       claimBlock = `
-        <a href="/join.html">Claim a Profile</a><br>
+        <a href="/profile-edit.html">
+          Claim Tournament Identity
+        </a><br>
       `;
     }
 
     /* -------------------------------
        Admin link
     -------------------------------- */
-    let adminLink = "";
+    let adminBlock = "";
     if (isAdmin) {
-      adminLink = `<a href="/admin.html">Admin Panel</a><br>`;
+      adminBlock = `
+        <a href="/admin.html">Admin Panel</a><br>
+      `;
     }
 
     /* -------------------------------
-       Render slot
+       Render
     -------------------------------- */
     slot.innerHTML = `
-      <span style="opacity:.7; font-size:0.9em">
+      <span style="opacity:.7;font-size:0.9em">
         ${user.email}
       </span><br>
-      ${adminLink}
+      ${adminBlock}
       ${claimBlock}
       <a href="/profile-edit.html">Edit Profile</a><br>
       <a href="#" id="logout-link">Sign out</a>
@@ -191,4 +183,5 @@
     };
 
   })();
+
 })();

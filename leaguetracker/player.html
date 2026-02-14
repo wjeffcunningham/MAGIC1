@@ -75,13 +75,6 @@
       margin-top: 0.75rem;
     }
 
-    .claim-box textarea {
-      width: 100%;
-      max-width: 420px;
-      min-height: 80px;
-      margin-bottom: 8px;
-    }
-
     .pending {
       color: #c0392b;
       font-weight: 700;
@@ -153,55 +146,71 @@ function prettifySlug(slug) {
 }
 
 /* --------------------------------------------------
-   Profile Display
+   Profile Display (NEW CORRECT FLOW)
 -------------------------------------------------- */
 async function renderProfile(slugRaw) {
+
   if (!window.auth) return;
 
   const slug = normalizeSlug(slugRaw);
   const container = document.getElementById("profile-display");
   const supabase = auth._client;
 
-  const { data } = await supabase
-    .from("player_profiles")
-    .select("*")
+  /* Step 1: find approved claim */
+  const { data: claim } = await supabase
+    .from("player_claims")
+    .select("user_id")
     .eq("slug", slug)
+    .eq("status", "approved")
     .maybeSingle();
 
-  if (!data) {
+  if (!claim) {
     container.innerHTML = "";
     return;
   }
 
-  const displayName = data.alias || prettifySlug(slug);
+  /* Step 2: load that user's profile */
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("*")
+    .eq("user_id", claim.user_id)
+    .maybeSingle();
+
+  if (!profile || !profile.is_public) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const displayName = profile.alias || prettifySlug(slug);
 
   const remoteList = [
-    data.remote_mtgo ? "MTGO" : null,
-    data.remote_webcam ? "Webcam" : null
+    profile.remote_mtgo ? "MTGO" : null,
+    profile.remote_webcam ? "Webcam" : null
   ].filter(Boolean);
 
   container.innerHTML = `
     <div class="profile-card">
-      ${data.avatar_url ? `<img src="${data.avatar_url}" class="profile-avatar">` : ""}
+      ${profile.avatar_url ? `<img src="${profile.avatar_url}" class="profile-avatar">` : ""}
       <div class="profile-name">
         ${displayName}
         <span class="verified">✓</span>
       </div>
 
-      ${data.quote ? `<div class="profile-quote">"${data.quote}"</div>` : ""}
+      ${profile.quote ? `<div class="profile-quote">"${profile.quote}"</div>` : ""}
 
       <div class="profile-meta">
         ${remoteList.length ? `<div>Remote: ${remoteList.join(" · ")}</div>` : ""}
-        ${data.store ? `<div>Local Store: ${data.store}</div>` : ""}
+        ${profile.store ? `<div>Local Store: ${profile.store}</div>` : ""}
       </div>
     </div>
   `;
 }
 
 /* --------------------------------------------------
-   Claim System (Note Required)
+   Claim UI (unchanged logic)
 -------------------------------------------------- */
 async function renderClaimUI(slugRaw) {
+
   if (!window.auth) return;
 
   const slug = normalizeSlug(slugRaw);
@@ -238,90 +247,11 @@ async function renderClaimUI(slugRaw) {
     return;
   }
 
-  const { data: mine } = await supabase
-    .from("player_claims")
-    .select("*")
-    .eq("slug", slug)
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1);
-
-  if (mine?.length) {
-    const latest = mine[0];
-
-    if (latest.status === "pending") {
-      slot.innerHTML = `
-        <div class="pending">Verification pending</div>
-        <div style="font-size:0.9em; opacity:.7;">
-          Your claim is awaiting moderator approval.
-        </div>
-      `;
-      return;
-    }
-
-    if (latest.status === "rejected") {
-      slot.innerHTML = `
-        <div class="claim-box">
-          <div style="margin-bottom:6px;">Your previous claim was rejected. Submit again:</div>
-          <textarea id="claim-note" placeholder="Short note to admin..."></textarea>
-          <button id="claim-btn">Submit Claim</button>
-        </div>
-      `;
-
-      document.getElementById("claim-btn").onclick = async () => {
-        const note = document.getElementById("claim-note").value.trim();
-        if (!note) {
-          alert("Please include a short note for verification.");
-          return;
-        }
-
-        await supabase.from("player_claims").insert({
-          slug,
-          user_id: user.id,
-          status: "pending",
-          note,
-          contact_email: user.email
-        });
-
-        renderClaimUI(slug);
-      };
-
-      return;
-    }
-  }
-
   slot.innerHTML = `
-    <div class="claim-box">
-      <div style="font-weight:700; margin-bottom:6px;">
-        Claim your profile
-      </div>
-      <textarea id="claim-note"
-        placeholder="Short note to admin (e.g. 'This is me, Jeff from Stronghold.')"></textarea>
-      <button id="claim-btn">Submit Claim</button>
-      <div style="margin-top:6px; font-size:0.9em; opacity:.7;">
-        A moderator must verify your identity before approval.
-      </div>
+    <div style="margin-top:10px;">
+      <a href="/join.html">Claim this profile</a>
     </div>
   `;
-
-  document.getElementById("claim-btn").onclick = async () => {
-    const note = document.getElementById("claim-note").value.trim();
-
-    if (!note) {
-      alert("Please include a short note for verification.");
-      return;
-    }
-
-    await supabase.from("player_claims").insert({
-      slug,
-      user_id: user.id,
-      status: "pending",
-      note,
-      contact_email: user.email
-    });
-
-    renderClaimUI(slug);
-  };
 }
 
 /* --------------------------------------------------

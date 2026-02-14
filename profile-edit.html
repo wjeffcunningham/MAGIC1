@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Profile · B.C. Premodern Masters</title>
+<title>Profile · Magic1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
@@ -23,7 +23,6 @@ body { background: var(--bg); color: var(--fg); }
   border-radius: 16px;
   padding: 24px;
   background: rgba(255,255,255,0.02);
-  backdrop-filter: blur(6px);
 }
 
 h1 { margin-bottom: 1.5rem; }
@@ -44,60 +43,32 @@ input, textarea, select {
   font-size:0.95rem;
 }
 
-textarea { min-height:100px; }
-
-.avatar-preview {
-  width:130px;
-  height:130px;
-  object-fit:cover;
-  border-radius:12px;
-  border:1px solid var(--muted);
-  display:block;
-  margin-bottom:12px;
-}
-
-.checks {
-  display:flex;
-  gap:18px;
-  margin-top:10px;
-}
-
-.checks label {
-  font-weight:600;
-  display:flex;
-  gap:8px;
-  align-items:center;
-}
+textarea { min-height:90px; }
 
 button {
-  padding:14px 20px;
-  border-radius:14px;
+  padding:12px 18px;
+  border-radius:12px;
   border:1px solid var(--fg);
   background:transparent;
-  font-weight:800;
-  cursor:pointer;
-  margin-top:24px;
-}
-
-.status {
-  margin-top:14px;
-  opacity:.85;
-  font-size:0.9rem;
-}
-
-.notice {
-  margin-bottom:1rem;
   font-weight:700;
+  cursor:pointer;
+  margin-top:16px;
 }
 
-.notice.pending { color:#ff6666; }
+.notice { font-weight:700; margin-bottom:12px; }
 .notice.approved { color:#4caf50; }
+.notice.pending { color:#ff6666; }
 .notice.none { color:#ffaa00; }
 
-.locked {
-  opacity:0.6;
-  pointer-events:none;
+.subtle {
+  font-size:0.85rem;
+  opacity:.7;
+  margin-top:4px;
 }
+
+.hidden { display:none; }
+
+hr { margin:32px 0; opacity:.2; }
 </style>
 </head>
 
@@ -109,7 +80,9 @@ button {
 
 <div class="card">
 
-<div id="state-msg" class="notice"></div>
+<div id="claim-state" class="notice"></div>
+
+<!-- PROFILE FIELDS -->
 
 <label>Alias (public display name)</label>
 <input id="alias">
@@ -118,36 +91,47 @@ button {
 <textarea id="quote"></textarea>
 
 <label>Local Store</label>
-<select id="store">
-  <option value="">—</option>
-  <option>Magic Stronghold</option>
-  <option>Connections Renfrew</option>
-  <option>Freelance Mage</option>
-</select>
+<input id="store">
 
 <label>Remote Play</label>
-<div class="checks">
-  <label><input type="checkbox" id="remote_mtgo"> MTGO</label>
-  <label><input type="checkbox" id="remote_webcam"> Webcam</label>
-</div>
+<select id="remote">
+  <option value="">—</option>
+  <option value="mtgo">MTGO</option>
+  <option value="webcam">Webcam</option>
+  <option value="both">MTGO + Webcam</option>
+</select>
 
 <label>Make this profile public</label>
 <select id="is_public">
-  <option value="true">Yes</option>
   <option value="false">No</option>
+  <option value="true">Yes</option>
 </select>
 
-<label>Avatar</label>
-<img id="avatar_preview" class="avatar-preview">
-<input type="file" id="avatar_file" accept="image/*">
+<hr>
 
-<hr style="margin:30px 0; opacity:.2;">
+<!-- CLAIM SECTION -->
 
-<label>Claim Tournament Identity</label>
+<h2>Claim Tournament Identity</h2>
+<div class="subtle">
+Select yourself from the tournament list.  
+We recommend completing your profile first.
+</div>
+
 <select id="slug-select"></select>
 
-<button id="save_btn">Save Profile</button>
-<div class="status" id="status"></div>
+<div id="claim-controls">
+  <button id="submit-claim">Request Verification</button>
+  <button id="retract-claim" class="hidden">Retract Request</button>
+</div>
+
+<div id="claim-note-wrap" class="hidden">
+  <label>Optional note to admin (150 chars max)</label>
+  <textarea id="claim-note" maxlength="150"></textarea>
+</div>
+
+<button id="save-profile">Save Profile</button>
+
+<div id="save-status" class="subtle"></div>
 
 </div>
 </div>
@@ -156,36 +140,8 @@ button {
 
 const AVATAR_BUCKET = "avatars";
 
-function normalizeSlug(s){
-  return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-}
-
 function prettify(slug){
   return slug.split("-").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");
-}
-
-async function loadAllSlugs(){
-  const paths = [
-    "/leaguetracker/data/raw/events/bcpmm-2026-01-10.json",
-    "/leaguetracker/data/raw/events/connections-2026-01-12.json",
-    "/leaguetracker/data/raw/events/connections-2026-01-26.json",
-    "/leaguetracker/data/raw/events/connections-2026-02-09.json",
-    "/leaguetracker/data/raw/events/stronghold-2026-02-01.json",
-    "/leaguetracker/data/raw/events/bcwl-2026-01-26-r1.json",
-    "/leaguetracker/data/raw/events/bcwl-2026-02-02-r2.json"
-  ];
-
-  const set = new Set();
-
-  for(const p of paths){
-    try{
-      const r = await fetch(p);
-      const j = await r.json();
-      (j.standings||[]).forEach(s=>set.add(normalizeSlug(s.player)));
-    }catch{}
-  }
-
-  return [...set].sort();
 }
 
 async function init(){
@@ -195,25 +151,28 @@ async function init(){
   const supabase = auth._client;
   const user = await auth.getUser();
   if(!user){
-    document.body.innerHTML="Sign in first.";
+    window.location.href = "/join.html";
     return;
   }
 
-  /* Explicit bindings */
-  const aliasInput = document.getElementById("alias");
-  const quoteInput = document.getElementById("quote");
-  const storeSelect = document.getElementById("store");
-  const remoteMtgo = document.getElementById("remote_mtgo");
-  const remoteWebcam = document.getElementById("remote_webcam");
+  const alias = document.getElementById("alias");
+  const quote = document.getElementById("quote");
+  const store = document.getElementById("store");
+  const remote = document.getElementById("remote");
   const isPublic = document.getElementById("is_public");
-  const avatarPreview = document.getElementById("avatar_preview");
-  const avatarFile = document.getElementById("avatar_file");
   const slugSelect = document.getElementById("slug-select");
-  const stateMsg = document.getElementById("state-msg");
-  const saveBtn = document.getElementById("save_btn");
-  const statusDiv = document.getElementById("status");
+  const claimState = document.getElementById("claim-state");
+  const submitClaimBtn = document.getElementById("submit-claim");
+  const retractBtn = document.getElementById("retract-claim");
+  const claimNoteWrap = document.getElementById("claim-note-wrap");
+  const claimNote = document.getElementById("claim-note");
+  const saveBtn = document.getElementById("save-profile");
+  const saveStatus = document.getElementById("save-status");
 
-  /* Load draft profile */
+  /* --------------------------
+     Load Profile Draft
+  -------------------------- */
+
   const { data: draft } = await supabase
     .from("user_profiles")
     .select("*")
@@ -221,112 +180,152 @@ async function init(){
     .maybeSingle();
 
   if(draft){
-    aliasInput.value = draft.alias || "";
-    quoteInput.value = draft.quote || "";
-    storeSelect.value = draft.store || "";
-    remoteMtgo.checked = !!draft.remote_mtgo;
-    remoteWebcam.checked = !!draft.remote_webcam;
-    isPublic.value = draft.is_public ? "true":"false";
-    if(draft.avatar_url) avatarPreview.src = draft.avatar_url;
+    alias.value = draft.alias || "";
+    quote.value = draft.quote || "";
+    store.value = draft.store || "";
+    remote.value = draft.remote || "";
+    isPublic.value = draft.is_public ? "true" : "false";
   }
 
-  /* Claim resolution (approved always wins) */
+  /* --------------------------
+     Claim State
+  -------------------------- */
+
   const { data: approvedClaim } = await supabase
     .from("player_claims")
-    .select("slug")
+    .select("*")
     .eq("user_id", user.id)
     .eq("status","approved")
     .maybeSingle();
 
   const { data: pendingClaim } = await supabase
     .from("player_claims")
-    .select("slug")
+    .select("*")
     .eq("user_id", user.id)
     .eq("status","pending")
     .maybeSingle();
 
-  const allSlugs = await loadAllSlugs();
+  const { data: allProfiles } = await supabase
+    .from("player_profiles")
+    .select("slug");
+
   const { data: approvedClaims } = await supabase
     .from("player_claims")
     .select("slug")
     .eq("status","approved");
 
-  const takenSet = new Set((approvedClaims||[]).map(x=>x.slug));
+  const taken = new Set((approvedClaims||[]).map(x=>x.slug));
 
-  slugSelect.innerHTML='<option value="">— Select your tournament name —</option>';
+  slugSelect.innerHTML = `<option value="">— Select yourself —</option>`;
 
-  allSlugs.forEach(sl=>{
+  (allProfiles||[]).forEach(p=>{
+    if(taken.has(p.slug)) return;
     const opt = document.createElement("option");
-    opt.value = sl;
-    opt.textContent = prettify(sl);
-    if(takenSet.has(sl)) opt.disabled = true;
+    opt.value = p.slug;
+    opt.textContent = prettify(p.slug);
     slugSelect.appendChild(opt);
   });
 
+  /* --------------------------
+     State Handling
+  -------------------------- */
+
   if(approvedClaim){
+
+    claimState.textContent = "Verified ✓";
+    claimState.className = "notice approved";
     slugSelect.value = approvedClaim.slug;
     slugSelect.disabled = true;
-    stateMsg.textContent = "Verified ✓";
-    stateMsg.className="notice approved";
+    submitClaimBtn.classList.add("hidden");
+    claimNoteWrap.classList.add("hidden");
     isPublic.disabled = false;
 
-    const viewLink = document.createElement("div");
-    viewLink.innerHTML = `<a href="/players/${approvedClaim.slug}.html">View My Player Page</a>`;
-    stateMsg.appendChild(document.createElement("br"));
-    stateMsg.appendChild(viewLink);
-
   } else if(pendingClaim){
+
+    claimState.textContent = "Verification pending";
+    claimState.className = "notice pending";
     slugSelect.value = pendingClaim.slug;
     slugSelect.disabled = true;
-    stateMsg.textContent = "Verification pending";
-    stateMsg.className="notice pending";
+    submitClaimBtn.classList.add("hidden");
+    retractBtn.classList.remove("hidden");
+    claimNoteWrap.classList.add("hidden");
     isPublic.disabled = true;
+
   } else {
-    stateMsg.textContent = "Not yet verified";
-    stateMsg.className="notice none";
+
+    claimState.textContent = "Not verified";
+    claimState.className = "notice none";
     isPublic.disabled = true;
+    claimNoteWrap.classList.remove("hidden");
   }
 
-  /* Save */
-  saveBtn.onclick = async ()=>{
-    statusDiv.textContent="Saving…";
+  /* --------------------------
+     Submit Claim
+  -------------------------- */
 
-    let avatar_url = draft?.avatar_url || null;
-    const file = avatarFile.files[0];
-    if(file){
-      const path = user.id+"/"+Date.now()+"-"+file.name;
-      await supabase.storage.from(AVATAR_BUCKET).upload(path,file,{upsert:true});
-      avatar_url = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
-    }
+  submitClaimBtn.onclick = async () => {
 
-    await supabase.from("user_profiles").upsert({
-      user_id:user.id,
-      alias:aliasInput.value.trim()||null,
-      quote:quoteInput.value.trim()||null,
-      store:storeSelect.value||null,
-      remote_mtgo:remoteMtgo.checked,
-      remote_webcam:remoteWebcam.checked,
-      avatar_url,
-      is_public:isPublic.value==="true" && approvedClaim,
-      updated_at:new Date().toISOString()
+    const slug = slugSelect.value;
+    if(!slug) return;
+
+    await supabase.from("player_claims").insert({
+      user_id: user.id,
+      slug,
+      status: "pending",
+      note: claimNote.value.trim() || null
     });
 
-    if(slugSelect.value && !approvedClaim && !pendingClaim){
-      await supabase.from("player_claims").insert({
-        slug:slugSelect.value,
-        user_id:user.id,
-        status:"pending"
-      });
-      slugSelect.disabled=true;
-      stateMsg.textContent="Verification pending";
-      stateMsg.className="notice pending";
-    }
+    slugSelect.disabled = true;
+    submitClaimBtn.classList.add("hidden");
+    retractBtn.classList.remove("hidden");
+    claimState.textContent = "Verification pending";
+    claimState.className = "notice pending";
+    isPublic.disabled = true;
+  };
 
-    statusDiv.textContent="Saved.";
+  /* --------------------------
+     Retract Claim
+  -------------------------- */
+
+  retractBtn.onclick = async () => {
+
+    await supabase
+      .from("player_claims")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("status","pending");
+
+    slugSelect.disabled = false;
+    retractBtn.classList.add("hidden");
+    submitClaimBtn.classList.remove("hidden");
+    claimState.textContent = "Not verified";
+    claimState.className = "notice none";
+  };
+
+  /* --------------------------
+     Save Profile
+  -------------------------- */
+
+  saveBtn.onclick = async () => {
+
+    saveStatus.textContent = "Saving…";
+
+    await supabase.from("user_profiles").upsert({
+      user_id: user.id,
+      alias: alias.value.trim() || null,
+      quote: quote.value.trim() || null,
+      store: store.value.trim() || null,
+      remote: remote.value || null,
+      is_public: isPublic.value === "true" && !!approvedClaim,
+      updated_at: new Date().toISOString()
+    });
+
+    saveStatus.textContent = "Saved.";
   };
 }
 
-window.addEventListener("load",init);
+window.addEventListener("load", init);
+
 </script>
 
 <script src="/js/bcpmm-shell.js"></script>
