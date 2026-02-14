@@ -115,20 +115,6 @@ textarea{
   margin-top:6px;
 }
 
-.claim-state{
-  font-weight:700;
-  margin-top:12px;
-}
-
-.claim-state.approved{ color:#2e7d32; }
-.claim-state.pending{ color:#c0392b; }
-.claim-state.none{ color:#888; }
-
-.subtle{
-  font-size:0.85rem;
-  opacity:.7;
-}
-
 .save-btn{
   margin-top:40px;
   padding:16px;
@@ -163,7 +149,6 @@ WELCOME TO MAGIC1.ca!
 
 <div id="email-display" class="email-display"></div>
 
-<!-- Avatar -->
 <label>Avatar</label>
 <div class="avatar-box">
   <img id="avatar-preview">
@@ -171,15 +156,12 @@ WELCOME TO MAGIC1.ca!
 </div>
 <input type="file" id="avatar-file" accept="image/*">
 
-<!-- Alias -->
 <label>Alias</label>
 <input id="alias">
 
-<!-- Quote -->
 <label>Quote</label>
 <textarea id="quote"></textarea>
 
-<!-- Store -->
 <label>Local Store</label>
 <select id="store">
   <option value="">—</option>
@@ -188,7 +170,6 @@ WELCOME TO MAGIC1.ca!
   <option>Freelance Mage</option>
 </select>
 
-<!-- Remote -->
 <label>Remote Play Preference (0–5)</label>
 <input type="range" id="remote-slider" min="0" max="5" value="0">
 
@@ -206,66 +187,50 @@ WELCOME TO MAGIC1.ca!
   <label><input type="checkbox" id="remote-webcam"> Webcam</label>
 </div>
 
-<label>
-<input type="checkbox" disabled> Sponsored (coming soon)
-</label>
-
 <hr>
 
-<h2>Claim Tournament Identity</h2>
-<select id="slug-select"></select>
-<div id="claim-state" class="claim-state"></div>
-
-<div id="cancel-wrap" class="hidden">
-  <button id="cancel-claim">Cancel Request</button>
-</div>
-
 <button id="save-profile" class="save-btn">SAVE PROFILE</button>
-<div id="save-status" class="subtle"></div>
+<div id="save-status"></div>
 
 </div>
 
 <script>
-const AVATAR_BUCKET="avatars";
+const AVATAR_BUCKET = "avatars";
 
 function backgroundForRemote(val){
-  const base=255-(val*12);
+  const base = 255 - (val * 12);
   return `rgb(${base},${base},${base})`;
-}
-
-function prettify(slug){
-  return slug.split("-").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");
 }
 
 async function init(){
 
   if(!window.auth) return;
 
-  const supabase=auth._client;
-  const user=await auth.getUser();
+  const supabase = auth._client;
+  const user = await auth.getUser();
   if(!user){
     window.location.href="/join.html";
     return;
   }
 
-  document.getElementById("email-display").textContent=user.email;
+  document.getElementById("email-display").textContent = user.email;
 
-  const alias=document.getElementById("alias");
-  const quote=document.getElementById("quote");
-  const store=document.getElementById("store");
-  const slider=document.getElementById("remote-slider");
-  const remoteChecks=document.getElementById("remote-checks");
-  const mtgo=document.getElementById("remote-mtgo");
-  const webcam=document.getElementById("remote-webcam");
-  const avatarPreview=document.getElementById("avatar-preview");
-  const avatarFile=document.getElementById("avatar-file");
-  const removeAvatar=document.getElementById("remove-avatar");
-  const saveStatus=document.getElementById("save-status");
+  const alias = document.getElementById("alias");
+  const quote = document.getElementById("quote");
+  const store = document.getElementById("store");
+  const slider = document.getElementById("remote-slider");
+  const remoteChecks = document.getElementById("remote-checks");
+  const mtgo = document.getElementById("remote-mtgo");
+  const webcam = document.getElementById("remote-webcam");
+  const avatarPreview = document.getElementById("avatar-preview");
+  const avatarFile = document.getElementById("avatar-file");
+  const removeAvatar = document.getElementById("remove-avatar");
+  const saveStatus = document.getElementById("save-status");
 
-  const { data:draft }=await supabase
+  const { data:draft } = await supabase
     .from("user_profiles")
     .select("*")
-    .eq("user_id",user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if(!draft){
@@ -273,108 +238,107 @@ async function init(){
   }
 
   if(draft){
-    alias.value=draft.alias||"";
-    quote.value=draft.quote||"";
-    store.value=draft.store||"";
-    slider.value=draft.remote_pref||0;
+    alias.value = draft.alias || "";
+    quote.value = draft.quote || "";
+    store.value = draft.store || "";
+    slider.value = draft.remote_pref || 0;
 
-    document.body.style.background=backgroundForRemote(slider.value);
+    document.body.style.background = backgroundForRemote(slider.value);
 
-    if(draft.remote_pref>0){
+    if(draft.remote_pref > 0){
       remoteChecks.classList.remove("hidden");
-      mtgo.checked=!!draft.remote_mtgo;
-      webcam.checked=!!draft.remote_webcam;
+      mtgo.checked = !!draft.remote_mtgo;
+      webcam.checked = !!draft.remote_webcam;
     }
 
     if(draft.avatar_url){
-      avatarPreview.src=draft.avatar_url+"?t="+Date.now();
+      avatarPreview.src = draft.avatar_url + "?t=" + Date.now();
       removeAvatar.classList.remove("hidden");
     }
   }
 
-  slider.oninput=()=>{
-    document.body.style.background=backgroundForRemote(slider.value);
+  slider.oninput = ()=>{
+    document.body.style.background = backgroundForRemote(slider.value);
 
-    if(slider.value>0){
+    if(slider.value > 0){
       remoteChecks.classList.remove("hidden");
-    }else{
+    } else {
       remoteChecks.classList.add("hidden");
-      mtgo.checked=false;
-      webcam.checked=false;
+      mtgo.checked = false;
+      webcam.checked = false;
     }
   };
 
-  avatarFile.onchange=e=>{
-    const file=e.target.files[0];
+  avatarFile.onchange = e=>{
+    const file = e.target.files[0];
     if(!file) return;
-    avatarPreview.src=URL.createObjectURL(file);
+    avatarPreview.src = URL.createObjectURL(file);
     removeAvatar.classList.remove("hidden");
   };
 
-  removeAvatar.onclick=()=>{
-    avatarPreview.src="";
-    avatarFile.value="";
+  removeAvatar.onclick = async ()=>{
+    const path = `${user.id}/avatar.png`;
+    await supabase.storage.from(AVATAR_BUCKET).remove([path]);
+
+    avatarPreview.src = "";
+    avatarFile.value = "";
     removeAvatar.classList.add("hidden");
+
+    await supabase.from("user_profiles").update({
+      avatar_url: null
+    }).eq("user_id", user.id);
   };
 
-  /* Slugs */
-  const { data:slugs }=await supabase.from("player_profiles").select("slug");
-  const slugSelect=document.getElementById("slug-select");
-  slugSelect.innerHTML='<option value="">— Select yourself —</option>';
+  document.getElementById("save-profile").onclick = async ()=>{
 
-  (slugs||[]).forEach(p=>{
-    const opt=document.createElement("option");
-    opt.value=p.slug;
-    opt.textContent=prettify(p.slug);
-    slugSelect.appendChild(opt);
-  });
+    saveStatus.textContent = "Saving…";
 
-  document.getElementById("save-profile").onclick=async()=>{
-    saveStatus.textContent="Saving…";
-
-    let avatar_url=draft?.avatar_url||null;
-    const file=avatarFile.files[0];
+    let avatar_url = draft?.avatar_url || null;
+    const file = avatarFile.files[0];
 
     if(file){
-      const path=`${user.id}/avatar.png`;
+      const path = `${user.id}/avatar.png`;
 
-      const { error }=await supabase
-        .storage
+      const { error } = await supabase.storage
         .from(AVATAR_BUCKET)
-        .upload(path,file,{upsert:true});
+        .upload(path, file, {
+          upsert: true,
+          contentType: file.type
+        });
 
       if(error){
-        saveStatus.textContent="Avatar upload failed.";
+        console.error(error);
+        saveStatus.textContent = "Avatar upload failed.";
         return;
       }
 
-      avatar_url=supabase
-        .storage
+      avatar_url = supabase.storage
         .from(AVATAR_BUCKET)
         .getPublicUrl(path).data.publicUrl;
     }
 
     await supabase.from("user_profiles").upsert({
-      user_id:user.id,
-      alias:alias.value.trim()||null,
-      quote:quote.value.trim()||null,
-      store:store.value||null,
-      remote_pref:parseInt(slider.value),
-      remote_mtgo:mtgo.checked,
-      remote_webcam:webcam.checked,
+      user_id: user.id,
+      alias: alias.value.trim() || null,
+      quote: quote.value.trim() || null,
+      store: store.value || null,
+      remote_pref: parseInt(slider.value),
+      remote_mtgo: mtgo.checked,
+      remote_webcam: webcam.checked,
       avatar_url,
-      updated_at:new Date().toISOString()
+      updated_at: new Date().toISOString()
     });
 
     if(avatar_url){
-      avatarPreview.src=avatar_url+"?t="+Date.now();
+      avatarPreview.src = avatar_url + "?t=" + Date.now();
+      removeAvatar.classList.remove("hidden");
     }
 
-    saveStatus.textContent="Saved.";
+    saveStatus.textContent = "Saved.";
   };
 }
 
-window.addEventListener("load",init);
+window.addEventListener("load", init);
 </script>
 
 <script src="/js/bcpmm-shell.js"></script>
