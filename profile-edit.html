@@ -124,7 +124,16 @@ textarea{
 
 .claim-state.approved{ color:#2e7d32; }
 .claim-state.pending{ color:#c0392b; }
-.claim-state.none{ color:#888; }
+.claim-state.none{ color:#666; }
+
+.action-btn{
+  margin-top:14px;
+  padding:10px 14px;
+  border:2px solid #000;
+  background:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
 
 .save-btn{
   margin-top:40px;
@@ -160,7 +169,6 @@ WELCOME TO MAGIC1.ca!
 
 <div id="email-display" class="email-display"></div>
 
-<!-- Avatar -->
 <label>Avatar</label>
 <div class="avatar-box">
   <img id="avatar-preview">
@@ -168,15 +176,12 @@ WELCOME TO MAGIC1.ca!
 </div>
 <input type="file" id="avatar-file" accept="image/*">
 
-<!-- Alias -->
 <label>Alias</label>
 <input id="alias">
 
-<!-- Quote -->
 <label>Quote</label>
 <textarea id="quote"></textarea>
 
-<!-- Store -->
 <label>Local Store</label>
 <select id="store">
   <option value="">—</option>
@@ -185,7 +190,6 @@ WELCOME TO MAGIC1.ca!
   <option>Freelance Mage</option>
 </select>
 
-<!-- Remote -->
 <label>Remote Play Preference (0–5)</label>
 <input type="range" id="remote-slider" min="0" max="5" value="0">
 
@@ -205,15 +209,18 @@ WELCOME TO MAGIC1.ca!
 
 <hr>
 
-<!-- CLAIM SECTION -->
 <div class="claim-section">
   <h2>Tournament Identity</h2>
-
   <select id="slug-select"></select>
   <div id="claim-state" class="claim-state"></div>
 
-  <button id="request-claim" class="hidden">Request Verification</button>
-  <button id="cancel-claim" class="hidden">Cancel Request</button>
+  <button id="request-claim" class="action-btn hidden">
+    Request Verification
+  </button>
+
+  <button id="cancel-claim" class="action-btn hidden">
+    Cancel Request
+  </button>
 </div>
 
 <button id="save-profile" class="save-btn">SAVE PROFILE</button>
@@ -224,9 +231,17 @@ WELCOME TO MAGIC1.ca!
 <script>
 const AVATAR_BUCKET = "avatars";
 
+/* Color spectrum for slider */
 function backgroundForRemote(val){
-  const base = 255 - (val * 12);
-  return `rgb(${base},${base},${base})`;
+  const colors = [
+    "#ffffff",
+    "#e3f2fd",
+    "#e8f5e9",
+    "#fff8e1",
+    "#f3e5f5",
+    "#fdecea"
+  ];
+  return colors[val];
 }
 
 function prettify(slug){
@@ -263,7 +278,6 @@ async function init(){
   const requestBtn = document.getElementById("request-claim");
   const cancelBtn = document.getElementById("cancel-claim");
 
-  /* Load profile */
   const { data:draft } = await supabase
     .from("user_profiles")
     .select("*")
@@ -335,13 +349,15 @@ async function init(){
     slugSelect.disabled = true;
     claimState.textContent = "Verified ✓";
     claimState.className="claim-state approved";
-  } else if(pending){
+  }
+  else if(pending){
     slugSelect.value = pending.slug;
     slugSelect.disabled = true;
     claimState.textContent = "Verification pending";
     claimState.className="claim-state pending";
     cancelBtn.classList.remove("hidden");
-  } else {
+  }
+  else{
     claimState.textContent = "Not verified";
     claimState.className="claim-state none";
     requestBtn.classList.remove("hidden");
@@ -349,12 +365,18 @@ async function init(){
 
   requestBtn.onclick = async ()=>{
     if(!slugSelect.value) return;
+
     await supabase.from("player_claims").insert({
       user_id:user.id,
       slug:slugSelect.value,
       status:"pending"
     });
-    location.reload();
+
+    slugSelect.disabled = true;
+    requestBtn.classList.add("hidden");
+    cancelBtn.classList.remove("hidden");
+    claimState.textContent = "Verification pending";
+    claimState.className="claim-state pending";
   };
 
   cancelBtn.onclick = async ()=>{
@@ -363,38 +385,14 @@ async function init(){
       .delete()
       .eq("user_id",user.id)
       .eq("status","pending");
-    location.reload();
+
+    slugSelect.disabled = false;
+    cancelBtn.classList.add("hidden");
+    requestBtn.classList.remove("hidden");
+    claimState.textContent = "Not verified";
+    claimState.className="claim-state none";
   };
 
-  /* Save profile */
-  document.getElementById("save-profile").onclick = async ()=>{
-    saveStatus.textContent="Saving…";
-
-    let avatar_url = draft?.avatar_url || null;
-    const file = avatarFile.files[0];
-
-    if(file){
-      const path = `${user.id}/avatar.png`;
-      await supabase.storage.from(AVATAR_BUCKET)
-        .upload(path,file,{upsert:true,contentType:file.type});
-      avatar_url = supabase.storage.from(AVATAR_BUCKET)
-        .getPublicUrl(path).data.publicUrl;
-    }
-
-    await supabase.from("user_profiles").upsert({
-      user_id:user.id,
-      alias:alias.value.trim()||null,
-      quote:quote.value.trim()||null,
-      store:store.value||null,
-      remote_pref:parseInt(slider.value),
-      remote_mtgo:mtgo.checked,
-      remote_webcam:webcam.checked,
-      avatar_url,
-      updated_at:new Date().toISOString()
-    });
-
-    saveStatus.textContent="Saved.";
-  };
 }
 
 window.addEventListener("load", init);
