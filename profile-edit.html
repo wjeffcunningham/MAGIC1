@@ -13,20 +13,34 @@
 body { background: var(--bg); color: var(--fg); }
 
 .wrap {
-  max-width: 760px;
+  max-width: 720px;
   margin: 6rem auto 4rem;
-  padding: 0 1.5rem;
+  padding: 0 1.25rem;
 }
 
 .card {
   border: 1px solid var(--muted);
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 18px;
+  padding: 28px;
   background: rgba(255,255,255,0.02);
-  overflow:hidden;
 }
 
-h1 { margin-bottom: 1.5rem; }
+.header-row {
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:20px;
+}
+
+.header-row img {
+  width:42px;
+  height:42px;
+}
+
+.user-email {
+  font-size:1.1rem;
+  font-weight:700;
+}
 
 label {
   display:block;
@@ -36,8 +50,7 @@ label {
 
 input, textarea, select {
   width:100%;
-  max-width:100%;
-  padding:12px 14px;
+  padding:10px 12px;
   border-radius:12px;
   border:1px solid var(--muted);
   background:transparent;
@@ -45,10 +58,10 @@ input, textarea, select {
   font-size:0.95rem;
 }
 
-textarea { min-height:90px; }
+textarea { min-height:90px; resize:vertical; }
 
 button {
-  padding:12px 18px;
+  padding:10px 16px;
   border-radius:12px;
   border:1px solid var(--fg);
   background:transparent;
@@ -57,34 +70,70 @@ button {
   margin-top:16px;
 }
 
-.notice { font-weight:700; margin-bottom:12px; }
+.notice { font-weight:700; margin-bottom:16px; }
 .notice.approved { color:#4caf50; }
 .notice.pending { color:#ff6666; }
 .notice.none { color:#ffaa00; }
 
-.subtle {
-  font-size:0.85rem;
-  opacity:.7;
-  margin-top:4px;
-}
+.subtle { font-size:0.85rem; opacity:.7; }
+
+hr { margin:28px 0; opacity:.15; }
 
 .hidden { display:none; }
 
-hr { margin:32px 0; opacity:.2; }
+/* Avatar */
 
-.avatar-preview {
+.avatar-box {
+  position:relative;
   width:120px;
   height:120px;
-  object-fit:cover;
-  border-radius:12px;
+  border-radius:14px;
   border:1px solid var(--muted);
-  margin-bottom:10px;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,0.04);
+}
+
+.avatar-box img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.avatar-remove {
+  position:absolute;
+  top:6px;
+  right:6px;
+  background:#c0392b;
+  color:white;
+  border:none;
+  border-radius:50%;
+  width:22px;
+  height:22px;
+  font-size:12px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .remote-options {
-  margin-top:10px;
+  margin-top:8px;
   display:flex;
-  gap:18px;
+  gap:16px;
+}
+
+.remote-options label {
+  font-weight:600;
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+
+.sponsored {
+  opacity:0.4;
 }
 </style>
 </head>
@@ -93,14 +142,25 @@ hr { margin:32px 0; opacity:.2; }
 <div id="global-menu-root"></div>
 
 <div class="wrap">
-<h1>Your Profile</h1>
-
 <div class="card">
 
-<div id="account-email" class="subtle"></div>
+<div class="header-row">
+  <img src="/assets/BCPMMsvg.png" alt="BCPMM">
+  <div class="user-email" id="user-email"></div>
+</div>
+
 <div id="claim-state" class="notice"></div>
 
-<!-- PROFILE FIELDS -->
+<!-- Avatar -->
+
+<label>Avatar</label>
+<div class="avatar-box">
+  <img id="avatar-preview" src="" class="hidden">
+  <button id="avatar-remove" class="avatar-remove hidden">✕</button>
+</div>
+<input type="file" id="avatar-file" accept="image/*">
+
+<!-- Profile fields -->
 
 <label>Alias (public display name)</label>
 <input id="alias">
@@ -109,48 +169,42 @@ hr { margin:32px 0; opacity:.2; }
 <textarea id="quote"></textarea>
 
 <label>Local Store</label>
-<input id="store">
-
-<label>Avatar</label>
-<img id="avatar-preview" class="avatar-preview">
-<input type="file" id="avatar-file" accept="image/*">
+<select id="store">
+  <option value="">—</option>
+  <option>Magic Stronghold</option>
+  <option>Connections Renfrew</option>
+  <option>Freelance Mage</option>
+</select>
 
 <label>Remote Play Preference (0–5)</label>
-<input type="range" id="remote-scale" min="0" max="5" value="0">
-<div class="subtle">
-0 = Never · 5 = Only remote
-</div>
+<input type="range" id="remote-slider" min="0" max="5" value="0">
+<div class="subtle">0 = never · 5 = remote only</div>
 
 <div id="remote-options" class="remote-options hidden">
-  <label><input type="checkbox" id="remote_mtgo"> MTGO</label>
-  <label><input type="checkbox" id="remote_webcam"> Webcam</label>
+  <label><input type="checkbox" id="remote-mtgo"> MTGO</label>
+  <label><input type="checkbox" id="remote-webcam"> Webcam</label>
 </div>
 
-<label>Make this profile public</label>
-<select id="is_public">
-  <option value="false">No</option>
-  <option value="true">Yes</option>
-</select>
+<label class="sponsored">
+  <input type="checkbox" disabled> Sponsored (coming soon)
+</label>
 
 <hr>
 
 <h2>Claim Tournament Identity</h2>
 <div class="subtle">
-Select yourself from the tournament list.
-Complete your profile first.
+Select yourself from the tournament list. Complete profile first.
 </div>
 
 <select id="slug-select"></select>
 
-<div>
-  <button id="submit-claim">Request Verification</button>
-  <button id="retract-claim" class="hidden">Retract Request</button>
-</div>
+<button id="submit-claim">Request Verification</button>
+<button id="retract-claim" class="hidden">Retract Request</button>
 
-<div id="claim-note-wrap">
-  <label>Optional note to admin (150 chars max)</label>
-  <textarea id="claim-note" maxlength="150"></textarea>
-</div>
+<label class="hidden" id="claim-note-label">
+Optional note to admin (150 chars max)
+</label>
+<textarea id="claim-note" maxlength="150" class="hidden"></textarea>
 
 <button id="save-profile">Save Profile</button>
 <div id="save-status" class="subtle"></div>
@@ -159,7 +213,6 @@ Complete your profile first.
 </div>
 
 <script>
-
 const AVATAR_BUCKET = "avatars";
 
 function prettify(slug){
@@ -172,34 +225,36 @@ async function init(){
 
   const supabase = auth._client;
   const user = await auth.getUser();
-
   if(!user){
     window.location.href = "/join.html";
     return;
   }
 
-  document.getElementById("account-email").textContent =
-    `Signed in as ${user.email}`;
+  document.getElementById("user-email").textContent = user.email;
+
+  const avatarPreview = document.getElementById("avatar-preview");
+  const avatarFile = document.getElementById("avatar-file");
+  const avatarRemove = document.getElementById("avatar-remove");
 
   const alias = document.getElementById("alias");
   const quote = document.getElementById("quote");
   const store = document.getElementById("store");
-  const remoteScale = document.getElementById("remote-scale");
+  const remoteSlider = document.getElementById("remote-slider");
   const remoteOptions = document.getElementById("remote-options");
-  const remoteMtgo = document.getElementById("remote_mtgo");
-  const remoteWebcam = document.getElementById("remote_webcam");
-  const isPublic = document.getElementById("is_public");
+  const remoteMtgo = document.getElementById("remote-mtgo");
+  const remoteWebcam = document.getElementById("remote-webcam");
+
   const slugSelect = document.getElementById("slug-select");
   const claimState = document.getElementById("claim-state");
-  const submitClaimBtn = document.getElementById("submit-claim");
-  const retractBtn = document.getElementById("retract-claim");
+  const submitClaim = document.getElementById("submit-claim");
+  const retractClaim = document.getElementById("retract-claim");
   const claimNote = document.getElementById("claim-note");
+  const claimNoteLabel = document.getElementById("claim-note-label");
+
   const saveBtn = document.getElementById("save-profile");
   const saveStatus = document.getElementById("save-status");
-  const avatarPreview = document.getElementById("avatar-preview");
-  const avatarFile = document.getElementById("avatar-file");
 
-  /* Load draft */
+  /* Load profile */
 
   const { data: draft } = await supabase
     .from("user_profiles")
@@ -211,39 +266,52 @@ async function init(){
     alias.value = draft.alias || "";
     quote.value = draft.quote || "";
     store.value = draft.store || "";
-    remoteScale.value = draft.remote_preference || 0;
+    remoteSlider.value = draft.remote_pref ?? 0;
     remoteMtgo.checked = !!draft.remote_mtgo;
     remoteWebcam.checked = !!draft.remote_webcam;
-    isPublic.value = draft.is_public ? "true":"false";
-    if(draft.avatar_url) avatarPreview.src = draft.avatar_url;
+
+    if(draft.avatar_url){
+      avatarPreview.src = draft.avatar_url;
+      avatarPreview.classList.remove("hidden");
+      avatarRemove.classList.remove("hidden");
+    }
   }
 
-  remoteOptions.classList.toggle("hidden", remoteScale.value == 0);
+  /* Remote toggle visibility */
+  function updateRemoteVisibility(){
+    if(Number(remoteSlider.value) > 0){
+      remoteOptions.classList.remove("hidden");
+    } else {
+      remoteOptions.classList.add("hidden");
+    }
+  }
+  updateRemoteVisibility();
+  remoteSlider.oninput = updateRemoteVisibility;
 
-  remoteScale.oninput = () => {
-    remoteOptions.classList.toggle("hidden", remoteScale.value == 0);
+  /* Avatar preview */
+  avatarFile.onchange = () => {
+    const file = avatarFile.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      avatarPreview.src = e.target.result;
+      avatarPreview.classList.remove("hidden");
+      avatarRemove.classList.remove("hidden");
+    };
+    reader.readAsDataURL(file);
   };
 
-  /* Claim state */
+  avatarRemove.onclick = () => {
+    avatarPreview.src = "";
+    avatarPreview.classList.add("hidden");
+    avatarRemove.classList.add("hidden");
+    avatarFile.value = "";
+  };
 
-  const { data: approvedClaim } = await supabase
-    .from("player_claims")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status","approved")
-    .maybeSingle();
+  /* Populate slug dropdown */
 
-  const { data: pendingClaim } = await supabase
-    .from("player_claims")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status","pending")
-    .maybeSingle();
-
-  const { data: allProfiles } = await supabase
-    .from("player_profiles")
-    .select("slug");
-
+  const { data: profiles } = await supabase.from("player_profiles").select("slug");
   const { data: approvedClaims } = await supabase
     .from("player_claims")
     .select("slug")
@@ -252,8 +320,7 @@ async function init(){
   const taken = new Set((approvedClaims||[]).map(x=>x.slug));
 
   slugSelect.innerHTML = `<option value="">— Select yourself —</option>`;
-
-  (allProfiles||[]).forEach(p=>{
+  (profiles||[]).forEach(p=>{
     if(taken.has(p.slug)) return;
     const opt = document.createElement("option");
     opt.value = p.slug;
@@ -261,74 +328,30 @@ async function init(){
     slugSelect.appendChild(opt);
   });
 
-  if(approvedClaim){
-    claimState.textContent = "Verified ✓";
-    claimState.className = "notice approved";
-    slugSelect.value = approvedClaim.slug;
-    slugSelect.disabled = true;
-    submitClaimBtn.classList.add("hidden");
-    retractBtn.classList.add("hidden");
-    isPublic.disabled = false;
-  }
-  else if(pendingClaim){
-    claimState.textContent = "Verification pending";
-    claimState.className = "notice pending";
-    slugSelect.value = pendingClaim.slug;
-    slugSelect.disabled = true;
-    submitClaimBtn.classList.add("hidden");
-    retractBtn.classList.remove("hidden");
-    isPublic.disabled = true;
-  }
-  else{
-    claimState.textContent = "Not verified";
-    claimState.className = "notice none";
-    isPublic.disabled = true;
-  }
+  /* Save */
 
-  submitClaimBtn.onclick = async ()=>{
-    if(!slugSelect.value) return;
-    await supabase.from("player_claims").insert({
-      user_id:user.id,
-      slug:slugSelect.value,
-      status:"pending",
-      note:claimNote.value.trim() || null
-    });
-    location.reload();
-  };
+  saveBtn.onclick = async () => {
 
-  retractBtn.onclick = async ()=>{
-    await supabase
-      .from("player_claims")
-      .delete()
-      .eq("user_id",user.id)
-      .eq("status","pending");
-    location.reload();
-  };
-
-  saveBtn.onclick = async ()=>{
     saveStatus.textContent = "Saving…";
 
-    let avatar_url = draft?.avatar_url || null;
+    let avatarUrl = draft?.avatar_url || null;
 
-    const file = avatarFile.files[0];
-    if(file){
-      const path = `${user.id}/${Date.now()}-${file.name}`;
-      await supabase.storage.from(AVATAR_BUCKET).upload(path,file,{upsert:true});
-      avatar_url =
-        supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
+    if(avatarFile.files[0]){
+      const path = user.id + "/" + Date.now() + "-" + avatarFile.files[0].name;
+      await supabase.storage.from(AVATAR_BUCKET).upload(path, avatarFile.files[0], { upsert:true });
+      avatarUrl = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
     }
 
     await supabase.from("user_profiles").upsert({
-      user_id:user.id,
-      alias:alias.value.trim()||null,
-      quote:quote.value.trim()||null,
-      store:store.value.trim()||null,
-      remote_preference:Number(remoteScale.value),
-      remote_mtgo:remoteMtgo.checked,
-      remote_webcam:remoteWebcam.checked,
-      avatar_url,
-      is_public:isPublic.value==="true" && !!approvedClaim,
-      updated_at:new Date().toISOString()
+      user_id: user.id,
+      alias: alias.value.trim() || null,
+      quote: quote.value.trim() || null,
+      store: store.value || null,
+      remote_pref: Number(remoteSlider.value),
+      remote_mtgo: remoteMtgo.checked,
+      remote_webcam: remoteWebcam.checked,
+      avatar_url: avatarUrl,
+      updated_at: new Date().toISOString()
     });
 
     saveStatus.textContent = "Saved.";
@@ -337,7 +360,6 @@ async function init(){
 }
 
 window.addEventListener("load", init);
-
 </script>
 
 <script src="/js/bcpmm-shell.js"></script>
