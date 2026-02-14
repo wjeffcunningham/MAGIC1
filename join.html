@@ -15,67 +15,30 @@ body {
 }
 
 h1 { margin-bottom: 0.25rem; }
-section { margin-top: 2rem; }
 
 button {
   font-size: 0.95rem;
   padding: 0.6rem 1rem;
   margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
   cursor: pointer;
-}
-
-input, select {
-  width: 100%;
-  padding: 0.5rem;
-  margin-top: 0.3rem;
-  margin-bottom: 1rem;
-  font-size: 0.95rem;
 }
 
 .notice {
   background: #f2f2f2;
   padding: 0.75rem;
-  margin-bottom: 1rem;
+  margin-top: 1rem;
   font-size: 0.9rem;
 }
-
-.hidden { display: none; }
 </style>
 </head>
 
 <body>
 
 <h1>Join Magic1.ca</h1>
-<p>Create an account or sign in to claim your player profile.</p>
+<p>Create an account or sign in.</p>
 
-<section id="auth-section"></section>
-
-<section id="claim-section" class="hidden">
-  <h2>Claim a Player Profile</h2>
-  <div id="claim-status" class="notice hidden"></div>
-  <select id="claim-dropdown"></select>
-  <button id="submit-claim">Submit Claim</button>
-</section>
-
-<section id="profile-section" class="hidden">
-  <h2>Edit Profile</h2>
-  <form id="profile-form">
-    <label>Display Name
-      <input id="display_name" required />
-    </label>
-
-    <label>Location
-      <input id="location" />
-    </label>
-
-    <label>Deck Archetype
-      <input id="archetype" />
-    </label>
-
-    <button type="submit">Save Profile</button>
-  </form>
-  <div id="profile-status" class="notice hidden"></div>
-</section>
+<div id="auth-section"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth.js"></script>
@@ -86,161 +49,29 @@ async function render() {
 
   if (!window.auth) return;
 
-  const supabase = auth._client;
   const user = await auth.getUser();
-
   const authSection = document.getElementById("auth-section");
+
   authSection.innerHTML = "";
 
   if (!user) {
     authSection.innerHTML = `
-      <button onclick="login('google')">Google</button>
-      <button onclick="login('discord')">Discord</button>
-      <button onclick="login('facebook')">Facebook</button>
+      <button onclick="login('google')">Continue with Google</button><br>
+      <button onclick="login('discord')">Continue with Discord</button><br>
+      <button onclick="login('facebook')">Continue with Facebook</button>
     `;
     return;
   }
 
-  authSection.innerHTML = `
-    <p>Signed in as <strong>${user.email}</strong></p>
-    <button onclick="logout()">Sign out</button>
-  `;
-
-  await loadClaimSection(user, supabase);
-  await loadProfileSection(user, supabase);
+  // If already signed in, immediately send to profile-edit
+  window.location.href = "/profile-edit.html";
 }
 
 async function login(provider) {
   await auth._client.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: window.location.href }
+    options: { redirectTo: window.location.origin + "/profile-edit.html" }
   });
-}
-
-async function logout() {
-  await auth.signOut();
-  location.reload();
-}
-
-/* ===============================
-   CLAIM SECTION
-================================ */
-
-async function loadClaimSection(user, supabase) {
-
-  const claimSection = document.getElementById("claim-section");
-  const dropdown = document.getElementById("claim-dropdown");
-  const statusBox = document.getElementById("claim-status");
-
-  claimSection.classList.remove("hidden");
-
-  /* Check existing claim */
-  const { data: existingClaim } = await supabase
-    .from("player_claims")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existingClaim) {
-
-    dropdown.disabled = true;
-    document.getElementById("submit-claim").disabled = true;
-
-    statusBox.classList.remove("hidden");
-
-    if (existingClaim.status === "approved") {
-      statusBox.textContent = "Verified ✓";
-    } else if (existingClaim.status === "pending") {
-      statusBox.textContent = "Verification pending.";
-    } else {
-      statusBox.textContent = "Claim rejected.";
-      dropdown.disabled = false;
-      document.getElementById("submit-claim").disabled = false;
-    }
-
-    return;
-  }
-
-  /* Load available slugs */
-  const { data: allProfiles } = await supabase
-    .from("player_profiles")
-    .select("slug");
-
-  const { data: approvedClaims } = await supabase
-    .from("player_claims")
-    .select("slug")
-    .eq("status", "approved");
-
-  const taken = new Set((approvedClaims || []).map(c => c.slug));
-
-  dropdown.innerHTML = "";
-
-  (allProfiles || []).forEach(p => {
-    if (taken.has(p.slug)) return;
-
-    const opt = document.createElement("option");
-    opt.value = p.slug;
-    opt.textContent = p.slug;
-    dropdown.appendChild(opt);
-  });
-
-  document.getElementById("submit-claim").onclick = async () => {
-
-    const slug = dropdown.value;
-    if (!slug) return;
-
-    await supabase.from("player_claims").insert({
-      user_id: user.id,
-      slug,
-      status: "pending"
-    });
-
-    statusBox.textContent = "Claim submitted. Awaiting verification.";
-    statusBox.classList.remove("hidden");
-
-    dropdown.disabled = true;
-    document.getElementById("submit-claim").disabled = true;
-  };
-}
-
-/* ===============================
-   PROFILE SECTION
-================================ */
-
-async function loadProfileSection(user, supabase) {
-
-  const profileSection = document.getElementById("profile-section");
-  profileSection.classList.remove("hidden");
-
-  const { data: profile } = await supabase
-    .from("player_profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (profile) {
-    document.getElementById("display_name").value = profile.display_name || "";
-    document.getElementById("location").value = profile.location || "";
-    document.getElementById("archetype").value = profile.archetype || "";
-  }
-
-  document.getElementById("profile-form").onsubmit = async (e) => {
-    e.preventDefault();
-
-    await supabase.from("player_profiles").upsert({
-      user_id: user.id,
-      display_name: document.getElementById("display_name").value.trim(),
-      location: document.getElementById("location").value.trim(),
-      archetype: document.getElementById("archetype").value.trim(),
-      updated_at: new Date().toISOString()
-    });
-
-    const status = document.getElementById("profile-status");
-    status.textContent = "Profile saved.";
-    status.classList.remove("hidden");
-  };
 }
 
 window.addEventListener("load", render);
