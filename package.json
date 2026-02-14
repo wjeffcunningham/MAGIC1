@@ -1,0 +1,27 @@
+{
+  "name": "magic1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "import-slugs.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wjeffcunningham/MAGIC1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/wjeffcunningham/MAGIC1/issues"
+  },
+  "homepage": "https://github.com/wjeffcunningham/MAGIC1#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.95.3"
+  }
+}
