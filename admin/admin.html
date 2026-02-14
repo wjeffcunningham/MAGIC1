@@ -10,55 +10,58 @@
 <script src="/js/auth.js"></script>
 
 <style>
-body { background: var(--bg); color: var(--fg); }
-
-.wrap {
-  max-width: 1200px;
-  margin: 6rem auto 4rem;
-  padding: 0 1.5rem;
+.wrap{
+  max-width:1200px;
+  margin:6rem auto 4rem;
+  padding:0 1.5rem;
 }
 
-h2 { margin-top: 3rem; }
+h2{ margin-top:3rem; }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
+.notice{
+  margin-bottom:1rem;
+  font-weight:600;
 }
 
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid var(--muted);
-  vertical-align: top;
+.error{
+  color:#c0392b;
+  font-weight:700;
 }
 
-th { text-align: left; opacity: .8; }
-
-button {
-  margin-right: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-  border: none;
-  font-weight: 600;
+.success{
+  color:#2e7d32;
+  font-weight:700;
 }
 
-.approve { background: #4caf50; color: white; }
-.reject  { background: #f44336; color: white; }
-.ban     { background: #000; color: white; }
-.promote { background: #1976d2; color: white; }
-.demote  { background: #777; color: white; }
-
-.small { font-size: 0.85em; opacity: .8; }
-
-.notice {
-  opacity: .7;
-  margin-bottom: 1rem;
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:1rem;
 }
 
-.profile-preview {
-  font-size: 0.85rem;
-  opacity: .85;
-  margin-top: 4px;
+th,td{
+  padding:10px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+}
+
+button{
+  padding:6px 10px;
+  margin-right:6px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.approve{ background:#4caf50;color:white; }
+.reject{ background:#f44336;color:white; }
+.promote{ background:#1976d2;color:white; }
+.demote{ background:#777;color:white; }
+.assign{ background:#000;color:white; }
+
+.assign-box{
+  margin-top:1rem;
+  padding:1rem;
+  border:1px solid #ddd;
 }
 </style>
 </head>
@@ -67,31 +70,38 @@ button {
 <div id="global-menu-root"></div>
 
 <div class="wrap">
+
 <h1>Admin Panel</h1>
-<div class="notice" id="admin-notice"></div>
+
+<div id="admin-status" class="notice"></div>
 
 <h2>Pending Claims</h2>
-
 <table>
 <thead>
 <tr>
   <th>Slug</th>
   <th>Email</th>
   <th>Note</th>
-  <th>Profile Snapshot</th>
   <th>Actions</th>
 </tr>
 </thead>
 <tbody id="claims-body"></tbody>
 </table>
 
-<h2>Users</h2>
+<h2>Manual Claim Assignment</h2>
+<div class="assign-box">
+  <label>User Email</label>
+  <input id="assign-email">
+  <label>Player Slug</label>
+  <input id="assign-slug">
+  <button id="assign-btn" class="assign">Assign & Approve</button>
+</div>
 
+<h2>Users</h2>
 <table>
 <thead>
 <tr>
   <th>Email</th>
-  <th>Status</th>
   <th>Role</th>
   <th>Actions</th>
 </tr>
@@ -108,142 +118,95 @@ async function init(){
   if(!window.auth) return;
 
   const supabase = auth._client;
-  const adminUser = await auth.getUser();
-  if(!adminUser){
-    document.body.innerHTML = "Sign in required.";
+  const user = await auth.getUser();
+  const statusEl = document.getElementById("admin-status");
+
+  if(!user){
+    statusEl.innerHTML = `<span class="error">Sign in required.</span>`;
     return;
   }
 
-  const { data: role } = await supabase
+  const { data: role, error } = await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", adminUser.id)
+    .eq("user_id", user.id)
     .eq("role","admin")
     .maybeSingle();
 
-  if(!role){
-    document.body.innerHTML = "Admin access required.";
+  if(error){
+    statusEl.innerHTML = `<span class="error">Role lookup failed: ${error.message}</span>`;
     return;
   }
 
-  document.getElementById("admin-notice").textContent =
-    `Signed in as ${adminUser.email}`;
+  if(!role){
+    statusEl.innerHTML = `<span class="error">Admin access required.</span>`;
+    return;
+  }
 
-  await loadPendingClaims(supabase, adminUser);
-  await loadUsers(supabase, adminUser);
+  statusEl.innerHTML = `<span class="success">Admin: ${user.email}</span>`;
+
+  await loadClaims(supabase,user);
+  await loadUsers(supabase,user);
+  setupManualAssign(supabase,user);
 }
 
-/* =====================================================
-   Pending Claims (Upgraded)
-===================================================== */
-
-async function loadPendingClaims(supabase, adminUser){
+async function loadClaims(supabase, adminUser){
 
   const { data: claims } = await supabase
     .from("player_claims")
-    .select(`
-      id,
-      slug,
-      user_id,
-      created_at,
-      note
-    `)
+    .select("id,slug,user_id,note,created_at")
     .eq("status","pending")
     .order("created_at",{ascending:true});
 
   const body = document.getElementById("claims-body");
   body.innerHTML = "";
 
-  if(!claims || claims.length === 0){
-    body.innerHTML = `<tr><td colspan="5">No pending claims.</td></tr>`;
+  if(!claims || claims.length===0){
+    body.innerHTML = `<tr><td colspan="4">No pending claims.</td></tr>`;
     return;
   }
 
   for(const claim of claims){
 
-    /* Fetch user email */
     const { data: userRow } = await supabase
       .from("public_users")
       .select("email")
-      .eq("id", claim.user_id)
-      .maybeSingle();
-
-    /* Fetch profile snapshot */
-    const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("alias,quote,store,remote")
-      .eq("user_id", claim.user_id)
+      .eq("id",claim.user_id)
       .maybeSingle();
 
     const row = document.createElement("tr");
-
     row.innerHTML = `
       <td>${claim.slug}</td>
       <td>${userRow?.email || "—"}</td>
-      <td class="small">${claim.note || "—"}</td>
-      <td class="profile-preview">
-        <div><strong>Alias:</strong> ${profile?.alias || "—"}</div>
-        <div><strong>Store:</strong> ${profile?.store || "—"}</div>
-        <div><strong>Remote:</strong> ${profile?.remote || "—"}</div>
-        <div><strong>Quote:</strong> ${profile?.quote || "—"}</div>
-      </td>
+      <td>${claim.note || "—"}</td>
       <td>
         <button class="approve">Approve</button>
         <button class="reject">Reject</button>
       </td>
     `;
 
-    /* Approve */
-    row.querySelector(".approve").onclick = async () => {
-
-      if(!confirm("Approve this claim?")) return;
-
-      /* Prevent duplicate approved slug */
-      const { data: existingApproved } = await supabase
-        .from("player_claims")
-        .select("id")
-        .eq("slug", claim.slug)
-        .eq("status","approved")
-        .maybeSingle();
-
-      if(existingApproved){
-        alert("Slug already approved for someone else.");
-        return;
-      }
-
-      /* Reject other pending claims */
-      await supabase
-        .from("player_claims")
-        .update({ status:"rejected" })
-        .eq("slug", claim.slug)
-        .eq("status","pending");
-
-      /* Approve */
+    row.querySelector(".approve").onclick = async ()=>{
       await supabase
         .from("player_claims")
         .update({
           status:"approved",
-          reviewed_by: adminUser.id,
-          reviewed_at: new Date().toISOString()
+          reviewed_by:adminUser.id,
+          reviewed_at:new Date().toISOString()
         })
-        .eq("id", claim.id);
+        .eq("id",claim.id);
 
       init();
     };
 
-    /* Reject */
-    row.querySelector(".reject").onclick = async () => {
-
-      if(!confirm("Reject this claim?")) return;
-
+    row.querySelector(".reject").onclick = async ()=>{
       await supabase
         .from("player_claims")
         .update({
           status:"rejected",
-          reviewed_by: adminUser.id,
-          reviewed_at: new Date().toISOString()
+          reviewed_by:adminUser.id,
+          reviewed_at:new Date().toISOString()
         })
-        .eq("id", claim.id);
+        .eq("id",claim.id);
 
       init();
     };
@@ -252,60 +215,39 @@ async function loadPendingClaims(supabase, adminUser){
   }
 }
 
-/* =====================================================
-   Users
-===================================================== */
-
-async function loadUsers(supabase, adminUser){
+async function loadUsers(supabase){
 
   const { data: users } = await supabase
     .from("public_users")
-    .select("*")
-    .order("created_at",{ascending:false});
+    .select("*");
 
   const { data: roles } = await supabase
     .from("user_roles")
     .select("*");
 
   const roleMap = new Map();
-  (roles||[]).forEach(r=> roleMap.set(r.user_id, r.role));
+  (roles||[]).forEach(r=>roleMap.set(r.user_id,r.role));
 
   const body = document.getElementById("users-body");
-  body.innerHTML = "";
-
-  if(!users) return;
+  body.innerHTML="";
 
   users.forEach(u=>{
 
-    const isAdmin = roleMap.get(u.id) === "admin";
+    const isAdmin = roleMap.get(u.id)==="admin";
 
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
+    const row=document.createElement("tr");
+    row.innerHTML=`
       <td>${u.email}</td>
-      <td>${u.status || "active"}</td>
-      <td>${isAdmin ? "Admin" : "User"}</td>
+      <td>${isAdmin?"Admin":"User"}</td>
       <td>
         ${isAdmin
           ? '<button class="demote">Remove Admin</button>'
           : '<button class="promote">Make Admin</button>'}
-        <button class="ban">Ban</button>
       </td>
     `;
 
-    if(!isAdmin){
-      row.querySelector(".promote").onclick = async ()=>{
-        await supabase.from("user_roles").insert({
-          user_id: u.id,
-          role:"admin"
-        });
-        init();
-      };
-    }
-
     if(isAdmin){
-      row.querySelector(".demote").onclick = async ()=>{
-        if(!confirm("Remove admin privileges?")) return;
+      row.querySelector(".demote").onclick=async()=>{
         await supabase
           .from("user_roles")
           .delete()
@@ -313,19 +255,47 @@ async function loadUsers(supabase, adminUser){
           .eq("role","admin");
         init();
       };
+    }else{
+      row.querySelector(".promote").onclick=async()=>{
+        await supabase
+          .from("user_roles")
+          .insert({user_id:u.id,role:"admin"});
+        init();
+      };
     }
-
-    row.querySelector(".ban").onclick = async ()=>{
-      if(!confirm("Ban this user?")) return;
-      await supabase
-        .from("public_users")
-        .update({ status:"banned" })
-        .eq("id",u.id);
-      init();
-    };
 
     body.appendChild(row);
   });
+}
+
+function setupManualAssign(supabase,adminUser){
+
+  document.getElementById("assign-btn").onclick=async()=>{
+
+    const email=document.getElementById("assign-email").value.trim();
+    const slug=document.getElementById("assign-slug").value.trim();
+
+    if(!email||!slug) return alert("Fill both fields.");
+
+    const { data:userRow } = await supabase
+      .from("public_users")
+      .select("id")
+      .eq("email",email)
+      .maybeSingle();
+
+    if(!userRow) return alert("User not found.");
+
+    await supabase.from("player_claims").insert({
+      user_id:userRow.id,
+      slug,
+      status:"approved",
+      reviewed_by:adminUser.id,
+      reviewed_at:new Date().toISOString()
+    });
+
+    alert("Claim assigned & approved.");
+    init();
+  };
 }
 
 init();
