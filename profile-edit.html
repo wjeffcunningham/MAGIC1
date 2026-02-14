@@ -11,35 +11,36 @@
 
 <style>
 body {
-  background: #ffffff;
-  color: #000;
-  transition: background 0.4s ease;
+  background:#ffffff;
+  color:#000;
+  transition:background 0.4s ease;
 }
 
 .wrap {
-  max-width: 720px;
-  margin: 6rem auto 4rem;
-  padding: 0 1.5rem;
+  max-width:720px;
+  margin:6rem auto 4rem;
+  padding:0 1.5rem;
 }
 
-.card {
-  padding: 24px 0;
+.logo {
+  width:80px;
+  margin-bottom:1.5rem;
 }
 
 h1 {
-  margin-bottom: 0.5rem;
+  margin-bottom:0.5rem;
 }
 
 .email-display {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 2rem;
+  font-size:1.15rem;
+  font-weight:800;
+  margin-bottom:2rem;
 }
 
 .welcome-banner {
-  font-size: 1.6rem;
-  font-weight: 800;
-  margin-bottom: 2rem;
+  font-size:1.6rem;
+  font-weight:800;
+  margin-bottom:2rem;
 }
 
 label {
@@ -54,46 +55,60 @@ input, textarea, select {
   border:none;
   border-bottom:1px solid #ccc;
   background:transparent;
-  color:inherit;
   font-size:1rem;
 }
 
-textarea { min-height:80px; resize:vertical; }
+textarea {
+  min-height:80px;
+  resize:vertical;
+}
 
 .avatar-box {
-  width:120px;
-  height:120px;
+  width:130px;
+  height:130px;
   border:1px solid #ccc;
   position:relative;
   overflow:hidden;
   margin-bottom:10px;
+  background:#f8f8f8;
 }
 
 .avatar-box img {
   width:100%;
   height:100%;
   object-fit:cover;
+  display:block;
 }
 
 .avatar-remove {
   position:absolute;
-  top:6px;
-  right:6px;
-  width:28px;
-  height:28px;
+  top:8px;
+  right:8px;
+  width:30px;
+  height:30px;
   border-radius:50%;
   background:#c0392b;
   color:#fff;
   border:none;
   cursor:pointer;
   font-weight:700;
+  font-size:16px;
   display:flex;
   align-items:center;
   justify-content:center;
 }
 
+.hidden { display:none; }
+
+.slider-labels {
+  display:flex;
+  justify-content:space-between;
+  font-size:0.8rem;
+  margin-top:4px;
+}
+
 .remote-checks {
-  margin-top:10px;
+  margin-top:12px;
 }
 
 .remote-checks label {
@@ -104,12 +119,12 @@ textarea { min-height:80px; resize:vertical; }
 
 .claim-state {
   font-weight:700;
-  margin-top:10px;
+  margin-top:12px;
 }
 
 .claim-state.approved { color:#2e7d32; }
 .claim-state.pending { color:#c0392b; }
-.claim-state.none { color:#999; }
+.claim-state.none { color:#888; }
 
 .subtle {
   font-size:0.85rem;
@@ -126,9 +141,10 @@ textarea { min-height:80px; resize:vertical; }
   width:100%;
 }
 
-.logo {
-  width:80px;
-  margin-bottom:1rem;
+hr {
+  margin:36px 0;
+  border:none;
+  border-top:1px solid #ddd;
 }
 </style>
 </head>
@@ -142,8 +158,6 @@ textarea { min-height:80px; resize:vertical; }
 
 <h1>Your Profile</h1>
 
-<div class="card">
-
 <div id="welcome" class="welcome-banner hidden">
   WELCOME TO MAGIC1.ca!
 </div>
@@ -152,7 +166,7 @@ textarea { min-height:80px; resize:vertical; }
 
 <!-- Avatar -->
 <label>Avatar</label>
-<div class="avatar-box" id="avatar-box">
+<div class="avatar-box">
   <img id="avatar-preview">
   <button class="avatar-remove hidden" id="remove-avatar">×</button>
 </div>
@@ -179,143 +193,134 @@ textarea { min-height:80px; resize:vertical; }
 <label>Remote Play Preference (0–5)</label>
 <input type="range" id="remote-slider" min="0" max="5" value="0">
 
+<div class="slider-labels">
+  <span>0 No</span>
+  <span>1 Rare</span>
+  <span>2 Occasional</span>
+  <span>3 Neutral</span>
+  <span>4 Prefer Remote</span>
+  <span>5 Remote Only</span>
+</div>
+
 <div class="remote-checks hidden" id="remote-checks">
   <label><input type="checkbox" id="remote-mtgo"> MTGO</label>
   <label><input type="checkbox" id="remote-webcam"> Webcam</label>
 </div>
 
-<!-- Sponsored -->
 <label>
   <input type="checkbox" disabled> Sponsored (coming soon)
 </label>
 
 <hr>
 
-<!-- Claim -->
 <h2>Claim Tournament Identity</h2>
-<div class="subtle">Select yourself from the tournament list.</div>
-
 <select id="slug-select"></select>
-
 <div class="claim-state" id="claim-state"></div>
-
 <div id="cancel-wrap" class="hidden">
   <button id="cancel-claim">Cancel Request</button>
 </div>
 
 <button class="save-btn" id="save-profile">SAVE PROFILE</button>
-
 <div id="save-status" class="subtle"></div>
 
 </div>
-</div>
 
 <script>
-const AVATAR_BUCKET = "avatars";
+const AVATAR_BUCKET="avatars";
+
+function backgroundForRemote(val){
+  const shade=255-(val*10);
+  return `rgb(${shade},${shade},${shade})`;
+}
 
 function prettify(slug){
   return slug.split("-").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");
-}
-
-function backgroundForRemote(val){
-  const shade = 255 - (val * 12);
-  return `rgb(${shade}, ${shade}, ${shade})`;
 }
 
 async function init(){
 
   if(!window.auth) return;
 
-  const supabase = auth._client;
-  const user = await auth.getUser();
+  const supabase=auth._client;
+  const user=await auth.getUser();
   if(!user){
     window.location.href="/join.html";
     return;
   }
 
-  document.getElementById("email-display").textContent = user.email;
+  document.getElementById("email-display").textContent=user.email;
 
-  const { data: draft } = await supabase
+  const alias=document.getElementById("alias");
+  const quote=document.getElementById("quote");
+  const store=document.getElementById("store");
+  const slider=document.getElementById("remote-slider");
+  const remoteChecks=document.getElementById("remote-checks");
+  const mtgo=document.getElementById("remote-mtgo");
+  const webcam=document.getElementById("remote-webcam");
+  const avatarPreview=document.getElementById("avatar-preview");
+  const avatarFile=document.getElementById("avatar-file");
+  const removeAvatar=document.getElementById("remove-avatar");
+  const saveStatus=document.getElementById("save-status");
+
+  const { data:draft }=await supabase
     .from("user_profiles")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id",user.id)
     .maybeSingle();
 
   if(!draft){
     document.getElementById("welcome").classList.remove("hidden");
   }
 
-  const alias = document.getElementById("alias");
-  const quote = document.getElementById("quote");
-  const store = document.getElementById("store");
-  const slider = document.getElementById("remote-slider");
-  const remoteChecks = document.getElementById("remote-checks");
-  const mtgo = document.getElementById("remote-mtgo");
-  const webcam = document.getElementById("remote-webcam");
-  const avatarPreview = document.getElementById("avatar-preview");
-  const avatarFile = document.getElementById("avatar-file");
-  const removeAvatar = document.getElementById("remove-avatar");
-  const saveStatus = document.getElementById("save-status");
-
   if(draft){
-    alias.value = draft.alias || "";
-    quote.value = draft.quote || "";
-    store.value = draft.store || "";
-    slider.value = draft.remote_pref || 0;
+    alias.value=draft.alias||"";
+    quote.value=draft.quote||"";
+    store.value=draft.store||"";
+    slider.value=draft.remote_pref||0;
+
+    if(draft.remote_pref>0){
+      remoteChecks.classList.remove("hidden");
+      mtgo.checked=!!draft.remote_mtgo;
+      webcam.checked=!!draft.remote_webcam;
+    }
+
     if(draft.avatar_url){
-      avatarPreview.src = draft.avatar_url;
+      avatarPreview.src=draft.avatar_url;
       removeAvatar.classList.remove("hidden");
     }
   }
 
-  document.body.style.background = backgroundForRemote(slider.value);
+  document.body.style.background=backgroundForRemote(slider.value);
 
-  slider.oninput = () => {
-    document.body.style.background = backgroundForRemote(slider.value);
-    if(slider.value > 0){
+  slider.oninput=()=>{
+    document.body.style.background=backgroundForRemote(slider.value);
+
+    if(slider.value>0){
       remoteChecks.classList.remove("hidden");
-    } else {
+    }else{
       remoteChecks.classList.add("hidden");
       mtgo.checked=false;
       webcam.checked=false;
     }
   };
 
-  avatarFile.onchange = e => {
-    const file = e.target.files[0];
+  avatarFile.onchange=e=>{
+    const file=e.target.files[0];
     if(!file) return;
-    avatarPreview.src = URL.createObjectURL(file);
+    avatarPreview.src=URL.createObjectURL(file);
     removeAvatar.classList.remove("hidden");
   };
 
-  removeAvatar.onclick = () => {
+  removeAvatar.onclick=()=>{
     avatarPreview.src="";
     avatarFile.value="";
     removeAvatar.classList.add("hidden");
   };
 
-  /* Load slugs */
-  const { data: slugs } = await supabase
-    .from("player_profiles")
-    .select("slug");
-
-  const { data: approved } = await supabase
-    .from("player_claims")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status","approved")
-    .maybeSingle();
-
-  const { data: pending } = await supabase
-    .from("player_claims")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status","pending")
-    .maybeSingle();
-
-  const slugSelect = document.getElementById("slug-select");
+  /* Slugs */
+  const { data:slugs }=await supabase.from("player_profiles").select("slug");
+  const slugSelect=document.getElementById("slug-select");
   slugSelect.innerHTML='<option value="">— Select yourself —</option>';
-
   (slugs||[]).forEach(p=>{
     const opt=document.createElement("option");
     opt.value=p.slug;
@@ -323,44 +328,12 @@ async function init(){
     slugSelect.appendChild(opt);
   });
 
-  const claimState=document.getElementById("claim-state");
-  const cancelWrap=document.getElementById("cancel-wrap");
-
-  if(approved){
-    claimState.textContent="Verified ✓";
-    claimState.className="claim-state approved";
-    slugSelect.value=approved.slug;
-    slugSelect.disabled=true;
-  }
-  else if(pending){
-    claimState.textContent="Verification pending";
-    claimState.className="claim-state pending";
-    slugSelect.value=pending.slug;
-    slugSelect.disabled=true;
-    cancelWrap.classList.remove("hidden");
-  }
-  else{
-    claimState.textContent="Not verified";
-    claimState.className="claim-state none";
-  }
-
-  document.getElementById("cancel-claim").onclick=async()=>{
-    await supabase
-      .from("player_claims")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("status","pending");
-
-    location.reload();
-  };
-
   document.getElementById("save-profile").onclick=async()=>{
-
     saveStatus.textContent="Saving…";
 
     let avatar_url=draft?.avatar_url||null;
-
     const file=avatarFile.files[0];
+
     if(file){
       const path=user.id+"/"+Date.now()+"-"+file.name;
       await supabase.storage.from(AVATAR_BUCKET).upload(path,file,{upsert:true});
@@ -378,14 +351,6 @@ async function init(){
       avatar_url,
       updated_at:new Date().toISOString()
     });
-
-    if(slugSelect.value && !approved && !pending){
-      await supabase.from("player_claims").insert({
-        user_id:user.id,
-        slug:slugSelect.value,
-        status:"pending"
-      });
-    }
 
     saveStatus.textContent="Saved.";
   };
