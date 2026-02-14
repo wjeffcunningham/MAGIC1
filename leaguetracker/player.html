@@ -30,6 +30,7 @@
     }
 
     td.num, th.num { text-align: right; }
+
     #claim-slot { margin-bottom: 1.25rem; }
 
     .profile-card {
@@ -145,9 +146,10 @@ function prettifySlug(slug) {
     .join(" ");
 }
 
-/* --------------------------------------------------
-   Profile Display (NEW CORRECT FLOW)
--------------------------------------------------- */
+/* ==================================================
+   PUBLIC PROFILE RENDER (CLEAN ARCHITECTURE)
+   slug → player_claims → user_profiles
+================================================== */
 async function renderProfile(slugRaw) {
 
   if (!window.auth) return;
@@ -156,7 +158,7 @@ async function renderProfile(slugRaw) {
   const container = document.getElementById("profile-display");
   const supabase = auth._client;
 
-  /* Step 1: find approved claim */
+  /* Step 1: approved claim */
   const { data: claim } = await supabase
     .from("player_claims")
     .select("user_id")
@@ -169,7 +171,7 @@ async function renderProfile(slugRaw) {
     return;
   }
 
-  /* Step 2: load that user's profile */
+  /* Step 2: fetch user profile */
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("*")
@@ -206,43 +208,48 @@ async function renderProfile(slugRaw) {
   `;
 }
 
-/* --------------------------------------------------
-   Claim UI (unchanged logic)
--------------------------------------------------- */
+/* ==================================================
+   CLAIM UI
+================================================== */
 async function renderClaimUI(slugRaw) {
 
   if (!window.auth) return;
 
   const slug = normalizeSlug(slugRaw);
   const slot = document.getElementById("claim-slot");
-  const user = await auth.getUser();
   const supabase = auth._client;
+  const user = await auth.getUser();
 
   if (!user) {
     slot.innerHTML = `<a href="/join.html">Sign in to claim this profile</a>`;
     return;
   }
 
+  /* Already approved elsewhere */
   const { data: approvedElsewhere } = await supabase
     .from("player_claims")
     .select("slug")
     .eq("user_id", user.id)
     .eq("status", "approved")
-    .limit(1);
+    .maybeSingle();
 
-  if (approvedElsewhere?.length && approvedElsewhere[0].slug !== slug) {
-    slot.innerHTML = `<em>You are already verified as ${approvedElsewhere[0].slug}. Each user may only claim one profile.</em>`;
+  if (approvedElsewhere && approvedElsewhere.slug !== slug) {
+    slot.innerHTML = `
+      <em>You are already verified as ${approvedElsewhere.slug}. 
+      Each user may only claim one profile.</em>
+    `;
     return;
   }
 
+  /* Is this slug already claimed? */
   const { data: approved } = await supabase
     .from("player_claims")
-    .select("*")
+    .select("id")
     .eq("slug", slug)
     .eq("status", "approved")
-    .limit(1);
+    .maybeSingle();
 
-  if (approved?.length) {
+  if (approved) {
     slot.innerHTML = `<span style="opacity:.7">Profile claimed</span>`;
     return;
   }
@@ -254,13 +261,16 @@ async function renderClaimUI(slugRaw) {
   `;
 }
 
-/* --------------------------------------------------
+/* ==================================================
    INIT
--------------------------------------------------- */
+================================================== */
 window.addEventListener("load", () => {
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("player");
   if (!slug) return;
+
+  document.getElementById("player-name").textContent = prettifySlug(slug);
+  document.getElementById("player-meta").textContent = `Player slug: ${normalizeSlug(slug)}`;
 
   renderProfile(slug);
   renderClaimUI(slug);
