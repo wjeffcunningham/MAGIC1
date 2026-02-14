@@ -23,6 +23,7 @@ body { background: var(--bg); color: var(--fg); }
   border-radius: 16px;
   padding: 24px;
   background: rgba(255,255,255,0.02);
+  overflow:hidden;
 }
 
 h1 { margin-bottom: 1.5rem; }
@@ -35,6 +36,7 @@ label {
 
 input, textarea, select {
   width:100%;
+  max-width:100%;
   padding:12px 14px;
   border-radius:12px;
   border:1px solid var(--muted);
@@ -69,6 +71,21 @@ button {
 .hidden { display:none; }
 
 hr { margin:32px 0; opacity:.2; }
+
+.avatar-preview {
+  width:120px;
+  height:120px;
+  object-fit:cover;
+  border-radius:12px;
+  border:1px solid var(--muted);
+  margin-bottom:10px;
+}
+
+.remote-options {
+  margin-top:10px;
+  display:flex;
+  gap:18px;
+}
 </style>
 </head>
 
@@ -80,6 +97,7 @@ hr { margin:32px 0; opacity:.2; }
 
 <div class="card">
 
+<div id="account-email" class="subtle"></div>
 <div id="claim-state" class="notice"></div>
 
 <!-- PROFILE FIELDS -->
@@ -93,13 +111,20 @@ hr { margin:32px 0; opacity:.2; }
 <label>Local Store</label>
 <input id="store">
 
-<label>Remote Play</label>
-<select id="remote">
-  <option value="">—</option>
-  <option value="mtgo">MTGO</option>
-  <option value="webcam">Webcam</option>
-  <option value="both">MTGO + Webcam</option>
-</select>
+<label>Avatar</label>
+<img id="avatar-preview" class="avatar-preview">
+<input type="file" id="avatar-file" accept="image/*">
+
+<label>Remote Play Preference (0–5)</label>
+<input type="range" id="remote-scale" min="0" max="5" value="0">
+<div class="subtle">
+0 = Never · 5 = Only remote
+</div>
+
+<div id="remote-options" class="remote-options hidden">
+  <label><input type="checkbox" id="remote_mtgo"> MTGO</label>
+  <label><input type="checkbox" id="remote_webcam"> Webcam</label>
+</div>
 
 <label>Make this profile public</label>
 <select id="is_public">
@@ -109,28 +134,25 @@ hr { margin:32px 0; opacity:.2; }
 
 <hr>
 
-<!-- CLAIM SECTION -->
-
 <h2>Claim Tournament Identity</h2>
 <div class="subtle">
-Select yourself from the tournament list.  
-We recommend completing your profile first.
+Select yourself from the tournament list.
+Complete your profile first.
 </div>
 
 <select id="slug-select"></select>
 
-<div id="claim-controls">
+<div>
   <button id="submit-claim">Request Verification</button>
   <button id="retract-claim" class="hidden">Retract Request</button>
 </div>
 
-<div id="claim-note-wrap" class="hidden">
+<div id="claim-note-wrap">
   <label>Optional note to admin (150 chars max)</label>
   <textarea id="claim-note" maxlength="150"></textarea>
 </div>
 
 <button id="save-profile">Save Profile</button>
-
 <div id="save-status" class="subtle"></div>
 
 </div>
@@ -150,28 +172,34 @@ async function init(){
 
   const supabase = auth._client;
   const user = await auth.getUser();
+
   if(!user){
     window.location.href = "/join.html";
     return;
   }
 
+  document.getElementById("account-email").textContent =
+    `Signed in as ${user.email}`;
+
   const alias = document.getElementById("alias");
   const quote = document.getElementById("quote");
   const store = document.getElementById("store");
-  const remote = document.getElementById("remote");
+  const remoteScale = document.getElementById("remote-scale");
+  const remoteOptions = document.getElementById("remote-options");
+  const remoteMtgo = document.getElementById("remote_mtgo");
+  const remoteWebcam = document.getElementById("remote_webcam");
   const isPublic = document.getElementById("is_public");
   const slugSelect = document.getElementById("slug-select");
   const claimState = document.getElementById("claim-state");
   const submitClaimBtn = document.getElementById("submit-claim");
   const retractBtn = document.getElementById("retract-claim");
-  const claimNoteWrap = document.getElementById("claim-note-wrap");
   const claimNote = document.getElementById("claim-note");
   const saveBtn = document.getElementById("save-profile");
   const saveStatus = document.getElementById("save-status");
+  const avatarPreview = document.getElementById("avatar-preview");
+  const avatarFile = document.getElementById("avatar-file");
 
-  /* --------------------------
-     Load Profile Draft
-  -------------------------- */
+  /* Load draft */
 
   const { data: draft } = await supabase
     .from("user_profiles")
@@ -183,13 +211,20 @@ async function init(){
     alias.value = draft.alias || "";
     quote.value = draft.quote || "";
     store.value = draft.store || "";
-    remote.value = draft.remote || "";
-    isPublic.value = draft.is_public ? "true" : "false";
+    remoteScale.value = draft.remote_preference || 0;
+    remoteMtgo.checked = !!draft.remote_mtgo;
+    remoteWebcam.checked = !!draft.remote_webcam;
+    isPublic.value = draft.is_public ? "true":"false";
+    if(draft.avatar_url) avatarPreview.src = draft.avatar_url;
   }
 
-  /* --------------------------
-     Claim State
-  -------------------------- */
+  remoteOptions.classList.toggle("hidden", remoteScale.value == 0);
+
+  remoteScale.oninput = () => {
+    remoteOptions.classList.toggle("hidden", remoteScale.value == 0);
+  };
+
+  /* Claim state */
 
   const { data: approvedClaim } = await supabase
     .from("player_claims")
@@ -226,102 +261,79 @@ async function init(){
     slugSelect.appendChild(opt);
   });
 
-  /* --------------------------
-     State Handling
-  -------------------------- */
-
   if(approvedClaim){
-
     claimState.textContent = "Verified ✓";
     claimState.className = "notice approved";
     slugSelect.value = approvedClaim.slug;
     slugSelect.disabled = true;
     submitClaimBtn.classList.add("hidden");
-    claimNoteWrap.classList.add("hidden");
+    retractBtn.classList.add("hidden");
     isPublic.disabled = false;
-
-  } else if(pendingClaim){
-
+  }
+  else if(pendingClaim){
     claimState.textContent = "Verification pending";
     claimState.className = "notice pending";
     slugSelect.value = pendingClaim.slug;
     slugSelect.disabled = true;
     submitClaimBtn.classList.add("hidden");
     retractBtn.classList.remove("hidden");
-    claimNoteWrap.classList.add("hidden");
     isPublic.disabled = true;
-
-  } else {
-
+  }
+  else{
     claimState.textContent = "Not verified";
     claimState.className = "notice none";
     isPublic.disabled = true;
-    claimNoteWrap.classList.remove("hidden");
   }
 
-  /* --------------------------
-     Submit Claim
-  -------------------------- */
-
-  submitClaimBtn.onclick = async () => {
-
-    const slug = slugSelect.value;
-    if(!slug) return;
-
+  submitClaimBtn.onclick = async ()=>{
+    if(!slugSelect.value) return;
     await supabase.from("player_claims").insert({
-      user_id: user.id,
-      slug,
-      status: "pending",
-      note: claimNote.value.trim() || null
+      user_id:user.id,
+      slug:slugSelect.value,
+      status:"pending",
+      note:claimNote.value.trim() || null
     });
-
-    slugSelect.disabled = true;
-    submitClaimBtn.classList.add("hidden");
-    retractBtn.classList.remove("hidden");
-    claimState.textContent = "Verification pending";
-    claimState.className = "notice pending";
-    isPublic.disabled = true;
+    location.reload();
   };
 
-  /* --------------------------
-     Retract Claim
-  -------------------------- */
-
-  retractBtn.onclick = async () => {
-
+  retractBtn.onclick = async ()=>{
     await supabase
       .from("player_claims")
       .delete()
-      .eq("user_id", user.id)
+      .eq("user_id",user.id)
       .eq("status","pending");
-
-    slugSelect.disabled = false;
-    retractBtn.classList.add("hidden");
-    submitClaimBtn.classList.remove("hidden");
-    claimState.textContent = "Not verified";
-    claimState.className = "notice none";
+    location.reload();
   };
 
-  /* --------------------------
-     Save Profile
-  -------------------------- */
-
-  saveBtn.onclick = async () => {
-
+  saveBtn.onclick = async ()=>{
     saveStatus.textContent = "Saving…";
 
+    let avatar_url = draft?.avatar_url || null;
+
+    const file = avatarFile.files[0];
+    if(file){
+      const path = `${user.id}/${Date.now()}-${file.name}`;
+      await supabase.storage.from(AVATAR_BUCKET).upload(path,file,{upsert:true});
+      avatar_url =
+        supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
+    }
+
     await supabase.from("user_profiles").upsert({
-      user_id: user.id,
-      alias: alias.value.trim() || null,
-      quote: quote.value.trim() || null,
-      store: store.value.trim() || null,
-      remote: remote.value || null,
-      is_public: isPublic.value === "true" && !!approvedClaim,
-      updated_at: new Date().toISOString()
+      user_id:user.id,
+      alias:alias.value.trim()||null,
+      quote:quote.value.trim()||null,
+      store:store.value.trim()||null,
+      remote_preference:Number(remoteScale.value),
+      remote_mtgo:remoteMtgo.checked,
+      remote_webcam:remoteWebcam.checked,
+      avatar_url,
+      is_public:isPublic.value==="true" && !!approvedClaim,
+      updated_at:new Date().toISOString()
     });
 
     saveStatus.textContent = "Saved.";
   };
+
 }
 
 window.addEventListener("load", init);
