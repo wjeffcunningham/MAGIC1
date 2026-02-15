@@ -4,10 +4,8 @@ import { supabase } from "./config.js";
    DOM
 ------------------------------------- */
 const nameEl    = document.getElementById("player-name");
-const ratingEl = document.getElementById("player-rating");
-
-// Optional avatar (safe if element doesn’t exist)
-const avatarEl = document.getElementById("player-avatar");
+const ratingEl  = document.getElementById("player-rating");
+const avatarEl  = document.getElementById("player-avatar");
 
 const standingsEmptyEl = document.getElementById("standings-empty");
 const standingsTableEl = document.getElementById("standings-table");
@@ -24,6 +22,13 @@ function clear(el) {
   while (el.firstChild) el.removeChild(el.firstChild);
 }
 
+function prettify(slug) {
+  return slug
+    .split("-")
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 function playerLink(id, name) {
   if (!id) return document.createTextNode(name || "—");
   const a = document.createElement("a");
@@ -36,40 +41,71 @@ function playerLink(id, name) {
    Load player
 ------------------------------------- */
 async function loadPlayer() {
+
   const playerId = qs("id");
+
   if (!playerId) {
     nameEl.textContent = "Player not found";
     return;
   }
 
-  const { data: player, error } = await supabase
-    .from("players")
-    .select("id, full_name, rating, avatar_url")
+  /* 1️⃣ Load player profile registry */
+  const { data: profile, error: profileError } = await supabase
+    .from("player_profiles")
+    .select("id, slug, verified_user_id")
     .eq("id", playerId)
-    .single();
+    .maybeSingle();
 
-  if (error || !player) {
+  if (profileError || !profile) {
     nameEl.textContent = "Player not found";
     return;
   }
 
-  nameEl.textContent = player.full_name || "Unnamed Player";
-  ratingEl.textContent = `Elo rating: ${player.rating ?? "—"}`;
+  let displayName = prettify(profile.slug);
+  let avatarUrl   = null;
 
-  // Avatar (optional)
-  if (avatarEl && player.avatar_url) {
-    avatarEl.src = player.avatar_url;
-    avatarEl.alt = `${player.full_name || "Player"} avatar`;
+  /* 2️⃣ If verified, load public user profile */
+  if (profile.verified_user_id) {
+
+    const { data: userProfile } = await supabase
+      .from("user_profiles")
+      .select("alias, avatar_url")
+      .eq("user_id", profile.verified_user_id)
+      .maybeSingle();
+
+    if (userProfile) {
+      displayName = userProfile.alias || displayName;
+      avatarUrl   = userProfile.avatar_url || null;
+    }
+
+  } else {
+    // Publicly show that this name is unverified
+    ratingEl.textContent = "Unverified player name";
   }
 
-  await loadStandings(player.id);
-  await loadMatches(player.id);
+  nameEl.textContent = displayName;
+
+  /* Avatar */
+  if (avatarEl) {
+    if (avatarUrl) {
+      avatarEl.src = avatarUrl;
+      avatarEl.alt = `${displayName} avatar`;
+      avatarEl.style.display = "block";
+    } else {
+      avatarEl.style.display = "none";
+    }
+  }
+
+  /* Load competitive data */
+  await loadStandings(profile.id);
+  await loadMatches(profile.id);
 }
 
 /* -------------------------------------
    Load standings
 ------------------------------------- */
 async function loadStandings(playerId) {
+
   const { data, error } = await supabase
     .from("month_standings")
     .select("month_index, points, ow_pct")
@@ -87,14 +123,19 @@ async function loadStandings(playerId) {
   clear(standingsTbodyEl);
 
   data.forEach(row => {
+
     const tr = document.createElement("tr");
+
     tr.innerHTML = `
       <td>Month ${row.month_index}</td>
       <td class="center">${row.points}</td>
       <td class="center">${
-        row.ow_pct != null ? (row.ow_pct * 100).toFixed(1) + "%" : "—"
+        row.ow_pct != null
+          ? (row.ow_pct * 100).toFixed(1) + "%"
+          : "—"
       }</td>
     `;
+
     standingsTbodyEl.appendChild(tr);
   });
 }
@@ -103,6 +144,7 @@ async function loadStandings(playerId) {
    Load matches
 ------------------------------------- */
 async function loadMatches(playerId) {
+
   const emptyEl = document.getElementById("matches-empty");
   const tableEl = document.getElementById("matches-table");
   const tbody   = tableEl.querySelector("tbody");
@@ -124,6 +166,7 @@ async function loadMatches(playerId) {
   clear(tbody);
 
   data.forEach(m => {
+
     const tr = document.createElement("tr");
 
     const opponentCell = document.createElement("td");

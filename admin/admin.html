@@ -11,18 +11,19 @@
 
 <style>
 .wrap{
-  max-width:1200px;
+  max-width:1100px;
   margin:6rem auto 4rem;
   padding:0 1.5rem;
 }
 
-h2{ margin-top:3rem; }
-
-.notice{
-  margin-bottom:1rem;
-  font-weight:600;
+.logo{
+  width:70px;
+  margin-bottom:1.5rem;
 }
 
+h2{ margin-top:3rem; }
+
+.notice{ margin-bottom:1rem; font-weight:600; }
 .error{ color:#c0392b; font-weight:700; }
 .success{ color:#2e7d32; font-weight:700; }
 
@@ -39,29 +40,34 @@ th,td{
 }
 
 button{
-  padding:6px 10px;
+  padding:6px 12px;
   margin-right:6px;
   cursor:pointer;
   font-weight:600;
+  border:1px solid #000;
+  background:#fff;
 }
 
-.approve{ background:#4caf50;color:white; }
-.reject{ background:#f44336;color:white; }
-.promote{ background:#1976d2;color:white; }
-.demote{ background:#777;color:white; }
-.assign{ background:#000;color:white; }
+button:hover{ background:#f3f3f3; }
+
+.approve{ background:#2e7d32;color:white;border:none; }
+.reject{ background:#c0392b;color:white;border:none; }
+.promote{ background:#1976d2;color:white;border:none; }
+.demote{ background:#777;color:white;border:none; }
 
 .assign-box{
   margin-top:1rem;
-  padding:1rem;
+  padding:1.25rem;
   border:1px solid #ddd;
   display:flex;
-  gap:1rem;
   flex-wrap:wrap;
+  gap:1rem;
+  align-items:flex-end;
 }
 
 .assign-box select{
   padding:6px;
+  min-width:260px;
 }
 </style>
 </head>
@@ -71,11 +77,12 @@ button{
 
 <div class="wrap">
 
+<img src="/assets/BCPMMsvg.png" class="logo">
+
 <h1>Admin Panel</h1>
 <div id="admin-status" class="notice"></div>
 
-<h2>Pending Player Name Verifications</h2>
-
+<h2>Pending Player Verifications</h2>
 <table>
 <thead>
 <tr>
@@ -88,15 +95,21 @@ button{
 </table>
 
 <h2>Manual Player Assignment</h2>
-
 <div class="assign-box">
-  <select id="assign-user"></select>
-  <select id="assign-player"></select>
-  <button id="assign-btn" class="assign">Assign & Approve</button>
+  <div>
+    <label>User (Unpaired)</label><br>
+    <select id="assign-user"></select>
+  </div>
+
+  <div>
+    <label>Player Name (Unverified)</label><br>
+    <select id="assign-player"></select>
+  </div>
+
+  <button id="assign-btn">Assign & Approve</button>
 </div>
 
 <h2>Users</h2>
-
 <table>
 <thead>
 <tr>
@@ -126,6 +139,10 @@ function sortByLastName(arr){
     return aLast.localeCompare(bLast);
   });
 }
+
+/* =======================
+   INIT
+======================= */
 
 async function init(){
 
@@ -159,17 +176,16 @@ async function init(){
   await setupManualAssign(supabase, user);
 }
 
-/* =========================
-   Pending Claims
-========================= */
+/* =======================
+   PENDING CLAIMS
+======================= */
 
 async function loadClaims(supabase, adminUser){
 
   const { data: claims } = await supabase
     .from("player_claims")
-    .select("id,slug,user_id,created_at")
-    .eq("status","pending")
-    .order("created_at",{ascending:true});
+    .select("id,slug,user_id")
+    .eq("status","pending");
 
   const body = document.getElementById("claims-body");
   body.innerHTML = "";
@@ -201,17 +217,17 @@ async function loadClaims(supabase, adminUser){
     row.querySelector(".approve").onclick = async ()=>{
 
       const { data: existing } = await supabase
-        .from("player_claims")
-        .select("id")
+        .from("player_profiles")
+        .select("verified_user_id")
         .eq("slug",claim.slug)
-        .eq("status","approved")
         .maybeSingle();
 
-      if(existing){
-        alert("Player name already verified for another user.");
+      if(existing?.verified_user_id){
+        alert("Player already verified.");
         return;
       }
 
+      /* Update claim */
       await supabase
         .from("player_claims")
         .update({
@@ -220,6 +236,12 @@ async function loadClaims(supabase, adminUser){
           reviewed_at:new Date().toISOString()
         })
         .eq("id",claim.id);
+
+      /* Link publicly */
+      await supabase
+        .from("player_profiles")
+        .update({ verified_user_id: claim.user_id })
+        .eq("slug",claim.slug);
 
       init();
     };
@@ -241,14 +263,20 @@ async function loadClaims(supabase, adminUser){
   }
 }
 
-/* =========================
-   Users
-========================= */
+/* =======================
+   USERS LIST
+======================= */
 
 async function loadUsers(supabase){
 
-  const { data: users } = await supabase.from("public_users").select("*");
-  const { data: roles } = await supabase.from("user_roles").select("*");
+  const { data: users } = await supabase
+    .from("public_users")
+    .select("id,email")
+    .order("email",{ascending:true});
+
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("*");
 
   const roleMap = new Map();
   (roles||[]).forEach(r=>roleMap.set(r.user_id,r.role));
@@ -293,29 +321,46 @@ async function loadUsers(supabase){
   });
 }
 
-/* =========================
-   Manual Assignment
-========================= */
+/* =======================
+   MANUAL ASSIGNMENT
+======================= */
 
 async function setupManualAssign(supabase, adminUser){
 
   const userSelect = document.getElementById("assign-user");
   const playerSelect = document.getElementById("assign-player");
 
+  /* Users NOT already paired */
   const { data: users } = await supabase.from("public_users").select("id,email");
-  const { data: players } = await supabase.from("player_profiles").select("slug");
+  const { data: verified } = await supabase
+    .from("player_profiles")
+    .select("verified_user_id");
 
-  userSelect.innerHTML = "<option value=''>Select user</option>";
-  users.forEach(u=>{
-    const opt=document.createElement("option");
-    opt.value=u.id;
-    opt.textContent=u.email;
-    userSelect.appendChild(opt);
-  });
+  const pairedIds = new Set(
+    (verified||[])
+      .map(v=>v.verified_user_id)
+      .filter(Boolean)
+  );
 
-  playerSelect.innerHTML = "<option value=''>Select player</option>";
+  userSelect.innerHTML="<option value=''>Select user</option>";
+  users
+    .filter(u=>!pairedIds.has(u.id))
+    .forEach(u=>{
+      const opt=document.createElement("option");
+      opt.value=u.id;
+      opt.textContent=u.email;
+      userSelect.appendChild(opt);
+    });
 
-  sortByLastName(players||[]).forEach(p=>{
+  /* Players not yet verified */
+  const { data: players } = await supabase
+    .from("player_profiles")
+    .select("slug,verified_user_id");
+
+  playerSelect.innerHTML="<option value=''>Select player</option>";
+  sortByLastName(
+    (players||[]).filter(p=>!p.verified_user_id)
+  ).forEach(p=>{
     const opt=document.createElement("option");
     opt.value=p.slug;
     opt.textContent=prettify(p.slug);
@@ -325,7 +370,7 @@ async function setupManualAssign(supabase, adminUser){
   document.getElementById("assign-btn").onclick = async ()=>{
 
     if(!userSelect.value || !playerSelect.value){
-      alert("Select both user and player.");
+      alert("Select both fields.");
       return;
     }
 
@@ -336,6 +381,11 @@ async function setupManualAssign(supabase, adminUser){
       reviewed_by:adminUser.id,
       reviewed_at:new Date().toISOString()
     });
+
+    await supabase
+      .from("player_profiles")
+      .update({ verified_user_id: userSelect.value })
+      .eq("slug",playerSelect.value);
 
     init();
   };
