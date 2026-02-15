@@ -142,7 +142,7 @@
 
     let adminBlock = "";
     if (isAdmin) {
-      adminBlock = `<a href="/admin.html">Admin Panel</a><br>`;
+      adminBlock = `<a href="admin/admin.html">Admin Panel</a><br>`;
     }
 
     let playerBlock = "";
