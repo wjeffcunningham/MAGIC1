@@ -96,15 +96,65 @@ textarea{
 
 .hidden{ display:none; }
 
+/* ===== Slider with notches + gems ===== */
+
+.range-wrap{
+  position:relative;
+  margin-top:6px;
+}
+
+.range-wrap input[type="range"]{
+  width:100%;
+  margin:0;
+  padding:0;
+}
+
+/* tick rail */
+.ticks{
+  position:relative;
+  height:24px;
+  margin-top:10px;
+}
+
+.tick{
+  position:absolute;
+  top:0;
+  transform:translateX(-50%);
+  width:10px;
+  height:10px;
+  border:1px solid #111;
+  border-radius:50%;
+  background:#fff;
+  opacity:.35;
+}
+
+.tick.active{
+  opacity:1;
+}
+
+.tick img{
+  width:10px;
+  height:10px;
+  display:block;
+}
+
+/* Labels */
 .slider-labels{
   display:flex;
   justify-content:space-between;
   font-size:0.8rem;
-  margin-top:4px;
+  margin-top:6px;
 }
 
+/* Remote checks */
 .remote-checks{
   margin-top:12px;
+}
+
+.remote-checks label{
+  font-weight:600;
+  display:block;
+  margin-top:6px;
 }
 
 .claim-section{
@@ -120,6 +170,18 @@ textarea{
 
 .claim-state.pending{ color:#c0392b; }
 .claim-state.approved{ color:#2e7d32; }
+
+.claim-actions{
+  margin-top:10px;
+}
+
+.claim-actions button{
+  padding:10px 12px;
+  border:2px solid #000;
+  background:#fff;
+  font-weight:800;
+  cursor:pointer;
+}
 
 .save-btn{
   margin-top:40px;
@@ -145,7 +207,7 @@ textarea{
 
 <div class="wrap">
 
-<img src="/assets/BCPMMsvg.png" class="logo">
+<img src="/assets/BCPMMsvg.png" class="logo" alt="BCPMM">
 
 <h1>Your Profile</h1>
 
@@ -158,8 +220,8 @@ WELCOME TO MAGIC1.ca!
 <!-- Avatar -->
 <label>Avatar</label>
 <div class="avatar-box">
-  <img id="avatar-preview">
-  <button id="remove-avatar" class="avatar-remove hidden">×</button>
+  <img id="avatar-preview" alt="">
+  <button id="remove-avatar" class="avatar-remove hidden" type="button">×</button>
 </div>
 <input type="file" id="avatar-file" accept="image/*">
 
@@ -178,7 +240,11 @@ WELCOME TO MAGIC1.ca!
 </select>
 
 <label>Remote Play Preference (0–5)</label>
-<input type="range" id="remote-slider" min="0" max="5" step="1" value="0">
+
+<div class="range-wrap">
+  <input type="range" id="remote-slider" min="0" max="5" step="1" value="0">
+  <div class="ticks" id="ticks"></div>
+</div>
 
 <div class="slider-labels">
   <span>0 No</span>
@@ -202,17 +268,28 @@ WELCOME TO MAGIC1.ca!
 
   <div id="claim-state" class="claim-state"></div>
 
-  <button id="request-claim" class="hidden">Request Verification</button>
-  <button id="cancel-claim" class="hidden">Cancel Request</button>
+  <div class="claim-actions">
+    <button id="request-claim" class="hidden" type="button">Request Verification</button>
+    <button id="cancel-claim" class="hidden" type="button">Cancel Request</button>
+  </div>
 </div>
 
-<button id="save-profile" class="save-btn">SAVE PROFILE</button>
+<button id="save-profile" class="save-btn" type="button">SAVE PROFILE</button>
 <div id="save-status" class="save-status"></div>
 
 </div>
 
 <script>
 const AVATAR_BUCKET="avatars";
+
+const GEM_ASSETS = [
+  null,
+  "/assets/sphere_blue.gif",
+  "/assets/sphere_black.gif",
+  "/assets/sphere_green.gif",
+  "/assets/sphere_red.gif",
+  "/assets/sphere_white.gif"
+];
 
 function backgroundForRemote(val){
   const colors=["#ffffff","#f0f7ff","#e3f2fd","#e8f5e9","#fff8e1","#fce4ec"];
@@ -223,10 +300,42 @@ function prettify(slug){
   return slug.split("-").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");
 }
 
+function setSavedCheck(el){
+  el.textContent="✓ Saved";
+  el.style.opacity=1;
+  setTimeout(()=>{ el.style.opacity=0; },2000);
+}
+
+function buildTicks(){
+  const ticks = document.getElementById("ticks");
+  ticks.innerHTML = "";
+  for(let i=0;i<=5;i++){
+    const d = document.createElement("div");
+    d.className="tick";
+    d.dataset.val = String(i);
+    d.style.left = (i*20) + "%";
+    if (i>0 && GEM_ASSETS[i]){
+      const img = document.createElement("img");
+      img.src = GEM_ASSETS[i];
+      img.alt = "";
+      d.appendChild(img);
+    }
+    ticks.appendChild(d);
+  }
+}
+
+function syncTicks(value){
+  document.querySelectorAll(".tick").forEach(t=>{
+    const v = parseInt(t.dataset.val,10);
+    t.classList.toggle("active", v === value);
+  });
+}
+
 async function init(){
 
   if(!window.auth) return;
   const supabase=auth._client;
+
   const user=await auth.getUser();
   if(!user){ window.location.href="/join.html"; return; }
 
@@ -249,6 +358,8 @@ async function init(){
   const requestBtn=document.getElementById("request-claim");
   const cancelBtn=document.getElementById("cancel-claim");
 
+  buildTicks();
+
   /* Load profile */
   const { data:draft }=await supabase
     .from("user_profiles")
@@ -262,44 +373,66 @@ async function init(){
     alias.value=draft.alias||"";
     quote.value=draft.quote||"";
     store.value=draft.store||"";
-    slider.value=draft.remote_pref??0;
-    mtgo.checked=!!draft.remote_mtgo;
-    webcam.checked=!!draft.remote_webcam;
 
-    if(draft.remote_pref>0) remoteChecks.classList.remove("hidden");
-    document.body.style.background=backgroundForRemote(slider.value);
+    const pref = (draft.remote_pref ?? 0);
+    slider.value = String(pref);
+
+    // IMPORTANT: always apply saved checkbox values
+    mtgo.checked = !!draft.remote_mtgo;
+    webcam.checked = !!draft.remote_webcam;
+
+    document.body.style.background=backgroundForRemote(pref);
+    syncTicks(pref);
+
+    if(pref>0){
+      remoteChecks.classList.remove("hidden");
+    }else{
+      remoteChecks.classList.add("hidden");
+    }
 
     if(draft.avatar_url){
       avatarPreview.src=draft.avatar_url+"?t="+Date.now();
       removeAvatar.classList.remove("hidden");
     }
+  } else {
+    document.body.style.background = backgroundForRemote(0);
+    syncTicks(0);
   }
 
   slider.oninput=()=>{
-    document.body.style.background=backgroundForRemote(slider.value);
-    if(slider.value>0) remoteChecks.classList.remove("hidden");
-    else{
+    const v = parseInt(slider.value,10);
+    document.body.style.background=backgroundForRemote(v);
+    syncTicks(v);
+
+    if(v>0){
+      remoteChecks.classList.remove("hidden");
+    }else{
       remoteChecks.classList.add("hidden");
       mtgo.checked=false;
       webcam.checked=false;
     }
   };
 
-  /* Load slugs */
+  /* Load player names (still stored as slug internally) */
   const { data:slugs }=await supabase
     .from("player_profiles")
-    .select("slug")
-    .order("slug",{ascending:true});
+    .select("slug");
+
+  const sorted = (slugs||[]).slice().sort((a,b)=>{
+    const aLast = prettify(a.slug).split(" ").slice(-1)[0];
+    const bLast = prettify(b.slug).split(" ").slice(-1)[0];
+    return aLast.localeCompare(bLast);
+  });
 
   slugSelect.innerHTML='<option value="">— Select yourself —</option>';
-  (slugs||[]).forEach(p=>{
+  sorted.forEach(p=>{
     const opt=document.createElement("option");
     opt.value=p.slug;
     opt.textContent=prettify(p.slug);
     slugSelect.appendChild(opt);
   });
 
-  /* Check claim state */
+  /* Claim state */
   const { data:approved }=await supabase
     .from("player_claims")
     .select("slug")
@@ -318,14 +451,15 @@ async function init(){
     slugSelect.value=approved.slug;
     slugSelect.disabled=true;
     claimState.textContent="Verified ✓";
-    claimState.classList.add("approved");
+    claimState.className="claim-state approved";
   }else if(pending){
     slugSelect.value=pending.slug;
     slugSelect.disabled=true;
     claimState.textContent="Verification pending";
-    claimState.classList.add("pending");
+    claimState.className="claim-state pending";
     cancelBtn.classList.remove("hidden");
   }else{
+    claimState.textContent="";
     requestBtn.classList.remove("hidden");
   }
 
@@ -336,9 +470,10 @@ async function init(){
       slug:slugSelect.value,
       status:"pending"
     });
+
     slugSelect.disabled=true;
     claimState.textContent="Verification pending";
-    claimState.classList.add("pending");
+    claimState.className="claim-state pending";
     requestBtn.classList.add("hidden");
     cancelBtn.classList.remove("hidden");
   };
@@ -349,26 +484,68 @@ async function init(){
       .delete()
       .eq("user_id",user.id)
       .eq("status","pending");
+
     slugSelect.disabled=false;
     claimState.textContent="";
+    claimState.className="claim-state";
     cancelBtn.classList.add("hidden");
     requestBtn.classList.remove("hidden");
   };
 
+  /* Avatar preview */
+  avatarFile.onchange = e=>{
+    const file=e.target.files[0];
+    if(!file) return;
+    avatarPreview.src = URL.createObjectURL(file);
+    removeAvatar.classList.remove("hidden");
+  };
+
+  removeAvatar.onclick=async()=>{
+    const path = `${user.id}/avatar.png`;
+    await supabase.storage.from(AVATAR_BUCKET).remove([path]);
+
+    avatarPreview.src="";
+    avatarFile.value="";
+    removeAvatar.classList.add("hidden");
+
+    await supabase.from("user_profiles")
+      .update({ avatar_url:null })
+      .eq("user_id",user.id);
+
+    setSavedCheck(saveStatus);
+  };
+
   /* Save profile */
   document.getElementById("save-profile").onclick=async()=>{
+    saveStatus.style.opacity=1;
     saveStatus.textContent="Saving…";
 
-    let avatar_url=draft?.avatar_url||null;
-    const file=avatarFile.files[0];
+    // re-fetch latest draft so we don't "lose" checkbox state between loads
+    const { data: latest } = await supabase
+      .from("user_profiles")
+      .select("avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
+    let avatar_url = latest?.avatar_url || null;
+
+    const file=avatarFile.files[0];
     if(file){
       const path=`${user.id}/avatar.png`;
-      await supabase.storage.from(AVATAR_BUCKET)
+      const { error } = await supabase.storage.from(AVATAR_BUCKET)
         .upload(path,file,{upsert:true,contentType:file.type});
+
+      if(error){
+        saveStatus.textContent="Avatar upload failed.";
+        return;
+      }
+
       avatar_url=supabase.storage
         .from(AVATAR_BUCKET)
         .getPublicUrl(path).data.publicUrl;
+
+      avatarPreview.src = avatar_url + "?t=" + Date.now();
+      removeAvatar.classList.remove("hidden");
     }
 
     await supabase.from("user_profiles").upsert({
@@ -376,15 +553,14 @@ async function init(){
       alias:alias.value.trim()||null,
       quote:quote.value.trim()||null,
       store:store.value||null,
-      remote_pref:parseInt(slider.value),
+      remote_pref:parseInt(slider.value,10),
       remote_mtgo:mtgo.checked,
       remote_webcam:webcam.checked,
       avatar_url,
       updated_at:new Date().toISOString()
     });
 
-    saveStatus.textContent="✓ Saved";
-    setTimeout(()=>{ saveStatus.textContent=""; },2000);
+    setSavedCheck(saveStatus);
   };
 }
 
