@@ -44,13 +44,10 @@ async function getStreakMap() {
   if (error || !data) return {};
 
   const streakMap = {};
-  const seen = new Set();
 
   for (const row of data) {
     const p = row.player;
     if (!streakMap[p]) streakMap[p] = [];
-
-    // Only record first 3 most recent results
     if (streakMap[p].length < 3) {
       streakMap[p].push(row.result);
     }
@@ -76,6 +73,43 @@ function fireIcons(n) {
 }
 
 /* =========================================================
+   BCPMM ONLY CHECKBOX
+========================================================= */
+
+function ensureBcpmmCheckbox() {
+  let box = document.getElementById("bcpmm-filter");
+  if (box) return box;
+
+  const table = document.querySelector("table.ladder");
+  if (!table) return null;
+
+  box = document.createElement("div");
+  box.id = "bcpmm-filter";
+  box.style.marginBottom = "1rem";
+
+  box.innerHTML = `
+    <label style="cursor:pointer;font-weight:600;">
+      <input type="checkbox" id="bcpmm-only" />
+      BCPMM points only
+    </label>
+  `;
+
+  table.insertAdjacentElement("beforebegin", box);
+
+  box.querySelector("#bcpmm-only").addEventListener("change", () => {
+    pageIndexByMode[currentMode] = 0;
+    loadLeaderboard();
+  });
+
+  return box;
+}
+
+function isBcpmmOnly() {
+  const cb = document.getElementById("bcpmm-only");
+  return !!(cb && cb.checked);
+}
+
+/* =========================================================
    Load Leaderboard Data
 ========================================================= */
 
@@ -85,17 +119,33 @@ async function loadLeaderboard() {
 
   const streakMap = await getStreakMap();
 
-  let tableName =
-    currentMode === "elo"
-      ? "leaderboard_elo"
-      : currentMode === "league"
-      ? "leaderboard_league"
-      : "leaderboard_points";
+  let tableName;
+  let orderColumn;
+  let valueAccessor;
+
+  if (currentMode === "elo") {
+    tableName = "leaderboard_elo";
+    orderColumn = "rating";       // ← adjust if needed
+    valueAccessor = row => row.rating;
+  }
+
+  else if (currentMode === "league") {
+    tableName = "leaderboard_league";
+    orderColumn = "points";       // ← adjust if needed
+    valueAccessor = row => row.points;
+  }
+
+  else {
+    tableName = "leaderboard_points";
+    orderColumn = isBcpmmOnly() ? "bcpmm_only_points" : "total_points";
+    valueAccessor = row =>
+      isBcpmmOnly() ? row.bcpmm_only_points : row.total_points;
+  }
 
   const { data, error } = await supabase
     .from(tableName)
     .select("*")
-    .order("value", { ascending: false });
+    .order(orderColumn, { ascending: false });
 
   if (error || !data) {
     ladderBody.innerHTML =
@@ -103,14 +153,22 @@ async function loadLeaderboard() {
     return;
   }
 
-  renderRows(data, streakMap);
+  renderRows(data, streakMap, valueAccessor);
+
+  if (currentMode === "bcpmm") {
+    const box = ensureBcpmmCheckbox();
+    if (box) box.style.display = "block";
+  } else {
+    const box = document.getElementById("bcpmm-filter");
+    if (box) box.style.display = "none";
+  }
 }
 
 /* =========================================================
-   Pagination + Render
+   Render
 ========================================================= */
 
-function renderRows(rows, streakMap) {
+function renderRows(rows, streakMap, valueAccessor) {
   ladderBody.innerHTML = "";
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
@@ -144,7 +202,7 @@ function renderRows(rows, streakMap) {
             ${slugToName(row.player)}
           </a>${fire}
         </td>
-        <td class="num">${row.value}</td>
+        <td class="num">${valueAccessor(row)}</td>
       </tr>
       `
     );
