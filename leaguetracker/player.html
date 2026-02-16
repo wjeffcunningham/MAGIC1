@@ -18,10 +18,6 @@
       padding: 0 1.5rem;
     }
 
-    h1 { margin: 0 0 0.5rem; }
-    .meta { opacity: 0.75; margin-bottom: 1.75rem; color: var(--muted); }
-    .back { margin: 0 0 1.5rem; opacity: 0.9; }
-
     table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
 
     th, td {
@@ -31,55 +27,7 @@
 
     td.num, th.num { text-align: right; }
 
-    #claim-slot { margin-bottom: 1.25rem; }
-
-    .profile-card {
-      margin-bottom: 1.75rem;
-      padding: 1.25rem;
-      border: 1px solid var(--muted);
-      border-radius: 14px;
-      background: rgba(255,255,255,0.02);
-    }
-
-    .profile-avatar {
-      width: 110px;
-      height: 110px;
-      object-fit: cover;
-      border-radius: 12px;
-      border: 1px solid var(--muted);
-      margin-bottom: 0.75rem;
-      display:block;
-    }
-
-    .profile-name {
-      font-size: 1.25rem;
-      font-weight: 700;
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-
-    .verified {
-      font-size: 0.9rem;
-      opacity: 0.7;
-    }
-
-    .profile-quote {
-      font-style: italic;
-      opacity: 0.8;
-      margin-top: 0.5rem;
-    }
-
-    .profile-meta {
-      font-size: 0.9em;
-      opacity: 0.75;
-      margin-top: 0.75rem;
-    }
-
-    .pending {
-      color: #c0392b;
-      font-weight: 700;
-    }
+    .bonus-icons { margin-left: 6px; }
   </style>
 </head>
 
@@ -88,23 +36,13 @@
 <div id="global-menu-root"></div>
 
 <div class="player-wrap">
-  <div class="back">
-    <a href="/leaguetracker/">← Back to League Tracker</a>
-  </div>
+  <div><a href="/leaguetracker/">← Back to League Tracker</a></div>
 
   <h1 id="player-name"></h1>
-  <div id="profile-display"></div>
-  <div id="claim-slot"></div>
-  <div class="meta" id="player-meta"></div>
+  <div id="player-meta"></div>
 
   <h2>Points Breakdown</h2>
   <table id="points-table">
-    <thead>
-      <tr>
-        <th>Category</th>
-        <th class="num">Points</th>
-      </tr>
-    </thead>
     <tbody></tbody>
   </table>
 
@@ -124,159 +62,7 @@
   </table>
 </div>
 
-<script src="/leaguetracker/js/player.js"></script>
-
-<script>
-function normalizeSlug(input) {
-  return (input || "")
-    .toString()
-    .trim()
-    .normalize("NFKD")
-    .toLowerCase()
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function prettifySlug(slug) {
-  return slug
-    .split("-")
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
-/* ==================================================
-   PUBLIC PROFILE RENDER (CLEAN ARCHITECTURE)
-   slug → player_claims → user_profiles
-================================================== */
-async function renderProfile(slugRaw) {
-
-  if (!window.auth) return;
-
-  const slug = normalizeSlug(slugRaw);
-  const container = document.getElementById("profile-display");
-  const supabase = auth._client;
-
-  /* Step 1: approved claim */
-  const { data: claim } = await supabase
-    .from("player_claims")
-    .select("user_id")
-    .eq("slug", slug)
-    .eq("status", "approved")
-    .maybeSingle();
-
-  if (!claim) {
-    container.innerHTML = "";
-    return;
-  }
-
-  /* Step 2: fetch user profile */
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("*")
-    .eq("user_id", claim.user_id)
-    .maybeSingle();
-
-  if (!profile || !profile.is_public) {
-    container.innerHTML = "";
-    return;
-  }
-
-  const displayName = profile.alias || prettifySlug(slug);
-
-  const remoteList = [
-    profile.remote_mtgo ? "MTGO" : null,
-    profile.remote_webcam ? "Webcam" : null
-  ].filter(Boolean);
-
-  container.innerHTML = `
-    <div class="profile-card">
-      ${profile.avatar_url ? `<img src="${profile.avatar_url}" class="profile-avatar">` : ""}
-      <div class="profile-name">
-        ${displayName}
-        <span class="verified">✓</span>
-      </div>
-
-      ${profile.quote ? `<div class="profile-quote">"${profile.quote}"</div>` : ""}
-
-      <div class="profile-meta">
-        ${remoteList.length ? `<div>Remote: ${remoteList.join(" · ")}</div>` : ""}
-        ${profile.store ? `<div>Local Store: ${profile.store}</div>` : ""}
-      </div>
-    </div>
-  `;
-}
-
-/* ==================================================
-   CLAIM UI
-================================================== */
-async function renderClaimUI(slugRaw) {
-
-  if (!window.auth) return;
-
-  const slug = normalizeSlug(slugRaw);
-  const slot = document.getElementById("claim-slot");
-  const supabase = auth._client;
-  const user = await auth.getUser();
-
-  if (!user) {
-    slot.innerHTML = `<a href="/join.html">Sign in to claim this profile</a>`;
-    return;
-  }
-
-  /* Already approved elsewhere */
-  const { data: approvedElsewhere } = await supabase
-    .from("player_claims")
-    .select("slug")
-    .eq("user_id", user.id)
-    .eq("status", "approved")
-    .maybeSingle();
-
-  if (approvedElsewhere && approvedElsewhere.slug !== slug) {
-    slot.innerHTML = `
-      <em>You are already verified as ${approvedElsewhere.slug}. 
-      Each user may only claim one profile.</em>
-    `;
-    return;
-  }
-
-  /* Is this slug already claimed? */
-  const { data: approved } = await supabase
-    .from("player_claims")
-    .select("id")
-    .eq("slug", slug)
-    .eq("status", "approved")
-    .maybeSingle();
-
-  if (approved) {
-    slot.innerHTML = `<span style="opacity:.7">Profile claimed</span>`;
-    return;
-  }
-
-  slot.innerHTML = `
-    <div style="margin-top:10px;">
-      <a href="/join.html">Claim this profile</a>
-    </div>
-  `;
-}
-
-/* ==================================================
-   INIT
-================================================== */
-window.addEventListener("load", () => {
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get("player");
-  if (!slug) return;
-
-  document.getElementById("player-name").textContent = prettifySlug(slug);
-  document.getElementById("player-meta").textContent = `Player slug: ${normalizeSlug(slug)}`;
-
-  renderProfile(slug);
-  renderClaimUI(slug);
-});
-</script>
-
+<script src="/leaguetracker/js/player.js?v=20260216-1"></script>
 <script src="/js/bcpmm-shell.js"></script>
 
 </body>

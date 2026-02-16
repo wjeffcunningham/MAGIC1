@@ -5,48 +5,33 @@
   <title>League Tracker · B.C. Premodern Masters</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Global shell (menu + theme) -->
   <link rel="stylesheet" href="/css/bcpmm-shell.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/auth.js"></script>
+  <script src="/js/auth.js"></script>
 
-  <!-- PAGE-SPECIFIC STYLES (INLINE, THEME-AWARE) -->
   <style>
-    body {
-      background: var(--bg);
-      color: var(--fg);
-    }
+    body { background: var(--bg); color: var(--fg); }
 
     .tracker {
       max-width: 900px;
       margin: 6rem auto 4rem;
       padding: 0 1.5rem;
-      background: var(--bg);
-      color: var(--fg);
     }
 
-    .back-link {
-      display: inline-block;
-      margin-bottom: 1.25rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-decoration: none;
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 1rem;
     }
 
-    .back-link:hover {
-      text-decoration: underline;
-      color: var(--fg);
-    }
-
-    h1 {
-      margin-bottom: 1.5rem;
+    .logo-wrap img {
+      width: 90px;
+      opacity: 0.95;
     }
 
     .tabs {
       display: flex;
       gap: 0.75rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       flex-wrap: wrap;
     }
 
@@ -55,7 +40,6 @@
       border: 1px solid var(--muted);
       color: var(--fg);
       padding: 0.5rem 0.75rem;
-      font-family: inherit;
       font-weight: 700;
       cursor: pointer;
     }
@@ -63,6 +47,12 @@
     .tabs button.active {
       background: var(--fg);
       color: var(--bg);
+    }
+
+    .filter-box {
+      margin-bottom: 1rem;
+      display: none;
+      font-weight: 700;
     }
 
     table.ladder {
@@ -76,81 +66,58 @@
       border-bottom: 1px solid var(--muted);
     }
 
-    .ladder th {
-      text-align: left;
-      opacity: 0.7;
-    }
-
     .ladder td.num,
     .ladder th.num {
       text-align: right;
     }
 
-    .ladder th.rank,
-    .ladder td.rank {
+    .ladder td.rank,
+    .ladder th.rank {
       width: 3rem;
       text-align: right;
-    }
-
-    .ladder th.player {
-      width: 60%;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
     }
   </style>
 </head>
 
 <body>
 
-<!-- GLOBAL MENU ROOT -->
 <div id="global-menu-root"></div>
 
-<!-- PAGE CONTENT -->
 <main class="tracker">
 
-  <a href="/" class="back-link">← Back to main</a>
+  <div class="logo-wrap">
+    <img src="/assets/BCPMMsvg.png" alt="BCPMM Logo">
+  </div>
 
   <h1>League Tracker</h1>
 
   <div class="tabs">
-    <button type="button" data-mode="bcpmm" class="active">
-      BCPMM Points
-    </button>
+    <button data-mode="bcpmm" class="active">BCPMM Points</button>
+    <button data-mode="league">League (January)</button>
+    <button data-mode="elo">Elo</button>
+  </div>
 
-    <button type="button" data-mode="league">
-      League (Feb)
-    </button>
-
-    <button type="button" data-mode="elo">
-      Elo
-    </button>
+  <div class="filter-box" id="bcpmm-filter">
+    <label>
+      <input type="checkbox" id="bcpmm-only">
+      BCPMM points only
+    </label>
   </div>
 
   <table class="ladder">
     <thead>
       <tr>
         <th class="rank">#</th>
-        <th class="player">Player</th>
+        <th>Player</th>
         <th class="num">Value</th>
       </tr>
     </thead>
-    <tbody id="ladder-body">
-      <!-- populated by JS -->
-    </tbody>
+    <tbody id="ladder-body"></tbody>
   </table>
+
 </main>
 
-<!-- Main league logic -->
-<script src="./js/league.js?v=20260208-2"></script>
-
-<!-- Global shell logic -->
+<script src="./js/league.js?v=20260216-1"></script>
 <script src="/js/bcpmm-shell.js"></script>
 
 </body>
