@@ -1,156 +1,231 @@
 /* =========================================================
-   League Tracker — SUPABASE AUTHORITATIVE VERSION
+   League Tracker – SUPABASE AUTHORITATIVE
+   - No JSON
+   - No local Elo math
+   - Reads leaderboard_elo
+   - Reads leaderboard_points
+   - Reads leaderboard_league
+   - Uses rating_history for streak logic
 ========================================================= */
+
+function getClient() {
+  return window.auth ? auth._client : null;
+}
 
 const ladderBody = document.getElementById("ladder-body");
 const tabs = document.querySelectorAll(".tabs button");
-const filterBox = document.getElementById("bcpmm-filter");
-const bcpmmOnlyCheckbox = document.getElementById("bcpmm-only");
 
 let currentMode = "bcpmm";
-let supabase = null;
+
+const PAGE_SIZE = 16;
+let pageIndexByMode = { bcpmm: 0, league: 0, elo: 0 };
+
+/* =========================================================
+   Helpers
+========================================================= */
 
 function slugToName(slug) {
   return (slug || "").replace(/-/g, " ");
 }
 
-function firesForStreak(n) {
+/* =========================================================
+   STREAK LOGIC (from rating_history)
+========================================================= */
+
+async function getStreakMap() {
+  const supabase = getClient();
+  if (!supabase) return {};
+
+  const { data, error } = await supabase
+    .from("rating_history")
+    .select("player, result")
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return {};
+
+  const streakMap = {};
+  const seen = new Set();
+
+  for (const row of data) {
+    const p = row.player;
+    if (!streakMap[p]) streakMap[p] = [];
+
+    // Only record first 3 most recent results
+    if (streakMap[p].length < 3) {
+      streakMap[p].push(row.result);
+    }
+  }
+
+  const out = {};
+  Object.entries(streakMap).forEach(([p, results]) => {
+    let streak = 0;
+    for (const r of results) {
+      if (r === "W") streak++;
+      else break;
+    }
+    out[p] = streak;
+  });
+
+  return out;
+}
+
+function fireIcons(n) {
   if (n >= 3) return " 🔥🔥";
   if (n >= 2) return " 🔥";
   return "";
 }
 
-async function init() {
-  if (!window.auth) return;
-  supabase = auth._client;
-  render();
-}
+/* =========================================================
+   Load Leaderboard Data
+========================================================= */
 
-async function fetchLeaderboard() {
+async function loadLeaderboard() {
+  const supabase = getClient();
+  if (!supabase) return;
 
-  if (currentMode === "elo") {
-    const { data } = await supabase
-      .from("leaderboard_elo")
-      .select("*")
-      .order("rating", { ascending: false });
+  const streakMap = await getStreakMap();
 
-    return data.map(r => ({
-      player: r.player,
-      value: r.rating
-    }));
-  }
+  let tableName =
+    currentMode === "elo"
+      ? "leaderboard_elo"
+      : currentMode === "league"
+      ? "leaderboard_league"
+      : "leaderboard_points";
 
-  if (currentMode === "league") {
-    const { data } = await supabase
-      .from("leaderboard_league")
-      .select("*")
-      .order("points", { ascending: false });
-
-    return data.map(r => ({
-      player: r.player,
-      value: r.points
-    }));
-  }
-
-  // BCPMM race
-  const { data } = await supabase
-    .from("leaderboard_points")
+  const { data, error } = await supabase
+    .from(tableName)
     .select("*")
-    .order("points", { ascending: false });
+    .order("value", { ascending: false });
 
-  if (!data) return [];
-
-  if (bcpmmOnlyCheckbox.checked) {
-    // subtract non-BCPMM bonuses
-    const { data: bonuses } = await supabase
-      .from("bonuses")
-      .select("*");
-
-    const nonBcpmm = bonuses
-      .filter(b => b.bonus_type !== "bcpmm")
-      .reduce((acc, b) => {
-        acc[b.player] = (acc[b.player] || 0) + b.bonus_points;
-        return acc;
-      }, {});
-
-    return data.map(r => ({
-      player: r.player,
-      value: r.points - (nonBcpmm[r.player] || 0)
-    }));
+  if (error || !data) {
+    ladderBody.innerHTML =
+      `<tr><td colspan="3">Failed to load leaderboard.</td></tr>`;
+    return;
   }
 
-  return data.map(r => ({
-    player: r.player,
-    value: r.points
-  }));
+  renderRows(data, streakMap);
 }
 
-async function fetchBonusIcons() {
-  const { data } = await supabase
-    .from("bonuses")
-    .select("*");
+/* =========================================================
+   Pagination + Render
+========================================================= */
 
-  const map = {};
-
-  data.forEach(b => {
-    if (!map[b.player]) map[b.player] = [];
-    map[b.player].push(iconForBonus(b.bonus_type));
-  });
-
-  return map;
-}
-
-function iconForBonus(type) {
-  switch (type) {
-    case "bcpmm_champion": return "🏆";
-    case "bcpmm_finals": return "🥈";
-    case "bcpmm_top4": return "🥉";
-    case "bcpmm_top8": return "🏅";
-    case "shg_win": return "⭐";
-    case "connections_win": return "✦";
-    case "bcwl_month_win": return "🏁";
-    default: return "";
-  }
-}
-
-async function render() {
-
+function renderRows(rows, streakMap) {
   ladderBody.innerHTML = "";
 
-  filterBox.style.display = (currentMode === "bcpmm") ? "block" : "none";
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pageIndex = Math.min(
+    pageIndexByMode[currentMode] || 0,
+    totalPages - 1
+  );
 
-  const rows = await fetchLeaderboard();
-  const bonusIcons = await fetchBonusIcons();
+  pageIndexByMode[currentMode] = pageIndex;
 
-  rows.forEach((r, i) => {
+  const start = pageIndex * PAGE_SIZE;
+  const slice = rows.slice(start, start + PAGE_SIZE);
 
-    const icons = bonusIcons[r.player]
-      ? " " + bonusIcons[r.player].join("")
-      : "";
+  if (!slice.length) {
+    ladderBody.innerHTML =
+      `<tr><td colspan="3">No data available</td></tr>`;
+    return;
+  }
 
-    ladderBody.insertAdjacentHTML("beforeend", `
+  slice.forEach((row, i) => {
+    const globalRank = start + i + 1;
+    const fire = fireIcons(streakMap[row.player] || 0);
+
+    ladderBody.insertAdjacentHTML(
+      "beforeend",
+      `
       <tr>
-        <td class="rank">${i + 1}</td>
-        <td>
-          <a href="./player.html?player=${encodeURIComponent(r.player)}">
-            ${slugToName(r.player)}
-          </a>${icons}
+        <td class="rank">${globalRank}</td>
+        <td class="player">
+          <a href="./player.html?player=${encodeURIComponent(row.player)}">
+            ${slugToName(row.player)}
+          </a>${fire}
         </td>
-        <td class="num">${r.value}</td>
+        <td class="num">${row.value}</td>
       </tr>
-    `);
+      `
+    );
   });
+
+  updatePager(rows.length);
 }
+
+/* =========================================================
+   Pager
+========================================================= */
+
+function ensurePager() {
+  let pager = document.getElementById("ladder-pager");
+  if (pager) return pager;
+
+  const table = document.querySelector("table.ladder");
+  if (!table) return null;
+
+  pager = document.createElement("div");
+  pager.id = "ladder-pager";
+  pager.style.display = "flex";
+  pager.style.justifyContent = "space-between";
+  pager.style.marginTop = "1rem";
+
+  pager.innerHTML = `
+    <button id="pager-prev">«</button>
+    <div id="pager-label"></div>
+    <button id="pager-next">»</button>
+  `;
+
+  table.insertAdjacentElement("afterend", pager);
+  return pager;
+}
+
+function updatePager(totalRows) {
+  const pager = ensurePager();
+  if (!pager) return;
+
+  const prevBtn = pager.querySelector("#pager-prev");
+  const nextBtn = pager.querySelector("#pager-next");
+  const label = pager.querySelector("#pager-label");
+
+  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+  const pageIndex = pageIndexByMode[currentMode] || 0;
+
+  label.textContent = `Page ${pageIndex + 1} / ${totalPages}`;
+
+  prevBtn.disabled = pageIndex === 0;
+  nextBtn.disabled = pageIndex >= totalPages - 1;
+
+  prevBtn.onclick = () => {
+    pageIndexByMode[currentMode] = Math.max(0, pageIndex - 1);
+    loadLeaderboard();
+  };
+
+  nextBtn.onclick = () => {
+    pageIndexByMode[currentMode] = Math.min(
+      totalPages - 1,
+      pageIndex + 1
+    );
+    loadLeaderboard();
+  };
+}
+
+/* =========================================================
+   Tabs
+========================================================= */
 
 tabs.forEach(btn => {
   btn.addEventListener("click", () => {
     tabs.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     currentMode = btn.dataset.mode;
-    render();
+    pageIndexByMode[currentMode] = 0;
+    loadLeaderboard();
   });
 });
 
-bcpmmOnlyCheckbox.addEventListener("change", render);
+/* =========================================================
+   Init
+========================================================= */
 
-init();
+document.addEventListener("DOMContentLoaded", loadLeaderboard);
