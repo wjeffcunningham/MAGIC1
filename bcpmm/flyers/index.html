@@ -3,19 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BCPMM Flyers & Posters · B.C. Premodern Masters</title>
+<title>BCPMM Flyers · B.C. Premodern Masters</title>
 
 <style>
 :root{
-  --bg:#f3f6ff;
-  --card:#ffffff;
+  --bg:#f5f7fb;
   --ink:#0f172a;
   --muted:#475569;
-  --border:rgba(15,23,42,.14);
-  --shadow:0 10px 30px rgba(15,23,42,.08);
-  --radius:16px;
-  --max:1000px;
-  --pad:18px;
+  --max:1100px;
+  --pad:24px;
 }
 
 *{ box-sizing:border-box; }
@@ -23,29 +19,26 @@
 body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
   color:var(--ink);
-  background:linear-gradient(var(--bg),#ffffff 65%);
 }
 
 .shell{
   max-width:var(--max);
-  margin:32px auto 56px;
+  margin:60px auto 80px;
   padding:0 var(--pad);
 }
 
+/* ================= HEADER ================= */
+
 header{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:20px;
-  margin-bottom:28px;
+  text-align:center;
+  margin-bottom:80px;
 }
 
 h1{
-  margin:0 0 6px;
-  font-size:clamp(1.4rem,2.6vw,2rem);
-  letter-spacing:-.02em;
+  margin:0 0 8px;
+  font-size:clamp(1.6rem,3vw,2.2rem);
 }
 
 .sub{
@@ -53,106 +46,81 @@ h1{
   color:var(--muted);
 }
 
-.nav{ margin-top:10px; }
+.nav{
+  margin-top:14px;
+}
 
 .nav a{
-  color:#1f6feb;
-  font-weight:650;
   text-decoration:none;
+  font-weight:600;
+  color:#1f6feb;
 }
 
-/* ================================
-   FEATURED OFFICIAL POSTER
-================================ */
-.featured{
-  display:flex;
-  justify-content:center;
-  margin-bottom:48px;
-}
+/* ================= HERO CYCLER ================= */
 
-.featured-figure{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:18px;
-  box-shadow:var(--shadow);
-  max-width:700px;
-  width:100%;
-}
-
-.featured-figure img{
-  width:100%;
-  height:auto;
-  display:block;
-  border-radius:12px;
-}
-
-.featured-figure figcaption{
-  margin-top:14px;
-  font-size:.9rem;
-  color:var(--muted);
+.hero{
   text-align:center;
+  margin-bottom:100px;
 }
 
-/* ================================
-   GRID
-================================ */
+.hero-frame{
+  width:760px;
+  max-width:100%;
+  height:520px;               /* fixed height prevents jump */
+  margin:0 auto;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  cursor:pointer;
+}
+
+.hero-frame img{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;          /* preserves true proportions */
+  display:block;
+}
+
+.tint{
+  position:absolute;
+  inset:0;
+  mix-blend-mode:multiply;
+  opacity:0.6;                 /* soft pastel effect */
+  pointer-events:none;
+}
+
+/* ================= SMALL POSTERS ================= */
+
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  gap:18px;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:28px;
 }
 
-figure{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:12px;
-  box-shadow:var(--shadow);
-  display:grid;
-  gap:10px;
+.card{
+  background:#fff;
+  padding:18px;
 }
 
-figure a{ display:block; }
-
-figure img{
+.card img{
   width:100%;
   height:auto;
-  border-radius:10px;
   display:block;
-  background:#e5e7eb;
 }
 
-figcaption{
+.caption{
+  margin-top:10px;
   font-size:.85rem;
   color:var(--muted);
   text-align:center;
 }
 
-/* ================================
-   QUARTER-PAGE FLYER CAROUSEL
-================================ */
-.flyer-frame{
-  height:320px;              /* fixed, uniform size */
-  padding:16px;
-  border-radius:12px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-}
-
-.flyer-frame img{
-  max-height:100%;
-  max-width:100%;
-  object-fit:contain;
-  mix-blend-mode:multiply;
-}
-
 .footer{
-  margin-top:40px;
+  margin-top:80px;
   text-align:center;
-  font-size:.9rem;
+  font-size:.85rem;
   color:var(--muted);
 }
 </style>
@@ -164,57 +132,56 @@ figcaption{
 <header>
   <h1>BCPMM Flyers & Posters</h1>
   <p class="sub">
-    Promotional artwork and print material for the B.C. Premodern Masters.
+    Promotional material for the B.C. Premodern Masters.
   </p>
   <div class="nav">
     <a href="../../">magic1.ca</a>
   </div>
 </header>
 
-<!-- FEATURED OFFICIAL FLYER -->
-<section class="featured">
-  <figure class="featured-figure">
-    <a href="BCPMM_poster.jpg" target="_blank" rel="noopener">
-      <img src="BCPMM_poster.jpg" alt="BCPMM Official Flyer">
-    </a>
-    <figcaption>Official Tournament Flyer</figcaption>
-  </figure>
+<!-- ================= HERO (MAIN PIECE) ================= -->
+
+<section class="hero">
+  <div class="hero-frame" onclick="cycleFlyer()">
+    <img id="hero-img" src="BCPMM(front)1.png" alt="Quarter Flyer">
+    <div id="tint-layer" class="tint"></div>
+  </div>
+  <div class="caption">
+    Quarter-Page Flyers · Click to cycle
+  </div>
 </section>
 
-<!-- ARCHIVE GRID -->
+<!-- ================= OTHER POSTERS ================= -->
+
 <section class="grid">
 
-  <!-- QUARTER-PAGE FLYERS (CYCLING) -->
-  <figure>
-    <div class="flyer-frame" id="flyer-frame">
-      <img
-        id="flyer-img"
-        src="BCPMM(front)1.png"
-        alt="BCPMM Quarter-Page Flyers">
-    </div>
-    <figcaption>Quarter-Page Flyers (click to cycle)</figcaption>
-  </figure>
+  <div class="card">
+    <a href="BCPMM_poster.jpg" target="_blank">
+      <img src="BCPMM_poster.jpg" alt="">
+    </a>
+    <div class="caption">Official Tournament Poster</div>
+  </div>
 
-  <figure>
-    <a href="webBCPMM.png" target="_blank" rel="noopener">
+  <div class="card">
+    <a href="webBCPMM.png" target="_blank">
       <img src="webBCPMM.png" alt="">
     </a>
-    <figcaption>Web Poster (BCPMM)</figcaption>
-  </figure>
+    <div class="caption">Web Poster (BCPMM)</div>
+  </div>
 
-  <figure>
-    <a href="webBCWL.png" target="_blank" rel="noopener">
+  <div class="card">
+    <a href="webBCWL.png" target="_blank">
       <img src="webBCWL.png" alt="">
     </a>
-    <figcaption>Web Poster (BCWL)</figcaption>
-  </figure>
+    <div class="caption">Web Poster (BCWL)</div>
+  </div>
 
-  <figure>
-    <a href="prizeboosters.jpg" target="_blank" rel="noopener">
+  <div class="card">
+    <a href="prizeboosters.jpg" target="_blank">
       <img src="prizeboosters.jpg" alt="">
     </a>
-    <figcaption>Prize Boosters</figcaption>
-  </figure>
+    <div class="caption">Prize Boosters</div>
+  </div>
 
 </section>
 
@@ -225,41 +192,32 @@ figcaption{
 </div>
 
 <script>
-/* ---------------------------------
-   QUARTER-PAGE FLYER CAROUSEL
------------------------------------*/
-(() => {
-  const images = [
-    "BCPMM(front)1.png",
-    "BCPMM(front)2.png",
-    "BCPMM(front)3.png",
-    "BCPMM(front)4.png"
-  ];
+/* ================= CYCLER ================= */
 
-  let idx = 0;
-  const img = document.getElementById("flyer-img");
-  const frame = document.getElementById("flyer-frame");
+const images = [
+  "BCPMM(front)1.png",
+  "BCPMM(front)2.png",
+  "BCPMM(front)3.png",
+  "BCPMM(front)4.png"
+];
 
-  frame.addEventListener("click", () => {
-    idx = (idx + 1) % images.length;
-    img.src = images[idx];
-  });
-})();
+const colors = [
+  "#efd9df",  // soft pink
+  "#dde7f3",  // soft blue
+  "#f3edd6",  // soft yellow
+  "#e1efe4"   // soft green
+];
 
-/* ---------------------------------
-   RANDOM PASTEL "INK"
------------------------------------*/
-(() => {
-  const pastels = [
-    "#FFF3C4",
-    "#E9F2FF",
-    "#FCE8F0",
-    "#EAF7EA"
-  ];
-  const frame = document.getElementById("flyer-frame");
-  frame.style.background =
-    pastels[Math.floor(Math.random() * pastels.length)];
-})();
+let idx = 0;
+
+function cycleFlyer(){
+  idx = (idx + 1) % images.length;
+  document.getElementById("hero-img").src = images[idx];
+  document.getElementById("tint-layer").style.background = colors[idx];
+}
+
+/* initialize first tint */
+document.getElementById("tint-layer").style.background = colors[0];
 </script>
 
 </body>

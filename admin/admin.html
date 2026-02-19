@@ -2,587 +2,299 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Admin Panel · Magic1</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+<title>Admin · Magic1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/auth.js"></script>
 
 <style>
-.wrap{
-  max-width:1100px;
-  margin:6rem auto 4rem;
-  padding:0 1.5rem;
+body {
+  max-width: 1100px;
+  margin: 3rem auto;
+  padding: 0 1.5rem;
+  font-family: system-ui, sans-serif;
 }
 
-.logo{
-  width:70px;
-  margin-bottom:1.5rem;
+.logo {
+  width: 120px;
+  margin-bottom: 1.5rem;
 }
 
-h2{ margin-top:3rem; }
-
-.notice{ margin-bottom:1rem; font-weight:600; }
-.error{ color:#c0392b; font-weight:700; }
-.success{ color:#2e7d32; font-weight:700; }
-.small{ font-size:0.9rem; opacity:.75; }
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:1rem;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
 }
 
-th,td{
-  padding:10px;
-  border-bottom:1px solid #eee;
-  text-align:left;
-  vertical-align:top;
+th, td {
+  padding: 0.7rem;
+  border-bottom: 1px solid #ddd;
+  vertical-align: top;
 }
 
-button{
-  padding:6px 12px;
-  margin-right:6px;
-  cursor:pointer;
-  font-weight:600;
-  border:1px solid #000;
-  background:#fff;
+button {
+  padding: 0.4rem 0.8rem;
+  margin-right: 0.4rem;
+  cursor: pointer;
 }
 
-button:hover{ background:#f3f3f3; }
-
-.approve{ background:#2e7d32;color:white;border:none; }
-.reject{ background:#c0392b;color:white;border:none; }
-.promote{ background:#1976d2;color:white;border:none; }
-.demote{ background:#777;color:white;border:none; }
-
-.assign-box{
-  margin-top:1rem;
-  padding:1.25rem;
-  border:1px solid #ddd;
-  display:flex;
-  flex-wrap:wrap;
-  gap:1rem;
-  align-items:flex-end;
+.section {
+  margin-top: 3rem;
 }
 
-.assign-box select{
-  padding:6px;
-  min-width:300px;
+.small {
+  font-size: 0.85rem;
+  opacity: 0.75;
 }
 
-.assign-box .field label{
-  display:block;
-  font-weight:700;
-  margin-bottom:6px;
-}
-
-#debug{
-  margin-top:10px;
-  padding:10px;
-  border:1px solid #eee;
-  border-radius:10px;
-  background:#fafafa;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size:12px;
-  white-space:pre-wrap;
+.err {
+  color: #c0392b;
+  font-weight: 700;
+  margin-top: 0.75rem;
 }
 </style>
 </head>
 
 <body>
+
 <div id="global-menu-root"></div>
 
-<div class="wrap">
-
-<img src="/assets/BCPMMsvg.png" class="logo">
+<img src="/assets/BCPMMsvg.png" class="logo" alt="Logo">
 
 <h1>Admin Panel</h1>
-<div id="admin-status" class="notice"></div>
-<div id="debug" class="small"></div>
 
-<h2>Pending Player Name Verifications</h2>
-<table>
-<thead>
-<tr>
-  <th>Player Name</th>
-  <th>User Email</th>
-  <th>Actions</th>
-</tr>
-</thead>
-<tbody id="claims-body"></tbody>
-</table>
+<!-- ===================================================== -->
+<!-- Pending Claims -->
+<!-- ===================================================== -->
 
-<h2>Manual Player Assignment</h2>
-<div class="assign-box">
-  <div class="field">
-    <label>User Email (unpaired)</label>
-    <select id="assign-user"></select>
-  </div>
+<div class="section">
+  <h2>Pending Claims</h2>
+  <div id="pending-error" class="err" style="display:none;"></div>
 
-  <div class="field">
-    <label>Player Name (unverified)</label>
-    <select id="assign-player"></select>
-  </div>
-
-  <button id="assign-btn">Assign & Approve</button>
+  <table>
+    <thead>
+      <tr>
+        <th>Player</th>
+        <th>User Info</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="pending-table"></tbody>
+  </table>
 </div>
 
-<h2>Users</h2>
-<table>
-<thead>
-<tr>
-  <th>Email</th>
-  <th>Role</th>
-  <th>Player Name</th>
-  <th>Actions</th>
-</tr>
-</thead>
-<tbody id="users-body"></tbody>
-</table>
+<!-- ===================================================== -->
+<!-- Manual Assignment -->
+<!-- ===================================================== -->
 
+<div class="section">
+  <h2>Manual Assignment</h2>
+  <select id="manual-user"></select>
+  <select id="manual-slug"></select>
+  <button id="assign-btn">Assign</button>
 </div>
+
+<!-- ===================================================== -->
+<!-- Grant Admin -->
+<!-- ===================================================== -->
+
+<div class="section">
+  <h2>Grant Admin Role</h2>
+  <select id="admin-user"></select>
+  <button id="grant-admin">Grant Admin</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/bcpmm-shell.js"></script>
 
 <script>
-/* =======================
-   Helpers
-======================= */
+document.addEventListener("DOMContentLoaded", async () => {
 
-const debugEl = document.getElementById("debug");
+  if (!window.auth || !window.auth._client) return;
+  const supabaseClient = window.auth._client;
 
-function dbg(line){
-  debugEl.textContent = (debugEl.textContent ? debugEl.textContent + "\n" : "") + line;
-}
+  /* =====================================================
+     Session + Admin Gate
+  ===================================================== */
 
-function prettify(slug){
-  return (slug || "")
-    .split("-")
-    .filter(Boolean)
-    .map(w => w[0].toUpperCase() + w.slice(1))
-    .join(" ");
-}
+  const { data: sessionWrap, error: sessErr } = await supabaseClient.auth.getSession();
 
-function sortByLastName(players){
-  return (players || []).sort((a,b)=>{
-    const aLast = prettify(a.slug).split(" ").slice(-1)[0] || "";
-    const bLast = prettify(b.slug).split(" ").slice(-1)[0] || "";
-    return aLast.localeCompare(bLast) || prettify(a.slug).localeCompare(prettify(b.slug));
-  });
-}
-
-function setStatus(html){
-  document.getElementById("admin-status").innerHTML = html;
-}
-
-function opt(el, value, text){
-  const o = document.createElement("option");
-  o.value = value;
-  o.textContent = text;
-  el.appendChild(o);
-}
-
-async function q(fnLabel, promise){
-  const { data, error } = await promise;
-  if(error){
-    dbg(`✗ ${fnLabel}: ${error.message}`);
-    return { data: null, error };
-  }
-  dbg(`✓ ${fnLabel}: ok`);
-  return { data, error: null };
-}
-
-/* =======================
-   Init
-======================= */
-
-async function init(){
-
-  debugEl.textContent = "";
-
-  if(!window.auth){
-    setStatus(`<span class="error">auth.js not loaded.</span>`);
+  if (sessErr || !sessionWrap?.session) {
+    window.location.href = "/join.html";
     return;
   }
 
-  const supabase = auth._client;
-  const user = await auth.getUser();
+  const currentUser = sessionWrap.session.user;
 
-  if(!user){
-    setStatus(`<span class="error">Sign in required.</span>`);
-    return;
-  }
-
-  const { data: roleRow } = await supabase
+  const { data: role, error: roleErr } = await supabaseClient
     .from("user_roles")
     .select("role")
-    .eq("user_id", user.id)
-    .eq("role","admin")
+    .eq("user_id", currentUser.id)
+    .eq("role", "admin")
     .maybeSingle();
 
-  if(!roleRow){
-    setStatus(`<span class="error">Admin access required.</span>`);
+  if (roleErr || !role) {
+    alert("Admin access required.");
+    window.location.href = "/";
     return;
   }
 
-  setStatus(`<span class="success">Admin: ${user.email}</span>`);
+  /* =====================================================
+     Pending Claims (FK-FREE JOIN)
+  ===================================================== */
 
-  await loadClaims(supabase, user);
-  await loadUsers(supabase);
-  await setupManualAssign(supabase, user);
-}
+  const pendingError = document.getElementById("pending-error");
+  const tbody = document.getElementById("pending-table");
+  tbody.innerHTML = "";
 
-/* =======================
-   Pending Claims
-======================= */
-
-async function loadClaims(supabase, adminUser){
-
-  const body = document.getElementById("claims-body");
-  body.innerHTML = `<tr><td colspan="3">Loading…</td></tr>`;
-
-  const { data: claims, error: claimsErr } = await supabase
+  const { data: pendingClaims, error: pendingErr } = await supabaseClient
     .from("player_claims")
     .select("id,slug,user_id,created_at")
-    .eq("status","pending")
-    .order("created_at",{ascending:true});
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
 
-  if(claimsErr){
-    body.innerHTML = `<tr><td colspan="3">Failed to load pending requests.</td></tr>`;
-    dbg(`✗ player_claims pending: ${claimsErr.message}`);
-    return;
+  if (pendingErr) {
+    pendingError.style.display = "block";
+    pendingError.textContent = pendingErr.message;
   }
 
-  if(!claims || claims.length===0){
-    body.innerHTML = `<tr><td colspan="3">No pending requests.</td></tr>`;
-    return;
-  }
+  if (!pendingClaims || pendingClaims.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3">No pending claims.</td></tr>`;
+  } else {
+    // fetch matching public_users
+    const userIds = [...new Set(pendingClaims.map(r => r.user_id).filter(Boolean))];
 
-  body.innerHTML = "";
+    let usersById = {};
+    if (userIds.length) {
+      const { data: users, error: usersErr } = await supabaseClient
+        .from("public_users")
+        .select("id,email,alias,local_store,quote")
+        .in("id", userIds);
 
-  // Build map of user_id -> email (best-effort)
-  const userIds = [...new Set(claims.map(c => c.user_id).filter(Boolean))];
-
-  const emailMap = new Map();
-
-  // IMPORTANT: This depends on your "public_users" table/view being readable by admins via RLS.
-  // If it's not, you'll see the debug line and "—" emails.
-  for(const uid of userIds){
-    const { data: urow, error: uerr } = await supabase
-      .from("public_users")
-      .select("email")
-      .eq("id", uid)
-      .maybeSingle();
-
-    if(uerr){
-      dbg(`✗ public_users email lookup (${uid}): ${uerr.message}`);
-    } else {
-      emailMap.set(uid, urow?.email || "—");
-    }
-  }
-
-  for(const claim of claims){
-
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
-      <td>${prettify(claim.slug)}</td>
-      <td>${emailMap.get(claim.user_id) || "—"}</td>
-      <td>
-        <button class="approve">Approve</button>
-        <button class="reject">Reject</button>
-        <span class="small" id="row-msg-${claim.id}"></span>
-      </td>
-    `;
-
-    const msgEl = row.querySelector(`#row-msg-${claim.id}`);
-
-    row.querySelector(".approve").onclick = async ()=>{
-
-      msgEl.textContent = " Approving…";
-
-      // Prevent double-approval: if player already linked, stop.
-      const { data: existing, error: exErr } = await supabase
-        .from("player_profiles")
-        .select("verified_user_id")
-        .eq("slug", claim.slug)
-        .maybeSingle();
-
-      if(exErr){
-        msgEl.textContent = " Failed (player lookup).";
-        return;
+      if (usersErr) {
+        pendingError.style.display = "block";
+        pendingError.textContent = usersErr.message;
       }
 
-      if(existing?.verified_user_id){
-        msgEl.textContent = " Already verified.";
-        return;
-      }
-
-      const { error: updErr } = await supabase
-        .from("player_claims")
-        .update({
-          status:"approved",
-          reviewed_by:adminUser.id,
-          reviewed_at:new Date().toISOString()
-        })
-        .eq("id", claim.id);
-
-      if(updErr){
-        msgEl.textContent = " Failed (claim update).";
-        dbg(`✗ approve claim update: ${updErr.message}`);
-        return;
-      }
-
-      const { error: linkErr } = await supabase
-        .from("player_profiles")
-        .update({ verified_user_id: claim.user_id })
-        .eq("slug", claim.slug);
-
-      if(linkErr){
-        msgEl.textContent = " Failed (public link).";
-        dbg(`✗ approve link player_profiles: ${linkErr.message}`);
-        return;
-      }
-
-      msgEl.textContent = " ✓ Approved";
-      await init();
-    };
-
-    row.querySelector(".reject").onclick = async ()=>{
-
-      msgEl.textContent = " Rejecting…";
-
-      const { error: rejErr } = await supabase
-        .from("player_claims")
-        .update({
-          status:"rejected",
-          reviewed_by:adminUser.id,
-          reviewed_at:new Date().toISOString()
-        })
-        .eq("id", claim.id);
-
-      if(rejErr){
-        msgEl.textContent = " Failed.";
-        dbg(`✗ reject claim update: ${rejErr.message}`);
-        return;
-      }
-
-      msgEl.textContent = " ✓ Rejected";
-      await init();
-    };
-
-    body.appendChild(row);
-  }
-}
-
-/* =======================
-   Users list
-======================= */
-
-async function loadUsers(supabase){
-
-  const body = document.getElementById("users-body");
-  body.innerHTML = `<tr><td colspan="4">Loading…</td></tr>`;
-
-  const { data: users, error: usersErr } = await supabase
-    .from("public_users")
-    .select("id,email")
-    .order("email",{ascending:true});
-
-  if(usersErr){
-    body.innerHTML = `<tr><td colspan="4">Failed to load users.</td></tr>`;
-    dbg(`✗ public_users list: ${usersErr.message}`);
-    return;
-  }
-
-  const { data: roles, error: rolesErr } = await supabase
-    .from("user_roles")
-    .select("user_id,role");
-
-  if(rolesErr){
-    dbg(`✗ user_roles list: ${rolesErr.message}`);
-  }
-
-  const roleMap = new Map();
-  (roles||[]).forEach(r => roleMap.set(r.user_id, r.role));
-
-  // Map user_id -> player slug (paired)
-  const { data: profiles, error: ppErr } = await supabase
-    .from("player_profiles")
-    .select("slug,verified_user_id");
-
-  if(ppErr){
-    dbg(`✗ player_profiles list: ${ppErr.message}`);
-  }
-
-  const pairedMap = new Map();
-  (profiles||[])
-    .filter(p => p.verified_user_id)
-    .forEach(p => pairedMap.set(p.verified_user_id, p.slug));
-
-  body.innerHTML = "";
-
-  (users||[]).forEach(u => {
-
-    const isAdmin = roleMap.get(u.id) === "admin";
-    const pairedSlug = pairedMap.get(u.id) || null;
-
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${u.email || "—"}</td>
-      <td>${isAdmin ? "Admin" : "User"}</td>
-      <td>${pairedSlug ? prettify(pairedSlug) : "—"}</td>
-      <td>
-        ${isAdmin
-          ? '<button class="demote">Remove Admin</button>'
-          : '<button class="promote">Make Admin</button>'}
-      </td>
-    `;
-
-    if(isAdmin){
-      row.querySelector(".demote").onclick = async ()=>{
-        const { error } = await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", u.id)
-          .eq("role","admin");
-        if(error) dbg(`✗ demote: ${error.message}`);
-        await init();
-      };
-    }else{
-      row.querySelector(".promote").onclick = async ()=>{
-        const { error } = await supabase
-          .from("user_roles")
-          .insert({ user_id: u.id, role: "admin" });
-        if(error) dbg(`✗ promote: ${error.message}`);
-        await init();
-      };
+      (users || []).forEach(u => { usersById[u.id] = u; });
     }
 
-    body.appendChild(row);
-  });
-}
+    pendingClaims.forEach(row => {
+      const u = usersById[row.user_id] || null;
 
-/* =======================
-   Manual assignment
-======================= */
+      const email = u?.email || "(no public_users row yet)";
+      const alias = u?.alias || "";
+      const store = u?.local_store || "";
+      const quote = u?.quote || "";
 
-async function setupManualAssign(supabase, adminUser){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <strong>${row.slug}</strong><br>
+          <a href="/player.html?player=${encodeURIComponent(row.slug)}" target="_blank" rel="noopener">
+            View Player Page
+          </a>
+        </td>
 
-  const userSelect = document.getElementById("assign-user");
-  const playerSelect = document.getElementById("assign-player");
+        <td>
+          <div><strong>${email}</strong></div>
+          <div class="small">user_id: ${row.user_id}</div>
+          ${alias ? `<div class="small">Alias: ${escapeHtml(alias)}</div>` : ""}
+          ${store ? `<div class="small">Store: ${escapeHtml(store)}</div>` : ""}
+          ${quote ? `<div class="small">"${escapeHtml(quote)}"</div>` : ""}
+        </td>
 
-  userSelect.innerHTML = "";
-  playerSelect.innerHTML = "";
-
-  opt(userSelect, "", "Loading…");
-  opt(playerSelect, "", "Loading…");
-
-  // Users
-  const { data: users, error: uErr } = await supabase
-    .from("public_users")
-    .select("id,email")
-    .order("email",{ascending:true});
-
-  if(uErr){
-    userSelect.innerHTML = "";
-    opt(userSelect, "", "Failed to load emails");
-    dbg(`✗ public_users for manual assign: ${uErr.message}`);
-  }
-
-  // Player profiles
-  const { data: players, error: pErr } = await supabase
-    .from("player_profiles")
-    .select("slug,verified_user_id");
-
-  if(pErr){
-    playerSelect.innerHTML = "";
-    opt(playerSelect, "", "Failed to load players");
-    dbg(`✗ player_profiles for manual assign: ${pErr.message}`);
-  }
-
-  const pairedIds = new Set(
-    (players||[])
-      .map(p => p.verified_user_id)
-      .filter(Boolean)
-  );
-
-  // Populate unpaired user emails
-  userSelect.innerHTML = "";
-  opt(userSelect, "", "Select unpaired user email");
-  (users||[])
-    .filter(u => u.id && u.email && !pairedIds.has(u.id))
-    .forEach(u => opt(userSelect, u.id, u.email));
-
-  // Populate unverified player names
-  playerSelect.innerHTML = "";
-  opt(playerSelect, "", "Select unverified player name");
-  sortByLastName((players||[]).filter(p => !p.verified_user_id))
-    .forEach(p => opt(playerSelect, p.slug, prettify(p.slug)));
-
-  document.getElementById("assign-btn").onclick = async ()=>{
-
-    const userId = userSelect.value;
-    const playerSlug = playerSelect.value;
-
-    if(!userId || !playerSlug){
-      alert("Select both fields.");
-      return;
-    }
-
-    // Safety: prevent assigning already-verified player
-    const { data: existing, error: exErr } = await supabase
-      .from("player_profiles")
-      .select("verified_user_id")
-      .eq("slug", playerSlug)
-      .maybeSingle();
-
-    if(exErr){
-      alert("Failed to check player.");
-      dbg(`✗ manual assign check: ${exErr.message}`);
-      return;
-    }
-
-    if(existing?.verified_user_id){
-      alert("That player name is already verified.");
-      return;
-    }
-
-    // Record an approved claim for audit trail
-    const { error: insErr } = await supabase.from("player_claims").insert({
-      user_id: userId,
-      slug: playerSlug,
-      status: "approved",
-      reviewed_by: adminUser.id,
-      reviewed_at: new Date().toISOString()
+        <td>
+          <button class="approve" data-id="${row.id}">Approve</button>
+          <button class="reject" data-id="${row.id}">Reject</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
     });
+  }
 
-    if(insErr){
-      alert("Failed to insert approval record.");
-      dbg(`✗ manual assign insert claim: ${insErr.message}`);
-      return;
+  tbody.addEventListener("click", async (e) => {
+    const id = e.target?.dataset?.id;
+    if (!id) return;
+
+    if (e.target.classList.contains("approve")) {
+      await supabaseClient
+        .from("player_claims")
+        .update({ status: "approved" })
+        .eq("id", id);
+      location.reload();
     }
 
-    // Link publicly
-    const { error: linkErr } = await supabase
-      .from("player_profiles")
-      .update({ verified_user_id: userId })
-      .eq("slug", playerSlug);
-
-    if(linkErr){
-      alert("Failed to link player name.");
-      dbg(`✗ manual assign link: ${linkErr.message}`);
-      return;
+    if (e.target.classList.contains("reject")) {
+      await supabaseClient
+        .from("player_claims")
+        .delete()
+        .eq("id", id);
+      location.reload();
     }
+  });
 
-    alert("Assigned and approved.");
-    await init();
+  /* =====================================================
+     Manual Assignment (public_users + tournament_players)
+  ===================================================== */
+
+  const { data: usersList } = await supabaseClient
+    .from("public_users")
+    .select("id,email")
+    .order("email");
+
+  const { data: players } = await supabaseClient
+    .from("tournament_players")
+    .select("slug")
+    .order("slug");
+
+  const userSelect = document.getElementById("manual-user");
+  const slugSelect = document.getElementById("manual-slug");
+  const adminUserSelect = document.getElementById("admin-user");
+
+  userSelect.innerHTML = "";
+  adminUserSelect.innerHTML = "";
+  slugSelect.innerHTML = "";
+
+  (usersList || []).forEach(u => {
+    userSelect.add(new Option(u.email, u.id));
+    adminUserSelect.add(new Option(u.email, u.id));
+  });
+
+  (players || []).forEach(p => {
+    slugSelect.add(new Option(p.slug, p.slug));
+  });
+
+  document.getElementById("assign-btn").onclick = async () => {
+    await supabaseClient
+      .from("player_claims")
+      .insert({
+        user_id: userSelect.value,
+        slug: slugSelect.value,
+        status: "approved"
+      });
+    alert("Assigned.");
+    location.reload();
   };
-}
 
-init();
+  document.getElementById("grant-admin").onclick = async () => {
+    await supabaseClient
+      .from("user_roles")
+      .insert({
+        user_id: adminUserSelect.value,
+        role: "admin"
+      });
+    alert("Admin granted.");
+  };
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
+  }
+
+});
 </script>
 
-<script src="/js/bcpmm-shell.js"></script>
 </body>
 </html>

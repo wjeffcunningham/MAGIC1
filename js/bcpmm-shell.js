@@ -1,184 +1,188 @@
+/* =====================================================
+   BCPMM Global Shell Menu — Production Stable
+===================================================== */
+
 (function () {
 
-  const root = document.getElementById("global-menu-root");
-  if (!root) return;
+  document.addEventListener("DOMContentLoaded", initMenu);
 
-  /* =====================================================
-     Inject Menu HTML
-  ===================================================== */
-  root.innerHTML = `
-    <div class="menu-button" id="menu-btn">☰</div>
-    <div class="menu-overlay" id="menu-overlay"></div>
+  async function initMenu() {
 
-    <div class="menu-panel" id="menu-panel">
-      <div class="menu-header">
-        <strong>Menu</strong>
-        <span class="menu-close" id="menu-close">✕</span>
+    const root = document.getElementById("global-menu-root");
+    if (!root) return;
+
+    /* =====================================================
+       Base UI
+    ===================================================== */
+
+    root.innerHTML = `
+      <div class="menu-button" id="menu-btn">☰</div>
+      <div class="menu-overlay" id="menu-overlay"></div>
+
+      <div class="menu-panel" id="menu-panel">
+        <div class="menu-header">
+          <strong>Menu</strong>
+          <span class="menu-close" id="menu-close">✕</span>
+        </div>
+
+        <div class="menu-item" id="auth-slot">
+          <span style="opacity:.6;">Loading…</span>
+        </div>
+
+        <div class="menu-item" id="toggle-theme" title="Toggle light/dark">🌙</div>
       </div>
+    `;
 
-      <div class="menu-item" id="auth-slot"></div>
-
-      <div class="menu-item" id="toggle-theme" title="Toggle light/dark">
-        🌙
-      </div>
-    </div>
-  `;
-
-  const btn = document.getElementById("menu-btn");
-  const panel = document.getElementById("menu-panel");
-  const closeBtn = document.getElementById("menu-close");
-  const overlay = document.getElementById("menu-overlay");
-  const toggle = document.getElementById("toggle-theme");
-
-  /* =====================================================
-     Menu Open / Close
-  ===================================================== */
-  btn.onclick = () => {
-    panel.classList.add("open");
-    overlay.classList.add("active");
-  };
-
-  const closeMenu = () => {
-    panel.classList.remove("open");
-    overlay.classList.remove("active");
-  };
-
-  closeBtn.onclick = closeMenu;
-  overlay.onclick = closeMenu;
-
-  /* =====================================================
-     Theme Handling
-  ===================================================== */
-  function syncIcon() {
-    toggle.textContent =
-      document.body.classList.contains("dark") ? "☀️" : "🌙";
-  }
-
-  toggle.onclick = () => {
-    document.body.classList.toggle("dark");
-    localStorage.setItem(
-      "bcpmm-theme",
-      document.body.classList.contains("dark") ? "dark" : "light"
-    );
-    syncIcon();
-  };
-
-  const saved = localStorage.getItem("bcpmm-theme");
-  if (saved === "dark") document.body.classList.add("dark");
-  syncIcon();
-
-  /* =====================================================
-     AUTH + ROLE + CLAIM STATUS
-  ===================================================== */
-  (async () => {
-
-    if (!window.auth) return;
-
+    const btn = document.getElementById("menu-btn");
+    const panel = document.getElementById("menu-panel");
+    const closeBtn = document.getElementById("menu-close");
+    const overlay = document.getElementById("menu-overlay");
+    const toggle = document.getElementById("toggle-theme");
     const slot = document.getElementById("auth-slot");
-    const supabase = auth._client;
 
-    const user = await auth.getUser();
+    /* =====================================================
+       Menu Toggle
+    ===================================================== */
 
-    /* -------------------------
-       Not signed in
-    -------------------------- */
+    btn.onclick = () => {
+      panel.classList.add("open");
+      overlay.classList.add("active");
+    };
+
+    function closeMenu() {
+      panel.classList.remove("open");
+      overlay.classList.remove("active");
+    }
+
+    closeBtn.onclick = closeMenu;
+    overlay.onclick = closeMenu;
+
+    /* =====================================================
+       Theme
+    ===================================================== */
+
+    function syncIcon() {
+      toggle.textContent =
+        document.body.classList.contains("dark") ? "☀️" : "🌙";
+    }
+
+    toggle.onclick = () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem(
+        "bcpmm-theme",
+        document.body.classList.contains("dark") ? "dark" : "light"
+      );
+      syncIcon();
+    };
+
+    if (localStorage.getItem("bcpmm-theme") === "dark") {
+      document.body.classList.add("dark");
+    }
+
+    syncIcon();
+
+    /* =====================================================
+       AUTH
+    ===================================================== */
+
+    if (!window.auth || !window.auth._client) {
+      slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
+      return;
+    }
+
+    const supabase = window.auth._client;
+
+    let user = null;
+
+    try {
+      const { data } = await supabase.auth.getUser();
+      user = data?.user || null;
+    } catch (err) {
+      console.warn("getUser failed:", err);
+    }
+
     if (!user) {
       slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
       return;
     }
 
-    /* -------------------------
-       Admin Check
-    -------------------------- */
+    /* =====================================================
+       ADMIN CHECK
+    ===================================================== */
+
     let isAdmin = false;
 
     try {
-      const { data: role } = await supabase
+      const { data } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
         .eq("role", "admin")
         .maybeSingle();
 
-      if (role) isAdmin = true;
+      if (data) isAdmin = true;
+
     } catch (err) {
-      console.warn("Admin lookup failed:", err);
+      console.warn("Admin lookup failed:", err.message);
     }
 
-    /* -------------------------
-       Claim Lookup (Safe)
-    -------------------------- */
+    /* =====================================================
+       CLAIM LOOKUP
+    ===================================================== */
+
     let approvedSlug = null;
     let pending = false;
 
     try {
-      const { data: approvedClaim } = await supabase
+      const { data: approved } = await supabase
         .from("player_claims")
         .select("slug")
         .eq("user_id", user.id)
         .eq("status", "approved")
         .maybeSingle();
 
-      if (approvedClaim) {
-        approvedSlug = approvedClaim.slug;
+      if (approved) {
+        approvedSlug = approved.slug;
       } else {
-        const { data: pendingClaim } = await supabase
+        const { data: pend } = await supabase
           .from("player_claims")
           .select("slug")
           .eq("user_id", user.id)
           .eq("status", "pending")
           .maybeSingle();
 
-        if (pendingClaim) pending = true;
+        if (pend) pending = true;
       }
 
     } catch (err) {
-      console.warn("Claim lookup failed:", err);
+      console.warn("Claim lookup blocked by RLS:", err.message);
     }
 
-    /* -------------------------
-       Build Blocks
-    -------------------------- */
+    /* =====================================================
+       BUILD MENU
+    ===================================================== */
 
     let adminBlock = "";
     if (isAdmin) {
-      adminBlock = `<a href="admin/admin.html">Admin Panel</a><br>`;
+      adminBlock = `<a href="/admin/admin.html">Admin Panel</a><br>`;
     }
 
     let playerBlock = "";
 
     if (approvedSlug) {
+      // 🔥 CORRECTED PATH
       playerBlock = `
-        <a href="/player.html?player=${approvedSlug}">
+        <a href="/leaguetracker/player.html?player=${encodeURIComponent(approvedSlug)}">
           View My Player Page
         </a><br>
       `;
     } else if (pending) {
       playerBlock = `
-        <div style="
-          color:#c0392b;
-          font-weight:700;
-          font-size:0.9em;
-          margin-top:6px;
-          display:flex;
-          align-items:center;
-          gap:6px;
-        ">
-          <span style="
-            width:8px;
-            height:8px;
-            background:#c0392b;
-            border-radius:50%;
-            display:inline-block;
-          "></span>
+        <div style="color:#c0392b;font-weight:700;font-size:0.9em;margin-top:6px;">
           Player ID verification pending
         </div>
       `;
     }
-
-    /* -------------------------
-       Render Menu
-    -------------------------- */
 
     slot.innerHTML = `
       <div style="opacity:.7;font-size:0.9em;margin-bottom:8px;">
@@ -192,12 +196,24 @@
       <a href="#" id="logout-link">Sign out</a>
     `;
 
-    document.getElementById("logout-link").onclick = async (e) => {
-      e.preventDefault();
-      await auth.signOut();
-      location.reload();
-    };
+    /* =====================================================
+       LOGOUT
+    ===================================================== */
 
-  })();
+    const logout = document.getElementById("logout-link");
+
+    if (logout) {
+      logout.onclick = async (e) => {
+        e.preventDefault();
+        try {
+          await supabase.auth.signOut();
+        } catch (err) {
+          console.warn("Sign out failed:", err);
+        }
+        window.location.reload();
+      };
+    }
+
+  }
 
 })();

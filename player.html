@@ -1,121 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Player Profile · magic1.ca</title>
+  <meta charset="utf-8" />
+  <title>Player Stats · magic1.ca</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
-  body {
-    margin:0;
-    padding:0;
-    font-family:-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
-    background:#fafafa;
-  }
-  .shell {
-    max-width:800px;
-    margin:80px auto;
-    padding:24px;
-    background:white;
-    border:2px solid black;
-    border-radius:12px;
-  }
-  h1 {
-    text-align:center;
-    margin:10px 0 6px;
-  }
-  .muted {
-    opacity:0.7;
-    font-size:0.9rem;
-    text-align:center;
-  }
-  .section {
-    margin-top:28px;
-  }
-  table {
-    width:100%;
-    border-collapse:collapse;
-    margin-top:10px;
-    font-size:0.9rem;
-  }
-  th, td {
-    padding:8px;
-    border-bottom:1px solid #ddd;
-    text-align:left;
-  }
-  th {
-    background:#f4f4f4;
-  }
-  .center {
-    text-align:center;
-  }
-</style>
+  <link rel="stylesheet" href="/css/bcpmm-shell.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+
+  <style>
+    body { background: var(--bg); color: var(--fg); }
+
+    .player-wrap{
+      max-width: 900px;
+      margin: 6rem auto 4rem;
+      padding: 0 1.5rem;
+    }
+
+    .back-link{
+      display:inline-block;
+      margin-bottom:1.25rem;
+      font-weight:600;
+      text-decoration:none;
+      color:var(--muted);
+    }
+    .back-link:hover{ color:var(--fg); text-decoration:underline; }
+
+    #claim-container{ margin-top:0.4rem; }
+
+    h2{
+      margin-top:2.25rem;
+      margin-bottom:0.75rem;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:0.75rem;
+    }
+    th,td{
+      padding:0.5rem 0.75rem;
+      border-bottom:1px solid var(--border);
+    }
+    th{ text-align:left; font-weight:600; }
+    td.num, th.num{ text-align:right; }
+  </style>
 </head>
 
 <body>
 
-<div class="shell">
+  <div id="global-menu-root"></div>
 
-  <h1 id="player-name">Player</h1>
-  <div class="muted" id="player-rating"></div>
+  <div class="player-wrap">
 
-  <img
-  id="player-avatar"
-  style="
-    display:block;
-    margin:12px auto;
-    width:96px;
-    height:96px;
-    border-radius:12px;
-    border:2px solid #000;
-    object-fit:cover;
-    background:#eee;
-  "
-  alt=""
-/>
+    <a class="back-link" href="/leaguetracker/">← Back to League Tracker</a>
 
-  <div class="section">
-    <h2>League Standings</h2>
-    <div id="standings-empty" class="muted">No league standings available.</div>
-    <table id="standings-table" style="display:none;">
-      <thead>
-        <tr>
-          <th>Month</th>
-          <th class="center">Points</th>
-          <th class="center">OW%</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <h1 id="player-name"></h1>
 
-  <div class="section">
-    <h2>Match History</h2>
-    <div id="matches-empty" class="muted">No matches recorded.</div>
-    <table id="matches-table" style="display:none;">
+    <!-- injected: verified profile OR claim link -->
+    <div id="claim-container"></div>
+
+    <h2>Points Breakdown</h2>
+    <div id="points-breakdown"></div>
+
+    <h2>Match History (Elo)</h2>
+    <table id="history-table">
       <thead>
         <tr>
           <th>Date</th>
           <th>Event</th>
           <th>Opponent</th>
           <th>Result</th>
-          <th class="center">Δ Elo</th>
+          <th class="num">Δ Elo</th>
+          <th class="num">Elo</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
+
   </div>
 
-</div>
-
-<script type="module" src="./js/db.js"></script>
-<script type="module" src="./js/global-menu-loader.js"></script>
-<script type="module" src="./js/player.js?v=20260210-1"></script>
-
-<script type="module">
-  import { renderAccountStateBanner } from "/js/account-state.js";
-  renderAccountStateBanner({ page: "hub" });
-</script>
+  <!-- IMPORTANT: only ONE player script, and it must be the Supabase one -->
+  <script src="/leaguetracker/js/player.js?v=20260219-verify"></script>
+  <script src="/js/bcpmm-shell.js"></script>
 
 </body>
 </html>

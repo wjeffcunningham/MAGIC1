@@ -8,111 +8,157 @@
 <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg" />
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet">
 
-<!-- GLOBAL SHELL (theme + menu) -->
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth.js"></script>
 
 <style>
 /* =====================================================
-   MAIN INDEX CONTENT (THEME-AWARE)
+   MAIN INDEX LAYOUT
 ===================================================== */
-body {
-  background: var(--bg);
-  color: var(--fg);
+
+.poster {
+  max-width: 640px;
+  margin: 5rem auto 4rem;
+  padding: 0 1.5rem;
   text-align: center;
 }
 
-.poster {
-  max-width: 720px;
-  margin: 6rem auto 5rem;
-  padding: 0 1.75rem;
-}
-
+/* Primary Logo */
 .logo-large {
-  width: 100%;
-  max-width: var(--logo-width);
+  width: 260px;           /* hard cap */
+  max-width: 90%;
   height: auto;
-  margin: 0 auto 24px;
+  margin: 0 auto 20px;
   display: block;
 }
 
+/* Headings */
 h1 {
-  font-size: 2.6em;
+  font-size: 2.4rem;
   font-weight: 800;
-  letter-spacing: 1.5px;
-  margin: 0 0 10px;
+  letter-spacing: 1px;
+  margin: 0 0 6px;
   text-transform: uppercase;
 }
 
 h2 {
-  margin: 0 0 28px;
+  margin: 0 0 26px;
   font-weight: 400;
+  font-size: 2rem;
 }
 
+/* Main Navigation Links */
 .main-links a {
   display: block;
-  margin: 16px 0;
-  font-size: 1.25em;
+  margin: 14px 0;
+  font-size: 1.15rem;
   font-weight: 800;
   text-transform: uppercase;
   text-decoration: none;
   color: inherit;
+  letter-spacing: 0.5px;
 }
 
 .main-links a:hover {
   text-decoration: underline;
 }
 
-.footer-note {
-  margin-top: 40px;
-  opacity: 0.7;
-  color: var(--muted);
-}
+/* =====================================================
+   SOCIAL ICONS (FIXED SIZE)
+===================================================== */
 
-/* ================================
-   SOCIAL BUTTONS
-================================ */
-.social-buttons {
+.social-icons {
   display: flex;
   justify-content: center;
-  gap: 22px;
-  margin: 36px 0 10px;
+  gap: 26px;
+  margin: 34px 0 8px;
 }
 
-.social-buttons a {
-  display: inline-block;
-}
-
-.social-buttons img {
-  height: 80px;
+.social-icons img {
+  height: 60px;       /* FIXED sane size */
   width: auto;
   opacity: 0.85;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.social-buttons img:hover {
+.social-icons img:hover {
   opacity: 1;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
-body.dark .social-buttons img {
+body.dark .social-icons img {
   filter: brightness(0.9);
+}
+
+/* =====================================================
+   SUBTLE GREEN SURGE GLINT — CLEAN + SMOOTH
+===================================================== */
+
+.glint{
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+
+/* the soft highlight */
+.glint::after{
+  content:"";
+  position:absolute;
+  top:-50%;
+  left:-60%;
+  width:50%;
+  height:200%;
+  pointer-events:none;
+
+  background: linear-gradient(
+    100deg,
+    rgba(0,0,0,0) 0%,
+    rgba(120,255,180,0.35) 45%,
+    rgba(80,240,140,0.65) 50%,
+    rgba(120,255,180,0.35) 55%,
+    rgba(0,0,0,0) 100%
+  );
+
+  filter: blur(10px);
+  opacity: 0;
+
+  transform: translateX(0) skewX(-18deg);
+  animation: greenSurge 6s ease-in-out infinite;
+}
+
+@keyframes greenSurge{
+
+  /* idle */
+  0%   { opacity:0; transform:translateX(0) skewX(-18deg); }
+
+  /* surge begins */
+  15%  { opacity:0.9; }
+
+  /* peak center */
+  35%  { opacity:1; transform:translateX(220%) skewX(-18deg); }
+
+  /* fade away */
+  50%  { opacity:0; }
+
+  /* rest period */
+  100% { opacity:0; transform:translateX(220%) skewX(-18deg); }
 }
 </style>
 </head>
 
 <body>
 
-<!-- GLOBAL MENU ROOT -->
 <div id="global-menu-root"></div>
 
-<!-- MAIN CONTENT -->
 <div class="poster">
-  <img src="/assets/BCPMM.svg" class="logo-large" alt="BC Premodern Masters logo" />
+
+  <img src="/assets/BCPMM.svg"
+       class="logo-large"
+       alt="BC Premodern Masters logo" />
 
   <h1>B.C. Premodern Masters</h1>
-  <h2><i>"Magic Lives in B.C."</i></h2>
+  <h2 class="glint">"Magic Lives in B.C."</h2>
 
   <div class="main-links">
     <a href="/leaguetracker/">League Tracker</a>
@@ -121,29 +167,26 @@ body.dark .social-buttons img {
     <a href="/archive/">Archive</a>
   </div>
 
-<div class="social-icons">
-
-  <a href="https://discord.gg/zm6r4pVjNr" target="_blank" rel="noopener" class="social">
-    <img src="./assets/discord.png?v=20260208" alt="Discord" />
-  </a>
+  <div class="social-icons">
+    <a href="https://discord.gg/zm6r4pVjNr" target="_blank" rel="noopener">
+      <img src="/assets/discord.png?v=20260208" alt="Discord" />
+    </a>
   
-  <a href="https://vvipmedia.net" target="_blank" rel="noopener" class="social">
-    <img src="./assets/vvip.png?v=20260208" alt="VVIP Media" />
-  </a>
+    <a href="https://vvipmedia.net" target="_blank" rel="noopener">
+      <img src="/assets/vvip.png?v=20260208" alt="VVIP Media" />
+    </a>
 
-  <a href="https://www.instagram.com/bcpremodernmasters/" target="_blank" rel="noopener" class="social">
-    <img src="./assets/instagram.svg?v=20260208" alt="Instagram" />
-  </a>
-
-  </a>
-</div>
+    <a href="https://www.instagram.com/bcpremodernmasters/" target="_blank" rel="noopener">
+      <img src="/assets/instagram.svg?v=20260208" alt="Instagram" />
+    </a>
+  </div>
 
   <div class="footer-note">
     Watch this space. More to come.
   </div>
+
 </div>
 
-<!-- GLOBAL SHELL LOGIC -->
 <script src="/js/bcpmm-shell.js"></script>
 
 </body>

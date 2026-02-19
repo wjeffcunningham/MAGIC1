@@ -1,34 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Player Stats · B.C. Premodern Masters</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8" />
+<title>Player Stats · B.C. Premodern Masters</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="stylesheet" href="/css/bcpmm-shell.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/auth.js"></script>
+<link rel="stylesheet" href="/css/bcpmm-shell.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/auth.js"></script>
 
-  <style>
-    body { background: var(--bg); color: var(--fg); }
+<style>
+body { background: var(--bg); color: var(--fg); }
 
-    .player-wrap {
-      max-width: 900px;
-      margin: 6rem auto 4rem;
-      padding: 0 1.5rem;
-    }
+.player-wrap {
+  max-width: 900px;
+  margin: 6rem auto 4rem;
+  padding: 0 1.5rem;
+}
 
-    table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+}
 
-    th, td {
-      padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid var(--muted);
-    }
+.back-link:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
 
-    td.num, th.num { text-align: right; }
+/* ===== Profile Header ===== */
 
-    .bonus-icons { margin-left: 6px; }
-  </style>
+.profile-card {
+  margin-top: 1rem;
+  padding: 1.2rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+.profile-alias {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 0.4rem;
+}
+
+.profile-quote {
+  font-style: italic;
+  opacity: 0.8;
+  margin-bottom: 0.4rem;
+}
+
+.profile-store {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+#claim-container {
+  margin-top: 0.5rem;
+}
+
+h2 {
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Match history */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+}
+
+th, td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--muted);
+}
+
+th {
+  text-align: left;
+  font-weight: 600;
+}
+
+td.num, th.num {
+  text-align: right;
+}
+</style>
 </head>
 
 <body>
@@ -36,33 +96,38 @@
 <div id="global-menu-root"></div>
 
 <div class="player-wrap">
-  <div><a href="/leaguetracker/">← Back to League Tracker</a></div>
 
-  <h1 id="player-name"></h1>
-  <div id="player-meta"></div>
+<a class="back-link" href="/leaguetracker/">← Back to League Tracker</a>
 
-  <h2>Points Breakdown</h2>
-  <table id="points-table">
-    <tbody></tbody>
-  </table>
+<h1 id="player-name"></h1>
 
-  <h2>Match History (Elo)</h2>
-  <table id="history-table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Event</th>
-        <th>Opponent</th>
-        <th>Score</th>
-        <th class="num">Δ Elo</th>
-        <th class="num">Elo</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<div id="claim-container"></div>
+
+<!-- PUBLIC PROFILE INTEGRATED HERE -->
+<div id="profile-header"></div>
+
+<h2>Points Breakdown</h2>
+<div id="points-breakdown"></div>
+
+<h2>Match History (Elo)</h2>
+
+<table id="history-table">
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Opponent</th>
+<th>Result</th>
+<th class="num">Δ Elo</th>
+<th class="num">Elo</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
 </div>
 
-<script src="/leaguetracker/js/player.js?v=20260216-1"></script>
+<script src="/leaguetracker/js/player.js?v=20260219-2"></script>
 <script src="/js/bcpmm-shell.js"></script>
 
 </body>

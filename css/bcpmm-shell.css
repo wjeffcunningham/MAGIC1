@@ -1,13 +1,19 @@
 /* =====================================================
    GLOBAL THEME
 ===================================================== */
+
 :root {
   --bg: #ffffff;
   --fg: #000000;
   --muted: #666;
-
-  /* UI surfaces (menus, icon chips, cards) */
+  --border: #d8d8d8;
   --surface: #f2f2f2;
+
+  --gold: #b88a00;
+  --gold-strong: #d4af37;
+
+  /* BCPMM bucket background (subtle cornflower) */
+  --bcpmm-bg: #eef4ff;
 
   --logo-width: 320px;
 }
@@ -16,8 +22,11 @@ body.dark {
   --bg: #121212;
   --fg: #f4f4f4;
   --muted: #aaa;
-
+  --border: #2a2a2a;
   --surface: #1f1f1f;
+
+  /* Dark-mode cornflower surface */
+  --bcpmm-bg: rgba(110, 160, 255, 0.16);
 }
 
 body {
@@ -29,16 +38,38 @@ body {
 }
 
 /* =====================================================
+   TYPOGRAPHY
+===================================================== */
+
+h1 {
+  font-size: 2.6rem;
+  margin-bottom: 0.5rem;
+}
+
+h2 {
+  margin-top: 2.5rem;
+  font-size: 1.8rem;
+}
+
+a {
+  color: #2a5db0;
+  text-decoration: underline;
+}
+
+a:hover {
+  opacity: 0.85;
+}
+
+/* =====================================================
    GLOBAL MENU
 ===================================================== */
+
 .menu-button {
   position: fixed;
   top: 20px;
   right: 22px;
   font-size: 56px;
-  line-height: 1;
   cursor: pointer;
-  user-select: none;
   z-index: 1001;
 }
 
@@ -57,16 +88,13 @@ body {
   position: fixed;
   top: 0;
   right: 0;
-  width: 200px;
+  width: 220px;
   height: 100vh;
-
   background: var(--surface);
   color: var(--fg);
-
   padding: 22px 18px;
-  box-sizing: border-box;
   transform: translateX(100%);
-  transition: transform 0.25s ease, background 0.25s ease;
+  transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease;
   z-index: 1002;
 }
 
@@ -74,32 +102,9 @@ body {
   transform: translateX(0);
 }
 
-.menu-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.menu-header strong {
-  font-size: 1.2em;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.menu-close {
-  font-size: 26px;
-  cursor: pointer;
-  opacity: 0.8;
-}
-
-.menu-close:hover {
-  opacity: 1;
-}
-
 .menu-item {
   margin-top: 40px;
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -109,54 +114,242 @@ body {
 }
 
 /* =====================================================
-   SOCIAL ICONS (THEME-AWARE, OPTICALLY NORMALIZED)
+   TABLES (LEAGUE + PLAYER)
 ===================================================== */
 
-.social-icons {
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  font-weight: 700;
+}
+
+td.num,
+th.num {
+  text-align: right;
+}
+
+td.rank,
+th.rank {
+  width: 3rem;
+  text-align: right;
+}
+
+/* =====================================================
+   LADDER POLISH
+===================================================== */
+
+.ladder tbody tr:hover {
+  background: var(--surface);
+}
+
+.ladder td a {
+  font-weight: 600;
+}
+
+/* Solid gold when ONLY BCPMM is shown */
+body.bcpmm-only .ladder td.num {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* =====================================================
+   PAGER
+===================================================== */
+
+#ladder-pager {
   display: flex;
-  gap: 32px;              /* slightly more breathing room */
-  justify-content: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
+#ladder-pager button {
+  background: transparent;
+  border: 1px solid var(--muted);
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+#ladder-pager button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* =====================================================
+   CLAIM LINK
+===================================================== */
+
+.claim-link {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* =====================================================
+   POINTS BREAKDOWN
+===================================================== */
+
+.points-category summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin: 0.9rem 0;
+  list-style: none;
+}
+
+.points-category summary::-webkit-details-marker {
+  display: none;
+}
+
+.points-category summary::before {
+  content: "▸ ";
+  display: inline-block;
+  margin-right: 4px;
+  transition: transform 0.2s ease;
+}
+
+.points-category[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.gold {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.points-sub {
+  padding-left: 1.2rem;
+  margin-bottom: 0.75rem;
+}
+
+.points-event {
+  margin-bottom: 0.65rem;
+}
+
+.event-title {
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.event-line {
+  font-size: 0.95rem;
+}
+
+.multiplier {
+  color: #c40000;
+  font-weight: 700;
+}
+
+.bonus {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* The “Total … Points” bar */
+.race-total {
+  border-top: 2px solid var(--border);
+  padding-top: 1rem;
+  margin-top: 1rem;
+  font-size: 1.05rem;
+}
+
+/* =====================================================
+   PLAYER PAGE: BCPMM HEADER + BUCKET BACKGROUND
+===================================================== */
+
+.bcpmm-header {
+  display: flex;
   align-items: center;
-  margin-top: 3.5rem;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
 }
 
-.social-icons img {
-  display: block;
-  height: 58px;           /* +33% base size */
-  width: auto;
-  opacity: 0.9;
-  transition:
-    opacity 0.2s ease,
-    filter 0.2s ease,
-    transform 0.2s ease;
+.bcpmm-logo {
+  width: 54px;
+  height: auto;
+  opacity: 0.95;
 }
 
-/* Hover polish */
-.social-icons a:hover img {
-  opacity: 1;
-  transform: translateY(-2px);
+.bcpmm-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
 }
 
-/* Dark mode: invert monochrome icons + subtle glow */
-body.dark .social-icons img {
-  filter: invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.18));
+/* Subtle cornflower panel only for BCPMM bucket */
+.points-category.bcpmm-bucket {
+  background: var(--bcpmm-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
 }
 
-/* -----------------------------------------------------
-   Optical compensation per icon (intentional)
------------------------------------------------------ */
-
-/* Instagram outline still needs extra weight */
-.social-icons img[src*="instagram"] {
-  height: 62px;
+/* Small trophy next to Top 8 bonus lines */
+.mini-trophy {
+  font-size: 0.9rem;
 }
 
-/* Discord glyph runs small */
-.social-icons img[src*="discord"] {
-  height: 60px;
+/* =====================================================
+   CHAMPIONSHIP (SOLID GOLD – NO PULSE)
+===================================================== */
+
+.glimmer {
+  font-weight: 700;
+  color: var(--gold-strong);
 }
 
-/* VVIP logo is visually heavy */
-.social-icons img[src*="vvip"] {
-  height: 54px;
+/* =====================================================
+   INLINE VERIFIED PROFILE (LEAN VERSION)
+===================================================== */
+
+.public-profile-inline {
+  margin-top: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-inline-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.public-avatar-small {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.profile-alias-sub {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.profile-verified-inline {
+  font-size: 0.85rem;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.profile-quote-inline {
+  margin-top: 0.5rem;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.profile-store-inline {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
 }

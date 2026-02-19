@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <title>Join · Magic1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
 
 <style>
@@ -13,54 +12,112 @@
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
   Roboto, Helvetica, Arial, sans-serif;
-  padding: 2rem;
-  max-width: 680px;
+  padding: 3rem 2rem;
+  max-width: 720px;
   margin: 0 auto;
+  background: var(--bg);
+  color: var(--fg);
 }
 
-/* Inner content width control */
 .content {
-  max-width: 460px;
+  max-width: 520px;
   margin: 0 auto;
+  text-align: center;
 }
+
+/* =====================================
+   HERO LOGO
+===================================== */
 
 .logo {
-  width: 80px;
-  margin-bottom: 1.5rem;
+  width: 170px;
+  margin-bottom: 2.2rem;
 }
 
-h1 { margin-bottom: 0.25rem; }
+/* =====================================
+   SLOGAN — SMOOTH SILVER GLINT
+===================================== */
 
-.section {
-  margin-top: 2rem;
+.slogan {
+  font-size: 2rem;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.6rem;
+  overflow: hidden;
 }
+
+.slogan::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -90%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255,255,255,0.9) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  animation: sunGlint 2s infinite;
+}
+
+@keyframes sunGlint {
+  0%   { left: -90%; }
+  70%  { left: -90%; }
+  90%  { left: 130%; }
+  100% { left: 130%; }
+}
+
+/* =====================================
+   FORM
+===================================== */
+
+.section { margin-top: 2rem; }
 
 input {
   width: 100%;
-  padding: 0.7rem 0.9rem;
-  margin-bottom: 0.75rem;
-  border: 1px solid #000;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.7rem;
+  border: 1px solid var(--border);
   font-size: 0.95rem;
+  background: var(--surface);
+  color: var(--fg);
+}
+
+input:focus {
+  outline: none;
+  border-color: #1f6feb;
+}
+
+.password-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  text-align: left;
 }
 
 button {
   font-size: 0.95rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.75rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.8rem;
   width: 100%;
   cursor: pointer;
-  border: 1px solid #000;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
   font-weight: 600;
+  color: var(--fg);
 }
 
 button:hover {
-  background: #f5f5f5;
+  background: var(--border);
 }
 
-.oauth button {
-  margin-bottom: 0.5rem;
-}
+.oauth button { margin-bottom: 0.5rem; }
 
 .status {
   margin-top: 1rem;
@@ -88,39 +145,65 @@ button:hover {
 <img src="/assets/BCPMMsvg.png" class="logo">
 
 <h1>Join Magic1.ca</h1>
+<div class="slogan">“Play Like a Legend”</div>
 <p>Create an account or sign in.</p>
 
 <div id="status" class="status"></div>
 
-<!-- EMAIL AUTH -->
 <div class="section">
   <h3>Email</h3>
 
-  <input type="email" id="email" placeholder="Email address">
-  <input type="password" id="password" placeholder="Password">
+  <input type="email" id="email" placeholder="Email address" autocomplete="email">
 
-  <button onclick="emailSignUp()">Sign Up</button>
-  <button onclick="emailSignIn()">Sign In</button>
+  <input 
+    type="password" 
+    id="password" 
+    placeholder="Password" 
+    minlength="8"
+    autocomplete="new-password"
+  >
+
+  <div class="password-hint">
+    Password must be at least <strong>8 characters</strong>.
+  </div>
+
+  <button id="signup-btn">Sign Up</button>
+  <button id="signin-btn">Sign In</button>
 </div>
 
 <div class="divider">— or —</div>
 
-<!-- OAUTH -->
 <div class="section oauth">
   <h3>Continue with</h3>
-
-  <button onclick="oauthLogin('google')">Google</button>
-  <button onclick="oauthLogin('discord')">Discord</button>
-  <button onclick="oauthLogin('facebook')">Facebook</button>
+  <button data-provider="google">Google</button>
+  <button data-provider="discord">Discord</button>
+  <button data-provider="facebook">Facebook</button>
 </div>
 
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/auth.js"></script>
 <script src="/js/bcpmm-shell.js"></script>
 
 <script>
+/* =====================================
+   Supabase Init (SAFE — no shadowing)
+===================================== */
+
+const SUPABASE_URL = "https://auth.magic1.ca";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
 
 const statusBox = document.getElementById("status");
 
@@ -129,73 +212,98 @@ function setStatus(msg, type="") {
   statusBox.textContent = msg;
 }
 
-async function checkSession() {
-  if (!window.auth) return;
-  const user = await auth.getUser();
-  if (user) {
-    setStatus("Signed in. Redirecting…", "success");
+/* =====================================
+   Session Redirect
+===================================== */
+
+(async () => {
+  const { data } = await supabaseClient.auth.getSession();
+  if (data?.session) {
     window.location.href = "/profile-edit.html";
   }
-}
+})();
 
-window.addEventListener("load", checkSession);
+/* =====================================
+   Sign Up
+===================================== */
 
-async function emailSignUp() {
+document.getElementById("signup-btn").onclick = async () => {
+
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
+
   if (!email || !password) {
     setStatus("Enter email and password.", "error");
     return;
   }
+
+  if (password.length < 8) {
+    setStatus("Password must be at least 8 characters.", "error");
+    return;
+  }
+
   setStatus("Creating account…");
-  const { error } = await auth._client.auth.signUp({
+
+  const { error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: window.location.origin + "/profile-edit.html"
     }
   });
+
   if (error) {
     setStatus(error.message, "error");
     return;
   }
-  setStatus("Check your email to confirm your account.", "success");
-}
 
-async function emailSignIn() {
+  setStatus("Check your email to confirm your account.", "success");
+};
+
+/* =====================================
+   Sign In
+===================================== */
+
+document.getElementById("signin-btn").onclick = async () => {
+
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
+
   if (!email || !password) {
     setStatus("Enter email and password.", "error");
     return;
   }
+
   setStatus("Signing in…");
-  const { error } = await auth._client.auth.signInWithPassword({
+
+  const { error } = await supabaseClient.auth.signInWithPassword({
     email,
     password
   });
+
   if (error) {
     setStatus(error.message, "error");
     return;
   }
-  setStatus("Success. Redirecting…", "success");
+
   window.location.href = "/profile-edit.html";
-}
+};
 
-async function oauthLogin(provider) {
-  setStatus("Redirecting to " + provider + "…");
-  const options = {
-    redirectTo: window.location.origin + "/profile-edit.html"
+/* =====================================
+   OAuth
+===================================== */
+
+document.querySelectorAll("[data-provider]").forEach(btn => {
+  btn.onclick = async () => {
+    const provider = btn.dataset.provider;
+    await supabaseClient.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: window.location.origin + "/profile-edit.html"
+      }
+    });
   };
-  if (provider === "google") {
-    options.queryParams = { prompt: "select_account" };
-  }
-  await auth._client.auth.signInWithOAuth({
-    provider,
-    options
-  });
-}
-
+});
 </script>
 
 </body>
