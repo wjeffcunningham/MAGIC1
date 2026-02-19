@@ -53,24 +53,26 @@ body {
   content: "";
   position: absolute;
   top: 0;
-  left: -90%;
-  width: 60%;
+  left: -120%;
+  width: 55%;
   height: 100%;
   background: linear-gradient(
     120deg,
     transparent 0%,
-    rgba(255,255,255,0.9) 50%,
+    rgba(255,255,255,0.75) 45%,
+    rgba(255,255,255,0.95) 50%,
+    rgba(255,255,255,0.75) 55%,
     transparent 100%
   );
-  transform: skewX(-20deg);
-  animation: sunGlint 2s infinite;
+  transform: skewX(-18deg);
+  animation: sunGlint 4.5s cubic-bezier(.4,.0,.2,1) infinite;
 }
 
 @keyframes sunGlint {
-  0%   { left: -90%; }
-  70%  { left: -90%; }
-  90%  { left: 130%; }
-  100% { left: 130%; }
+  0%   { left: -120%; }
+  65%  { left: -120%; }   /* pause before sweep */
+  85%  { left: 120%; }    /* smooth glide */
+  100% { left: 120%; }
 }
 
 /* =====================================
