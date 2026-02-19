@@ -111,6 +111,47 @@ figcaption{
   color:var(--muted);
   text-align:center;
 }
+
+/* =========================
+   PLAY OF THE DAY FEATURE
+========================= */
+
+.play-of-day {
+  text-align: center;
+}
+
+.play-of-day .featured {
+  width: 33%;
+  min-width: 260px;
+  margin: 0 auto;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--card);
+  position: relative;
+  border: 3px solid var(--accent);
+  box-shadow:
+    0 0 0 6px rgba(31,111,235,.08),
+    0 12px 30px rgba(15,23,42,.15);
+}
+
+/* Decorative border using bbal6.gif */
+.play-of-day .featured::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 22px;
+  background: url("bbal6.gif");
+  background-size: cover;
+  z-index: -1;
+  opacity: .35;
+  filter: contrast(110%) saturate(120%);
+}
+
+.play-of-day img {
+  border-radius: 12px;
+  display: block;
+}
+
 </style>
 </head>
 
@@ -145,11 +186,19 @@ figcaption{
   </div>
 </section>
 
-<section class="section">
+<section class="section play-of-day">
   <h2>Play of the Day</h2>
-    <figure><a href="t8/IMG_6512.png" target="_blank"><img src="t8/IMG_6512.png"></a><figcaption>Essence Flare your Sylvan Library (Submitted by J. Onions)</figcaption></figure>
-</section>
 
+  <figure class="featured">
+    <a href="t8/IMG_6512.png" target="_blank">
+      <img src="t8/IMG_6512.png" alt="Play of the Day">
+    </a>
+    <figcaption>
+      Essence Flare your Sylvan Library (Submitted by J. Onions)
+    </figcaption>
+  </figure>
+
+</section>
 <!-- ROUND 3 -->
 <section class="section">
   <h2>Round 3</h2>

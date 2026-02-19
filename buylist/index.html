@@ -11,14 +11,14 @@
 <style>
 .buylist-wrap {
   max-width: 1100px;
-  margin: 6rem auto 4rem;
-  padding: 0 1.5rem;
+  margin: 2.5rem auto 3rem;
+  padding: 0 1.25rem;
 }
 
 .back-link {
   display: inline-block;
-  margin-bottom: 1.25rem;
-  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--muted);
   text-decoration: none;
@@ -34,45 +34,47 @@ h1 { text-align:center; margin-bottom:0.25rem; }
 .subtitle {
   text-align:center;
   color:var(--muted);
-  margin-bottom:0.25rem;
+  margin-bottom:0.15rem;
+  font-size:0.9rem;
 }
 
 .note {
   text-align:center;
-  font-size:0.85rem;
+  font-size:0.8rem;
   color:var(--muted);
-  margin-bottom:0.5rem;
+  margin-bottom:0.25rem;
 }
 
 .edition-flag {
   text-align:center;
-  font-size:0.8rem;
+  font-size:0.75rem;
   color:var(--muted);
-  margin-bottom:1.5rem;
+  margin-bottom:1rem;
 }
 
 .section-title {
-  margin:2.5rem 0 1rem;
-  font-size:1.1rem;
+  margin:1.75rem 0 0.75rem;
+  font-size:1rem;
   font-weight:700;
   text-transform:uppercase;
   letter-spacing:0.5px;
   border-bottom:1px solid var(--muted);
-  padding-bottom:0.4rem;
+  padding-bottom:0.3rem;
 }
 
 .view-bar {
   text-align:center;
-  margin-bottom:1.5rem;
+  margin-bottom:1rem;
 }
 
 .view-bar button {
   font-weight:700;
-  padding:0.35rem 0.7rem;
+  padding:0.3rem 0.65rem;
   margin:0 0.25rem;
   border:1px solid var(--muted);
   background:transparent;
   cursor:pointer;
+  font-size:0.85rem;
 }
 
 .view-bar button.active {
@@ -80,26 +82,32 @@ h1 { text-align:center; margin-bottom:0.25rem; }
   color:var(--bg);
 }
 
+/* 1/4 width grid */
 .card-grid {
   display:grid;
-  grid-template-columns:repeat(8,1fr);
-  gap:18px;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
 }
 
-.card-tile { text-align:center; }
+.card-tile {
+  text-align:center;
+  padding:6px 4px;
+}
 
 .card-tile img {
-  width:60px;
+  width:48px;
   height:auto;
   border-radius:6px;
   display:block;
-  margin:0 auto 0.35rem;
+  margin:0 auto 0.25rem;
 }
 
-.card-meta { font-size:0.72rem; }
+.card-meta {
+  font-size:0.68rem;
+  line-height:1.2;
+}
 
 .card-name { font-weight:700; }
-
 .card-price { font-weight:700; }
 
 .market {
@@ -113,11 +121,12 @@ h1 { text-align:center; margin-bottom:0.25rem; }
 table.buylist {
   width:100%;
   border-collapse:collapse;
+  font-size:0.85rem;
 }
 
 .buylist th,
 .buylist td {
-  padding:0.5rem 0.75rem;
+  padding:0.4rem 0.65rem;
   border-bottom:1px solid var(--muted);
 }
 
@@ -126,16 +135,24 @@ table.buylist {
 .hidden { display:none; }
 
 .footer-email {
-  margin-top:3rem;
+  margin-top:2rem;
   text-align:center;
-  font-size:0.9rem;
+  font-size:0.85rem;
   color:var(--muted);
+}
+
+/* Responsive adjustments */
+@media (max-width:1000px){
+  .card-grid { grid-template-columns:repeat(3,1fr); }
+}
+
+@media (max-width:700px){
+  .card-grid { grid-template-columns:repeat(2,1fr); }
 }
 </style>
 </head>
 
 <body>
-
 <div class="buylist-wrap">
 
 <a href="/" class="back-link">← Back to main</a>
@@ -147,8 +164,8 @@ table.buylist {
 
 <div class="view-bar">
   View:
-  <button id="tile-btn" class="active">Tile</button>
-  <button id="list-btn">List</button>
+  <button id="tile-btn" class="active" type="button">Tile</button>
+  <button id="list-btn" type="button">List</button>
 </div>
 
 <div class="section-title">Reserved List Buys</div>
@@ -158,52 +175,51 @@ table.buylist {
 <div id="normal-grid" class="card-grid"></div>
 
 <table id="list-view" class="buylist hidden">
-<thead>
-<tr>
-<th>#</th>
-<th>Card</th>
-<th>Set</th>
-<th id="price-header" class="sortable">Buy Price ↓</th>
-<th>Market (USD)</th>
-</tr>
-</thead>
-<tbody></tbody>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Card</th>
+      <th>Set</th>
+      <th id="price-header" class="sortable">Buy Price ↓</th>
+      <th>Market (USD)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
 </table>
 
 <div class="footer-email">
-Contact: <a href="mailto:bcpremodermasters@gmail.com">bcpremodermasters@gmail.com</a>
+  Contact: <a href="mailto:bcpremodermasters@gmail.com">bcpremodermasters@gmail.com</a>
 </div>
 
 </div>
 
 <script>
-
 const cards = [
 
-{ name:"Intuition", set:"tmp" },
-{ name:"Survival of the Fittest", set:"wc98" },
-{ name:"Recurring Nightmare", set:"wc98" },
-{ name:"Humility", set:"tmp" },
-{ name:"Palinchron", set:"ulg" },
-{ name:"Mind Over Matter", set:"exo" },
-{ name:"Lotus Vale", set: "wth" },
-{ name:"Aluren", set:"tmp"},
-{ name:"Squee, Goblin Nabob", set:"mmq"},
-{ name:"Engineered Plague", set:"ulg"},
-{ name:"Hermit Druid", set:"shg"},
+  { name:"Intuition", set:"tmp" },
+  { name:"Survival of the Fittest", set:"wc98" },
+  { name:"Recurring Nightmare", set:"wc98" },
+  { name:"Humility", set:"tmp" },
+  { name:"Palinchron", set:"ulg" },
+  { name:"Mind Over Matter", set:"exo" },
+  { name:"Lotus Vale", set:"wth" },
+  { name:"Aluren", set:"tmp" },
+  { name:"Squee, Goblin Nabob", set:"mmq" },
+  { name:"Engineered Plague", set:"ulg" },
+  { name:"Hermit Druid", set:"shg" },
 
-// Snow lands bundled
-{
-  group:"Snow-Covered Lands",
-  override:3,
-  members:[
-    { name:"Snow-Covered Forest", set:"ice" },
-    { name:"Snow-Covered Island", set:"ice" },
-    { name:"Snow-Covered Mountain", set:"ice" },
-    { name:"Snow-Covered Swamp", set:"ice" },
-    { name:"Snow-Covered Plains", set:"ice" }
-  ]
-}
+  // Snow lands bundled
+  {
+    group:"Snow-Covered Lands",
+    override:3,
+    members:[
+      { name:"Snow-Covered Forest", set:"ice" },
+      { name:"Snow-Covered Island", set:"ice" },
+      { name:"Snow-Covered Mountain", set:"ice" },
+      { name:"Snow-Covered Swamp", set:"ice" },
+      { name:"Snow-Covered Plains", set:"ice" }
+    ]
+  }
 
 ];
 
@@ -211,12 +227,11 @@ let enriched = [];
 let listSortDesc = true;
 
 async function enrichCards(){
-
   enriched = [];
 
-  for(let card of cards){
+  for (let card of cards){
 
-    if(card.group){
+    if (card.group){
       enriched.push({
         name: card.group,
         group: true,
@@ -230,7 +245,7 @@ async function enrichCards(){
     const url = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(card.name)}&set=${card.set}`;
     const res = await fetch(url);
     const data = await res.json();
-    if(data.object==="error") continue;
+    if (data.object === "error") continue;
 
     const marketRaw = parseFloat(data.prices.usd || 0);
     const market = Math.round(marketRaw);
@@ -240,9 +255,9 @@ async function enrichCards(){
     const buyPrice = override ?? rulePrice;
 
     let arrow = "";
-    if(override !== null){
-      if(override > rulePrice) arrow = "<span class='arrow-up'>▲</span>";
-      if(override < rulePrice) arrow = "<span class='arrow-down'>▼</span>";
+    if (override !== null){
+      if (override > rulePrice) arrow = "<span class='arrow-up'>▲</span>";
+      if (override < rulePrice) arrow = "<span class='arrow-down'>▼</span>";
     }
 
     enriched.push({
@@ -261,19 +276,18 @@ async function enrichCards(){
 }
 
 function renderTile(){
-
   const reservedGrid = document.getElementById("reserved-grid");
   const normalGrid = document.getElementById("normal-grid");
 
-  reservedGrid.innerHTML="";
-  normalGrid.innerHTML="";
+  reservedGrid.innerHTML = "";
+  normalGrid.innerHTML = "";
 
   const reserved = enriched.filter(c=>c.reserved).sort((a,b)=>b.buyPrice-a.buyPrice);
   const normal = enriched.filter(c=>!c.reserved).sort((a,b)=>b.buyPrice-a.buyPrice);
 
-  function draw(group,target){
+  function draw(group, target){
     group.forEach(card=>{
-      if(card.group){
+      if (card.group){
         target.insertAdjacentHTML("beforeend",`
           <div class="card-tile">
             <div class="card-meta">
@@ -286,7 +300,9 @@ function renderTile(){
       } else {
         target.insertAdjacentHTML("beforeend",`
           <div class="card-tile">
-            <img src="${card.image}">
+            <a href="https://scryfall.com/search?q=${encodeURIComponent(card.name)}" target="_blank" rel="noopener">
+              <img src="${card.image}" alt="${card.name}">
+            </a>
             <div class="card-meta">
               <div class="card-name">${card.name}</div>
               <div class="card-price">$${card.buyPrice} ${card.arrow}</div>
@@ -298,16 +314,15 @@ function renderTile(){
     });
   }
 
-  draw(reserved,reservedGrid);
-  draw(normal,normalGrid);
+  draw(reserved, reservedGrid);
+  draw(normal, normalGrid);
 }
 
 function renderList(){
+  const body = document.querySelector("#list-view tbody");
+  body.innerHTML = "";
 
-  const body=document.querySelector("#list-view tbody");
-  body.innerHTML="";
-
-  const sorted=[...enriched].sort((a,b)=>listSortDesc?b.buyPrice-a.buyPrice:a.buyPrice-b.buyPrice);
+  const sorted = [...enriched].sort((a,b)=>listSortDesc ? b.buyPrice-a.buyPrice : a.buyPrice-b.buyPrice);
 
   sorted.forEach((card,i)=>{
     body.insertAdjacentHTML("beforeend",`
@@ -322,26 +337,29 @@ function renderList(){
   });
 }
 
-document.getElementById("price-header").onclick=()=>{
-  listSortDesc=!listSortDesc;
-  document.getElementById("price-header").textContent=listSortDesc?"Buy Price ↓":"Buy Price ↑";
+document.getElementById("price-header").onclick = () => {
+  listSortDesc = !listSortDesc;
+  document.getElementById("price-header").textContent = listSortDesc ? "Buy Price ↓" : "Buy Price ↑";
   renderList();
 };
 
-document.getElementById("tile-btn").onclick=()=>{
+document.getElementById("tile-btn").onclick = () => {
+  document.getElementById("tile-btn").classList.add("active");
+  document.getElementById("list-btn").classList.remove("active");
   document.getElementById("reserved-grid").classList.remove("hidden");
   document.getElementById("normal-grid").classList.remove("hidden");
   document.getElementById("list-view").classList.add("hidden");
 };
 
-document.getElementById("list-btn").onclick=()=>{
+document.getElementById("list-btn").onclick = () => {
+  document.getElementById("list-btn").classList.add("active");
+  document.getElementById("tile-btn").classList.remove("active");
   document.getElementById("reserved-grid").classList.add("hidden");
   document.getElementById("normal-grid").classList.add("hidden");
   document.getElementById("list-view").classList.remove("hidden");
 };
 
 enrichCards();
-
 </script>
 
 </body>
