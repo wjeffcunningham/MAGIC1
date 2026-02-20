@@ -140,18 +140,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* =====================================================
-     Pending Claims (FK-FREE JOIN)
+     Pending Claims — FIXED (email via RPC to auth.users)
   ===================================================== */
 
   const pendingError = document.getElementById("pending-error");
   const tbody = document.getElementById("pending-table");
   tbody.innerHTML = "";
 
+  // NEW: fetch pending claims + auth email server-side
   const { data: pendingClaims, error: pendingErr } = await supabaseClient
-    .from("player_claims")
-    .select("id,slug,user_id,created_at")
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
+    .rpc("admin_get_pending_claims");
 
   if (pendingErr) {
     pendingError.style.display = "block";
@@ -161,52 +159,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!pendingClaims || pendingClaims.length === 0) {
     tbody.innerHTML = `<tr><td colspan="3">No pending claims.</td></tr>`;
   } else {
-    // fetch matching public_users
-    const userIds = [...new Set(pendingClaims.map(r => r.user_id).filter(Boolean))];
-
-    let usersById = {};
-    if (userIds.length) {
-      const { data: users, error: usersErr } = await supabaseClient
-        .from("public_users")
-        .select("id,email,alias,local_store,quote")
-        .in("id", userIds);
-
-      if (usersErr) {
-        pendingError.style.display = "block";
-        pendingError.textContent = usersErr.message;
-      }
-
-      (users || []).forEach(u => { usersById[u.id] = u; });
-    }
-
     pendingClaims.forEach(row => {
-      const u = usersById[row.user_id] || null;
+      // row fields returned by RPC:
+      // claim_id, slug, user_id, created_at, email, alias, local_store, quote
 
-      const email = u?.email || "(no public_users row yet)";
-      const alias = u?.alias || "";
-      const store = u?.local_store || "";
-      const quote = u?.quote || "";
+      const email = row.email || "(no email)";
+      const alias = row.alias || "";
+      const store = row.local_store || "";
+      const quote = row.quote || "";
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>
-          <strong>${row.slug}</strong><br>
-          <a href="/player.html?player=${encodeURIComponent(row.slug)}" target="_blank" rel="noopener">
+          <strong>${escapeHtml(row.slug || "")}</strong><br>
+          <a href="/player.html?player=${encodeURIComponent(row.slug || "")}" target="_blank" rel="noopener">
             View Player Page
           </a>
         </td>
 
         <td>
-          <div><strong>${email}</strong></div>
-          <div class="small">user_id: ${row.user_id}</div>
+          <div><strong>${escapeHtml(email)}</strong></div>
+          <div class="small">user_id: ${escapeHtml(row.user_id || "")}</div>
           ${alias ? `<div class="small">Alias: ${escapeHtml(alias)}</div>` : ""}
           ${store ? `<div class="small">Store: ${escapeHtml(store)}</div>` : ""}
           ${quote ? `<div class="small">"${escapeHtml(quote)}"</div>` : ""}
         </td>
 
         <td>
-          <button class="approve" data-id="${row.id}">Approve</button>
-          <button class="reject" data-id="${row.id}">Reject</button>
+          <button class="approve" data-id="${row.claim_id}">Approve</button>
+          <button class="reject" data-id="${row.claim_id}">Reject</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -277,23 +258,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     location.reload();
   };
 
-  document.getElementById("grant-admin").onclick = async () => {
-    await supabaseClient
-      .from("user_roles")
-      .insert({
-        user_id: adminUserSelect.value,
-        role: "admin"
-      });
-    alert("Admin granted.");
-  };
+document.getElementById("grant-admin").onclick = async () => {
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[c]));
+  const userId = adminUserSelect.value;
+  if (!userId) return;
+
+  const { error } = await supabaseClient
+    .rpc("admin_grant_admin", { target_user_id: userId });
+
+  if (error) {
+    alert("Error: " + error.message);
+    return;
   }
 
-});
+  alert("Admin granted.");
+};
 </script>
 
 </body>
