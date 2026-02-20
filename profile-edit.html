@@ -24,10 +24,7 @@ input, select, textarea, button {
   font-size: 0.95rem;
 }
 
-textarea {
-  min-height: 100px;
-  resize: vertical;
-}
+textarea { min-height: 100px; resize: vertical; }
 
 button { font-weight: 600; cursor: pointer; }
 
@@ -42,7 +39,6 @@ button { font-weight: 600; cursor: pointer; }
   margin-bottom: 0.5rem;
 }
 
-/* SQUARE AVATAR */
 .avatar-preview {
   width: 140px;
   height: 140px;
@@ -88,6 +84,24 @@ button { font-weight: 600; cursor: pointer; }
   <div id="profile-status" class="status"></div>
 </div>
 
+<!-- ===================================================== -->
+<!-- VERIFICATION SECTION -->
+<!-- ===================================================== -->
+
+<div class="section">
+  <h3>Profile Verification</h3>
+
+  <div id="verification-status" class="status"></div>
+
+  <button id="request-verification" style="display:none;">
+    Request Verification
+  </button>
+
+  <div class="note">
+    Verification links your account to your tournament profile.
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/bcpmm-shell.js"></script>
@@ -107,7 +121,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const user = data.session.user;
   document.getElementById("user-email").textContent = user.email;
 
-  /* LOAD PROFILE */
+  /* =====================================================
+     LOAD PROFILE
+  ===================================================== */
 
   const { data: profile } = await supabase
     .from("public_users")
@@ -124,7 +140,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  /* AVATAR UPLOAD — FIXED PATH */
+  /* =====================================================
+     AVATAR UPLOAD
+  ===================================================== */
 
   document.getElementById("avatar-input").addEventListener("change", async (e) => {
 
@@ -132,16 +150,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!file) return;
 
     const ext = file.name.split(".").pop();
-    const filePath = `${user.id}/avatar.${ext}`;  // ✅ CRITICAL FIX
+    const filePath = `${user.id}/avatar.${ext}`;
 
     const { error } = await supabase.storage
       .from("avatars")
       .upload(filePath, file, { upsert: true });
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     const { data: publicUrlData } = supabase.storage
       .from("avatars")
@@ -149,27 +164,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const publicUrl = publicUrlData.publicUrl;
 
-    const { error: updateError } = await supabase
+    await supabase
       .from("public_users")
       .update({ avatar_url: publicUrl })
       .eq("id", user.id);
 
-    if (updateError) {
-      alert(updateError.message);
-      return;
-    }
-
     document.getElementById("avatar-preview").src = publicUrl;
   });
 
-  /* SAVE PROFILE */
+  /* =====================================================
+     SAVE PROFILE
+  ===================================================== */
 
   document.getElementById("save-profile").onclick = async () => {
 
     const alias = document.getElementById("alias").value.trim();
     const quote = document.getElementById("quote").value.trim();
     const store = document.getElementById("store").value;
-
     const box = document.getElementById("profile-status");
 
     if (!alias) {
@@ -193,6 +204,83 @@ document.addEventListener("DOMContentLoaded", async () => {
     } else {
       box.textContent = "Profile saved ✓";
       box.className = "status verified";
+    }
+  };
+
+  /* =====================================================
+     VERIFICATION LOGIC
+  ===================================================== */
+
+  function aliasToSlug(alias) {
+    if (!alias) return null;
+    return alias
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+  }
+
+  const statusBox = document.getElementById("verification-status");
+  const requestBtn = document.getElementById("request-verification");
+
+  const { data: claims } = await supabase
+    .from("player_claims")
+    .select("status")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  const currentStatus = claims?.[0]?.status || null;
+
+  if (currentStatus === "approved") {
+    statusBox.textContent = "Verified ✓";
+    statusBox.className = "status verified";
+  }
+  else if (currentStatus === "pending") {
+    statusBox.textContent = "Verification pending approval";
+    statusBox.className = "status pending";
+  }
+  else {
+    statusBox.textContent = "Not verified";
+    statusBox.className = "status pending";
+    requestBtn.style.display = "block";
+  }
+
+  requestBtn.onclick = async () => {
+
+    const alias = document.getElementById("alias").value.trim();
+    const slug = aliasToSlug(alias);
+
+    if (!slug) {
+      statusBox.textContent = "Save profile with alias first.";
+      return;
+    }
+
+    const { data: existingPending } = await supabase
+      .from("player_claims")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "pending")
+      .maybeSingle();
+
+    if (existingPending) {
+      statusBox.textContent = "Verification already pending.";
+      return;
+    }
+
+    const { error } = await supabase
+      .from("player_claims")
+      .insert({
+        user_id: user.id,
+        slug,
+        status: "pending"
+      });
+
+    if (error) {
+      statusBox.textContent = error.message;
+    } else {
+      statusBox.textContent = "Verification requested.";
+      requestBtn.style.display = "none";
     }
   };
 

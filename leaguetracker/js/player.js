@@ -87,20 +87,13 @@ async function injectVerifiedProfile(supabase, slug) {
 
   if (claimContainer) claimContainer.innerHTML = "";
 
-  const [{ data: profile }, { data: ladder }] = await Promise.all([
-    supabase
-      .from("public_users")
-      .select("alias, quote, local_store, avatar_url")
-      .eq("id", claim.user_id)
-      .maybeSingle(),
-    // Flames are stored on leaderboard row in your current build
-    supabase.from("leaderboard").select("flames").eq("slug", slug).maybeSingle()
-  ]);
+const { data: profile } = await supabase
+  .from("public_users")
+  .select("alias, quote, local_store, avatar_url")
+  .eq("id", claim.user_id)
+  .maybeSingle();
 
   if (!profile) return;
-
-  const flameCount = Number(ladder?.flames || 0);
-  const flames = flameCount > 0 ? ` ${"🔥".repeat(flameCount)}` : "";
 
   const block = document.createElement("div");
   block.className = "public-profile-inline";
@@ -114,7 +107,7 @@ async function injectVerifiedProfile(supabase, slug) {
       }
       <div>
         <div class="profile-alias-sub">
-          ${(profile.alias || slugToName(slug)) + flames}
+          ${(profile.alias || slugToName(slug))}
         </div>
         <div class="profile-verified-inline">Verified ✓</div>
       </div>

@@ -62,10 +62,6 @@ button {
 
 <h1>Admin Panel</h1>
 
-<!-- ===================================================== -->
-<!-- Pending Claims -->
-<!-- ===================================================== -->
-
 <div class="section">
   <h2>Pending Claims</h2>
   <div id="pending-error" class="err" style="display:none;"></div>
@@ -82,20 +78,12 @@ button {
   </table>
 </div>
 
-<!-- ===================================================== -->
-<!-- Manual Assignment -->
-<!-- ===================================================== -->
-
 <div class="section">
   <h2>Manual Assignment</h2>
   <select id="manual-user"></select>
   <select id="manual-slug"></select>
   <button id="assign-btn">Assign</button>
 </div>
-
-<!-- ===================================================== -->
-<!-- Grant Admin -->
-<!-- ===================================================== -->
 
 <div class="section">
   <h2>Grant Admin Role</h2>
@@ -109,6 +97,15 @@ button {
 
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
   if (!window.auth || !window.auth._client) return;
   const supabaseClient = window.auth._client;
@@ -140,14 +137,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* =====================================================
-     Pending Claims — FIXED (email via RPC to auth.users)
+     Pending Claims
   ===================================================== */
 
   const pendingError = document.getElementById("pending-error");
   const tbody = document.getElementById("pending-table");
   tbody.innerHTML = "";
 
-  // NEW: fetch pending claims + auth email server-side
   const { data: pendingClaims, error: pendingErr } = await supabaseClient
     .rpc("admin_get_pending_claims");
 
@@ -160,8 +156,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     tbody.innerHTML = `<tr><td colspan="3">No pending claims.</td></tr>`;
   } else {
     pendingClaims.forEach(row => {
-      // row fields returned by RPC:
-      // claim_id, slug, user_id, created_at, email, alias, local_store, quote
 
       const email = row.email || "(no email)";
       const alias = row.alias || "";
@@ -195,6 +189,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   tbody.addEventListener("click", async (e) => {
+
     const id = e.target?.dataset?.id;
     if (!id) return;
 
@@ -213,38 +208,48 @@ document.addEventListener("DOMContentLoaded", async () => {
         .eq("id", id);
       location.reload();
     }
+
   });
 
-  /* =====================================================
-     Manual Assignment (public_users + tournament_players)
-  ===================================================== */
+/* =====================================================
+   Manual Assignment
+===================================================== */
 
-  const { data: usersList } = await supabaseClient
-    .from("public_users")
-    .select("id,email")
-    .order("email");
+const { data: usersList, error: usersErr } = await supabaseClient
+  .rpc("admin_get_all_users");
 
-  const { data: players } = await supabaseClient
-    .from("tournament_players")
-    .select("slug")
-    .order("slug");
+if (usersErr) {
+  console.error("Failed to load users:", usersErr);
+}
 
-  const userSelect = document.getElementById("manual-user");
-  const slugSelect = document.getElementById("manual-slug");
-  const adminUserSelect = document.getElementById("admin-user");
+const { data: players, error: playersErr } = await supabaseClient
+  .from("tournament_players")
+  .select("slug")
+  .order("slug");
 
-  userSelect.innerHTML = "";
-  adminUserSelect.innerHTML = "";
-  slugSelect.innerHTML = "";
+if (playersErr) {
+  console.error("Failed to load players:", playersErr);
+}
 
-  (usersList || []).forEach(u => {
+const userSelect = document.getElementById("manual-user");
+const slugSelect = document.getElementById("manual-slug");
+const adminUserSelect = document.getElementById("admin-user");
+
+userSelect.innerHTML = "";
+adminUserSelect.innerHTML = "";
+slugSelect.innerHTML = "";
+
+/* sort users client-side instead */
+(usersList || [])
+  .sort((a, b) => (a.email || "").localeCompare(b.email || ""))
+  .forEach(u => {
     userSelect.add(new Option(u.email, u.id));
     adminUserSelect.add(new Option(u.email, u.id));
   });
 
-  (players || []).forEach(p => {
-    slugSelect.add(new Option(p.slug, p.slug));
-  });
+(players || []).forEach(p => {
+  slugSelect.add(new Option(p.slug, p.slug));
+});
 
   document.getElementById("assign-btn").onclick = async () => {
     await supabaseClient
@@ -254,25 +259,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         slug: slugSelect.value,
         status: "approved"
       });
+
     alert("Assigned.");
     location.reload();
   };
 
-document.getElementById("grant-admin").onclick = async () => {
+  document.getElementById("grant-admin").onclick = async () => {
 
-  const userId = adminUserSelect.value;
-  if (!userId) return;
+    const userId = adminUserSelect.value;
+    if (!userId) return;
 
-  const { error } = await supabaseClient
-    .rpc("admin_grant_admin", { target_user_id: userId });
+    const { error } = await supabaseClient
+      .rpc("admin_grant_admin", { target_user_id: userId });
 
-  if (error) {
-    alert("Error: " + error.message);
-    return;
-  }
+    if (error) {
+      alert("Error: " + error.message);
+      return;
+    }
 
-  alert("Admin granted.");
-};
+    alert("Admin granted.");
+  };
+
+}); // ✅ properly closes DOMContentLoaded
+
 </script>
 
 </body>
