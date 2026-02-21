@@ -9,6 +9,7 @@
      (fallbacks to leaderboard_league if month_standings missing)
    - Elo tab unchanged
    - No duplicate pager injection
+   - Flames computed from matches (NOT Elo deltas)
 ========================================================= */
 
 function getClient() {
@@ -51,6 +52,17 @@ function fireIcons(n) {
   if (n >= 3) return " 🔥🔥";
   if (n === 2) return " 🔥";
   return "";
+}
+
+function safeTime(x) {
+  if (!x) return 0;
+  const t = Date.parse(x);
+  return Number.isFinite(t) ? t : 0;
+}
+
+function numOrNegInf(x) {
+  const n = Number(x);
+  return Number.isFinite(n) ? n : -Infinity;
 }
 
 /* =========================================================
@@ -121,37 +133,62 @@ async function getTrophyMap() {
   return map;
 }
 
-/* Flames from consecutive Elo wins (rating_history deltas) */
+/* Flames from consecutive WINS in matches (not Elo deltas) */
 async function getStreakMap() {
   const supabase = getClient();
   if (!supabase) return {};
 
-  const { data, error } = await supabase
-    .from("rating_history")
-    .select("player_slug, before_rating, after_rating, match_date, match_index")
-    .order("match_date", { ascending: false })
-    .order("match_index", { ascending: false });
+  const { data: matches, error } = await supabase
+    .from("matches")
+    .select("player_a, player_b, winner, match_date, round_number, match_index, created_at");
 
-  if (error || !data) return {};
+  if (error || !matches) return {};
 
   const grouped = {};
-  data.forEach(r => {
-    if (!grouped[r.player_slug]) grouped[r.player_slug] = [];
-    grouped[r.player_slug].push(r);
+
+  matches.forEach(m => {
+    if (!m.player_a || !m.player_b) return;
+
+    [m.player_a, m.player_b].forEach(slug => {
+      if (!grouped[slug]) grouped[slug] = [];
+      grouped[slug].push(m);
+    });
   });
 
-  const out = {};
+  const streakMap = {};
+
   for (const [slug, rows] of Object.entries(grouped)) {
+    const sorted = [...rows].sort((a, b) => {
+      const ad = safeTime(a.match_date);
+      const bd = safeTime(b.match_date);
+      if (bd !== ad) return bd - ad;
+
+      const ac = safeTime(a.created_at);
+      const bc = safeTime(b.created_at);
+      if (bc !== ac) return bc - ac;
+
+      const ar = numOrNegInf(a.round_number);
+      const br = numOrNegInf(b.round_number);
+      if (br !== ar) return br - ar;
+
+      const am = numOrNegInf(a.match_index);
+      const bm = numOrNegInf(b.match_index);
+      return bm - am;
+    });
+
     let streak = 0;
-    for (const r of rows) {
-      if (Number(r.after_rating) > Number(r.before_rating)) streak++;
+    for (const m of sorted) {
+      if (!m.winner) break;
+      if (m.winner === slug) streak++;
       else break;
     }
-    out[slug] = streak;
+
+    streakMap[slug] = streak;
   }
 
-  return out;
+  return streakMap;
 }
+
 /* =========================================================
    Pagination (stable + clamped)
 ========================================================= */
@@ -198,24 +235,18 @@ function renderPager(totalRows) {
 ========================================================= */
 
 async function loadJanuaryStandings(supabase) {
-  // Try month_standings first (what you WANT).
-  // We keep this flexible because your exact column names may vary.
-  // We attempt a few sane schemas and normalize to {player, points, trophy}.
   const tries = [
-    // Common: month_standings(player, month_index, points, wins, losses)
     () => supabase
       .from("month_standings")
       .select("player,points,wins,losses,month_index,month_id")
       .eq("month_index", 0)
       .order("points", { ascending: false }),
 
-    // Alternative: month_id is used instead; month_index not present
     () => supabase
       .from("month_standings")
       .select("player,points,wins,losses,month_id")
       .order("points", { ascending: false }),
 
-    // Minimal
     () => supabase
       .from("month_standings")
       .select("player,points")
@@ -225,7 +256,6 @@ async function loadJanuaryStandings(supabase) {
   for (const fn of tries) {
     const { data, error } = await fn();
     if (!error && data && data.length) {
-      // Add mini-trophy for 2-0 if wins/losses exist (your ask).
       return data.map(r => {
         const w = Number(r.wins ?? NaN);
         const l = Number(r.losses ?? NaN);
@@ -239,7 +269,6 @@ async function loadJanuaryStandings(supabase) {
     }
   }
 
-  // Fallback: leaderboard_league (if month_standings is empty/missing)
   const { data: fallback } = await supabase
     .from("leaderboard_league")
     .select("player,points")
@@ -333,9 +362,7 @@ function renderRows(rows, slugToId, streakMap, trophyMap, championshipOnly) {
   slice.forEach((row, i) => {
     const rank = start + i + 1;
 
-const streak = streakMap[row.player] || 0;
-
-
+    const streak = streakMap[row.player] || 0;
     const fire = fireIcons(streak);
 
     const championTrophy = trophyMap[row.player] ? " 🏆" : "";
