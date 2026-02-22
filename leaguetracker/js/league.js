@@ -7,7 +7,7 @@
    - BCPMM totals rely on leaderboard_points (already includes Top 8 bonuses)
    - League tab uses month_standings (January) instead of full player list
      (fallbacks to leaderboard_league if month_standings missing)
-   - Elo tab unchanged
+   - Elo tab restored (leaderboard_elo)
    - No duplicate pager injection
    - Flames computed from matches (NOT Elo deltas)
 ========================================================= */
@@ -230,8 +230,6 @@ function renderPager(totalRows) {
 
 /* =========================================================
    League: month_standings (January) loader
-   - Uses standings as source of truth for names + points
-   - Falls back to leaderboard_league if month_standings query fails
 ========================================================= */
 
 async function loadJanuaryStandings(supabase) {
@@ -302,7 +300,21 @@ async function loadLeaderboard() {
     showBcpmmCheckbox(false);
     document.body.classList.remove("bcpmm-only");
 
-const { data } = await supabase
+    const { data, error } = await supabase
+      .from("leaderboard_elo")
+      .select("player,rating")
+      .order("rating", { ascending: false });
+
+    if (error) {
+      console.error("Elo load error:", error);
+      rows = [];
+    } else {
+      rows = (data || []).map(r => ({
+        player: r.player,
+        value: Number(r.rating || 0),
+        extra: ""
+      }));
+    }
   }
 
   else if (currentMode === "league") {
@@ -323,16 +335,21 @@ const { data } = await supabase
     showBcpmmCheckbox(true);
     document.body.classList.toggle("bcpmm-only", championshipOnly);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("leaderboard_points")
       .select("player,total_points,bcpmm_only_points")
       .order(championshipOnly ? "bcpmm_only_points" : "total_points", { ascending: false });
 
-    rows = (data || []).map(r => ({
-      player: r.player,
-      value: Number(championshipOnly ? (r.bcpmm_only_points || 0) : (r.total_points || 0)),
-      extra: ""
-    }));
+    if (error) {
+      console.error("Points load error:", error);
+      rows = [];
+    } else {
+      rows = (data || []).map(r => ({
+        player: r.player,
+        value: Number(championshipOnly ? (r.bcpmm_only_points || 0) : (r.total_points || 0)),
+        extra: ""
+      }));
+    }
   }
 
   renderRows(rows, slugToId, streakMap, trophyMap, championshipOnly);
