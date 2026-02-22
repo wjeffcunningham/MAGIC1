@@ -93,9 +93,11 @@ button { font-weight: 600; cursor: pointer; }
 
   <div id="verification-status" class="status"></div>
 
-  <button id="request-verification" style="display:none;">
-    Request Verification
-  </button>
+<select id="claim-slug" style="display:none;"></select>
+
+<button id="request-verification" style="display:none;">
+  Request Verification
+</button>
 
   <div class="note">
     Verification links your account to your tournament profile.
@@ -207,84 +209,91 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  /* =====================================================
-     VERIFICATION LOGIC
-  ===================================================== */
+/* =====================================================
+   VERIFICATION LOGIC (REAL SLUG SELECTION)
+===================================================== */
 
-  function aliasToSlug(alias) {
-    if (!alias) return null;
-    return alias
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
+const statusBox = document.getElementById("verification-status");
+const requestBtn = document.getElementById("request-verification");
+const claimSelect = document.getElementById("claim-slug");
+
+// Load all existing tournament players
+const { data: players } = await supabase
+  .from("tournament_players")
+  .select("slug")
+  .order("slug");
+
+if (players?.length) {
+  claimSelect.innerHTML = "";
+  players.forEach(p => {
+    if (!p.slug) return;
+    claimSelect.add(new Option(p.slug, p.slug));
+  });
+}
+
+// Check existing claim
+const { data: claims } = await supabase
+  .from("player_claims")
+  .select("slug, status")
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false })
+  .limit(1);
+
+const existing = claims?.[0];
+
+if (existing?.status === "approved") {
+  statusBox.textContent = `Verified ✓ (${existing.slug})`;
+  statusBox.className = "status verified";
+}
+else if (existing?.status === "pending") {
+  statusBox.textContent = `Verification pending for: ${existing.slug}`;
+  statusBox.className = "status pending";
+}
+else {
+  statusBox.textContent = "Not verified";
+  statusBox.className = "status pending";
+  claimSelect.style.display = "block";
+  requestBtn.style.display = "block";
+}
+
+requestBtn.onclick = async () => {
+
+  const selectedSlug = claimSelect.value;
+
+  if (!selectedSlug) {
+    statusBox.textContent = "Select a tournament profile first.";
+    return;
   }
 
-  const statusBox = document.getElementById("verification-status");
-  const requestBtn = document.getElementById("request-verification");
-
-  const { data: claims } = await supabase
+  // prevent duplicate pending
+  const { data: existingPending } = await supabase
     .from("player_claims")
-    .select("status")
+    .select("id")
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .eq("status", "pending")
+    .maybeSingle();
 
-  const currentStatus = claims?.[0]?.status || null;
-
-  if (currentStatus === "approved") {
-    statusBox.textContent = "Verified ✓";
-    statusBox.className = "status verified";
-  }
-  else if (currentStatus === "pending") {
-    statusBox.textContent = "Verification pending approval";
-    statusBox.className = "status pending";
-  }
-  else {
-    statusBox.textContent = "Not verified";
-    statusBox.className = "status pending";
-    requestBtn.style.display = "block";
+  if (existingPending) {
+    statusBox.textContent = "Verification already pending.";
+    return;
   }
 
-  requestBtn.onclick = async () => {
+  const { error } = await supabase
+    .from("player_claims")
+    .insert({
+      user_id: user.id,
+      slug: selectedSlug,
+      status: "pending"
+    });
 
-    const alias = document.getElementById("alias").value.trim();
-    const slug = aliasToSlug(alias);
-
-    if (!slug) {
-      statusBox.textContent = "Save profile with alias first.";
-      return;
-    }
-
-    const { data: existingPending } = await supabase
-      .from("player_claims")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "pending")
-      .maybeSingle();
-
-    if (existingPending) {
-      statusBox.textContent = "Verification already pending.";
-      return;
-    }
-
-    const { error } = await supabase
-      .from("player_claims")
-      .insert({
-        user_id: user.id,
-        slug,
-        status: "pending"
-      });
-
-    if (error) {
-      statusBox.textContent = error.message;
-    } else {
-      statusBox.textContent = "Verification requested.";
-      requestBtn.style.display = "none";
-    }
-  };
-
-});
+  if (error) {
+    statusBox.textContent = error.message;
+  } else {
+    statusBox.textContent = `Verification requested for: ${selectedSlug}`;
+    requestBtn.style.display = "none";
+    claimSelect.style.display = "none";
+  }
+};
 </script>
 
 </body>
