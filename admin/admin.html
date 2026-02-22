@@ -19,8 +19,8 @@ th, td { padding: 0.7rem; border-bottom: 1px solid #ddd; vertical-align: top; }
 button { padding: 0.5rem 0.9rem; cursor: pointer; font-weight: 600; }
 .section { margin-top: 3rem; }
 .small { font-size: 0.85rem; opacity: 0.75; }
-.err { color: #c0392b; font-weight: 700; margin-top: 0.75rem; }
-.ok { color: #2e7d32; font-weight: 700; margin-top: 0.75rem; }
+.err { color: #c0392b; font-weight: 700; margin-top: 0.75rem; display:none; }
+.ok { color: #2e7d32; font-weight: 700; margin-top: 0.75rem; display:none; }
 .row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem; }
 select { max-width: 520px; }
 input[type=file] { margin-top: 0.75rem; }
@@ -32,6 +32,8 @@ input[type=file] { margin-top: 0.75rem; }
 <div id="global-menu-root"></div>
 <img src="/assets/BCPMMsvg.png" class="logo" alt="Logo">
 <h1>Admin Panel</h1>
+
+<!-- ================= EVENT INGEST ================= -->
 
 <div class="section">
   <h2>Ingest New Event</h2>
@@ -45,24 +47,28 @@ input[type=file] { margin-top: 0.75rem; }
   </div>
 
   <div id="ingest-status" class="small"></div>
-  <div id="ingest-error" class="err" style="display:none;"></div>
-  <div id="ingest-ok" class="ok" style="display:none;"></div>
+  <div id="ingest-error" class="err"></div>
+  <div id="ingest-ok" class="ok"></div>
 </div>
+
+<!-- ================= PENDING CLAIMS ================= -->
 
 <div class="section">
   <h2>Pending Claims</h2>
-  <div id="pending-error" class="err" style="display:none;"></div>
+  <div id="pending-error" class="err"></div>
   <table>
     <thead>
       <tr>
         <th>Player</th>
-        <th>User</th>
+        <th>User Info</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody id="pending-table"></tbody>
   </table>
 </div>
+
+<!-- ================= MANUAL ASSIGN ================= -->
 
 <div class="section">
   <h2>Manual Assignment</h2>
@@ -71,8 +77,32 @@ input[type=file] { margin-top: 0.75rem; }
     <select id="manual-slug"></select>
     <button id="assign-btn">Assign</button>
   </div>
-  <div id="manual-error" class="err" style="display:none;"></div>
+  <div id="manual-error" class="err"></div>
 </div>
+
+<!-- ================= UNASSIGN ================= -->
+
+<div class="section">
+  <h2>Manual Separation</h2>
+  <div class="row">
+    <select id="unassign-claim"></select>
+    <button id="unassign-btn">Unassign</button>
+  </div>
+  <div id="unassign-error" class="err"></div>
+</div>
+
+<!-- ================= GRANT ADMIN ================= -->
+
+<div class="section">
+  <h2>Grant Admin Role</h2>
+  <div class="row">
+    <select id="admin-user"></select>
+    <button id="grant-admin">Grant Admin</button>
+  </div>
+  <div id="admin-error" class="err"></div>
+</div>
+
+<!-- ================= MERGE ================= -->
 
 <div class="section">
   <h2>Merge Players</h2>
@@ -82,11 +112,23 @@ input[type=file] { margin-top: 0.75rem; }
     <select id="merge-target"></select>
     <button id="merge-btn">Merge</button>
   </div>
-  <div id="merge-error" class="err" style="display:none;"></div>
+  <div id="merge-error" class="err"></div>
+</div>
+
+<!-- ================= UNMERGE ================= -->
+
+<div class="section">
+  <h2>Unmerge Alias</h2>
+  <div class="row">
+    <select id="unmerge-alias"></select>
+    <button id="unmerge-btn">Unmerge</button>
+  </div>
+  <div id="unmerge-error" class="err"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth.js"></script>
+<script src="/js/bcpmm-shell.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
@@ -94,18 +136,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!window.auth || !window.auth._client) return;
   const supabase = window.auth._client;
 
+  /* ================= ADMIN GATE ================= */
+
   const { data: sessionWrap } = await supabase.auth.getSession();
   if (!sessionWrap?.session) {
     window.location.href = "/join.html";
     return;
   }
 
-  const currentUser = sessionWrap.session.user;
+  const user = sessionWrap.session.user;
 
   const { data: role } = await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", currentUser.id)
+    .eq("user_id", user.id)
     .eq("role", "admin")
     .maybeSingle();
 
@@ -115,25 +159,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  /* =========================
-     LOAD USERS
-  ========================== */
+  /* ================= LOAD USERS ================= */
 
   const { data: users } = await supabase.rpc("admin_get_users");
 
   const manualUser = document.getElementById("manual-user");
-  manualUser.innerHTML = "";
+  const adminUser = document.getElementById("admin-user");
 
   users?.forEach(u => {
-    const opt = document.createElement("option");
-    opt.value = u.id;
-    opt.textContent = u.email;
-    manualUser.appendChild(opt);
+    const opt1 = new Option(u.email, u.id);
+    const opt2 = new Option(u.email, u.id);
+    manualUser.add(opt1);
+    adminUser.add(opt2);
   });
 
-  /* =========================
-     LOAD PLAYER SLUGS
-  ========================== */
+  /* ================= LOAD PLAYER SLUGS ================= */
 
   const { data: players } = await supabase
     .from("tournament_players")
@@ -144,19 +184,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   const mergeSource = document.getElementById("merge-source");
   const mergeTarget = document.getElementById("merge-target");
 
-  slugSelect.innerHTML = "";
-  mergeSource.innerHTML = "";
-  mergeTarget.innerHTML = "";
-
   players?.forEach(p => {
     slugSelect.add(new Option(p.slug, p.slug));
     mergeSource.add(new Option(p.slug, p.slug));
     mergeTarget.add(new Option(p.slug, p.slug));
   });
 
-  /* =========================
-     INGEST EDGE FUNCTION
-  ========================== */
+  /* ================= LOAD APPROVED CLAIMS ================= */
+
+  const { data: approved } = await supabase
+    .from("player_claims")
+    .select("id, slug, user_id")
+    .eq("status", "approved");
+
+  const unassignSelect = document.getElementById("unassign-claim");
+
+  approved?.forEach(c => {
+    unassignSelect.add(new Option(`${c.slug} — ${c.user_id}`, c.id));
+  });
+
+  /* ================= LOAD ALIASES ================= */
+
+  const { data: aliases } = await supabase
+    .from("player_slug_redirects")
+    .select("old_slug");
+
+  const unmergeSelect = document.getElementById("unmerge-alias");
+  aliases?.forEach(a => {
+    unmergeSelect.add(new Option(a.old_slug, a.old_slug));
+  });
+
+  /* ================= INGEST ================= */
 
   document.getElementById("ingest-btn").onclick = async () => {
     const file = document.getElementById("event-file").files[0];
@@ -170,7 +228,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     if (error) return alert(error.message);
-
     alert("Event ingested.");
   };
 
@@ -180,24 +237,55 @@ document.addEventListener("DOMContentLoaded", async () => {
     alert("Leaderboards rebuilt.");
   };
 
-  /* =========================
-     MERGE
-  ========================== */
+  /* ================= ASSIGN ================= */
 
-  document.getElementById("merge-btn").onclick = async () => {
-    const source = mergeSource.value;
-    const target = mergeTarget.value;
+  document.getElementById("assign-btn").onclick = async () => {
+    const { error } = await supabase.from("player_claims")
+      .insert({ user_id: manualUser.value, slug: slugSelect.value, status: "approved" });
 
-    if (source === target) return alert("Choose two different players.");
+    if (error) return alert(error.message);
+    alert("Assigned.");
+  };
 
-    const { error } = await supabase.rpc("admin_merge_players", {
-      source_slug: source,
-      target_slug: target
+  document.getElementById("unassign-btn").onclick = async () => {
+    const { error } = await supabase.from("player_claims")
+      .delete()
+      .eq("id", unassignSelect.value);
+
+    if (error) return alert(error.message);
+    alert("Unassigned.");
+  };
+
+  /* ================= GRANT ADMIN ================= */
+
+  document.getElementById("grant-admin").onclick = async () => {
+    const { error } = await supabase.rpc("admin_grant_admin", {
+      target_user_id: adminUser.value
     });
 
     if (error) return alert(error.message);
+    alert("Admin granted.");
+  };
 
+  /* ================= MERGE ================= */
+
+  document.getElementById("merge-btn").onclick = async () => {
+    const { error } = await supabase.rpc("admin_merge_players", {
+      source_slug: mergeSource.value,
+      target_slug: mergeTarget.value
+    });
+
+    if (error) return alert(error.message);
     alert("Merged.");
+  };
+
+  document.getElementById("unmerge-btn").onclick = async () => {
+    const { error } = await supabase.rpc("admin_unmerge_player", {
+      old_slug: unmergeSelect.value
+    });
+
+    if (error) return alert(error.message);
+    alert("Unmerged.");
   };
 
 });
