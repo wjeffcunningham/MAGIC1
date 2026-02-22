@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Event JSON Template · Magic1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/css/bcpmm-shell.css" />
+
+<style>
+body {
+  max-width: 900px;
+  margin: 3rem auto;
+  padding: 0 1.5rem;
+  font-family: system-ui, sans-serif;
+  line-height: 1.6;
+}
+pre {
+  background: #111;
+  color: #f5f5f5;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+code { color: #c5e1a5; }
+h1, h2 { margin-top: 2rem; }
+ul { margin-bottom: 1.5rem; }
+a.button {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  background: #111;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.small { font-size: 0.9rem; opacity: 0.8; }
+hr { margin: 2.5rem 0; opacity: 0.3; }
+</style>
+</head>
+
+<body>
+
+<a href="admin.html" class="button">← Back to Admin</a>
+
+<h1>Event JSON Template</h1>
+
+<p>
+Use this structure when uploading events via the Admin panel.
+</p>
+
+<p class="small">
+Reference example:
+<a href="/docs/stronghold-2026-02-01.json" target="_blank">
+stronghold-2026-02-01.json
+</a>
+</p>
+
+<hr>
+
+<h2>Top-Level Structure</h2>
+
+<pre>
+{
+  "event": { ... },
+  "rounds": [ ... ],
+  "standings": [ ... ],
+  "elimination": { ... },   // optional
+  "notes": [ ... ]          // optional
+}
+</pre>
+
+Only <code>event</code>, <code>rounds</code>, and <code>standings</code> are required.
+
+---
+
+<h2>event</h2>
+
+<pre>
+"event": {
+  "id": "stronghold-2026-03-01",
+  "name": "Stronghold Monthly",
+  "date": "2026-03-01",
+  "series": "SHG",
+  "location": "Stronghold Games",
+  "format": "Premodern"
+}
+</pre>
+
+Definitions:
+
+<ul>
+<li><strong>id</strong> — Optional. A slug-style identifier.  
+Format: <code>seriesname-YYYY-MM-DD</code> (lowercase, hyphenated).</li>
+
+<li><strong>name</strong> — Required. Public event name.</li>
+
+<li><strong>date</strong> — Required. Must be <code>YYYY-MM-DD</code>.</li>
+
+<li><strong>series</strong> — Required. One of:
+  <ul>
+    <li>BCPMM</li>
+    <li>SHG</li>
+    <li>CONNECTIONS</li>
+    <li>BCWL</li>
+  </ul>
+</li>
+
+<li><strong>location</strong> — Optional text.</li>
+<li><strong>format</strong> — Optional text.</li>
+</ul>
+
+---
+
+<h2>rounds</h2>
+
+<pre>
+"rounds": [
+  {
+    "round": 1,
+    "matches": [
+      {
+        "table": 1,
+        "playerA": "elliot-fisher",
+        "playerB": "james-onions",
+        "gamesA": 2,
+        "gamesB": 1
+      }
+    ],
+    "byes": ["kevin-mittertreiner"]
+  }
+]
+</pre>
+
+Definitions:
+
+<ul>
+<li><strong>round</strong> — Required. Round number (integer).</li>
+
+<li><strong>matches</strong> — Required. Array of match objects.</li>
+
+<li><strong>table</strong> — Optional. Table number.</li>
+
+<li><strong>playerA / playerB</strong> — Required.  
+Must match existing player slug exactly.</li>
+
+<li><strong>gamesA / gamesB</strong> — Optional but recommended.  
+If omitted, win/loss defaults to 2–0.</li>
+
+<li><strong>byes</strong> — Optional array of player slugs receiving a bye.</li>
+</ul>
+
+Draws are represented by equal game counts (e.g., 1–1).
+
+---
+
+<h2>standings</h2>
+
+<pre>
+"standings": [
+  { "rank": 1, "player": "elliot-fisher" },
+  { "rank": 2, "player": "james-onions" }
+]
+</pre>
+
+Definitions:
+
+<ul>
+<li><strong>rank</strong> — Required integer finish position.</li>
+<li><strong>player</strong> — Required slug.</li>
+</ul>
+
+Optional tiebreaker fields (safe to include):
+
+<ul>
+<li><code>match_points</code></li>
+<li><code>omw</code></li>
+<li><code>gw</code></li>
+<li><code>ogw</code></li>
+</ul>
+
+---
+
+<h2>elimination (optional)</h2>
+
+<pre>
+"elimination": {
+  "quarterfinals": [ ... ],
+  "semifinals": [ ... ],
+  "finals": [ ... ]
+}
+</pre>
+
+Same match format as Swiss rounds.
+
+Used primarily for BCPMM bonus logic.
+
+---
+
+<h2>notes (optional)</h2>
+
+<pre>
+"notes": [
+  "Player slugs normalized",
+  "No elimination bracket"
+]
+</pre>
+
+Free-form text. Not required.
+
+---
+
+<h2>Common Errors</h2>
+
+<ul>
+<li>Incorrect date format</li>
+<li>Slug mismatch</li>
+<li>Missing standings array</li>
+<li>Malformed JSON</li>
+</ul>
+
+---
+
+<p>
+If unsure, duplicate the Stronghold example file and modify only necessary values.
+</p>
+
+</body>
+</html>

@@ -1,11 +1,11 @@
 /* =========================================================
-   Historical Event Ingestion — PATCHED (deterministic)
+   Historical Event Ingestion — PRODUCTION (deterministic)
    - Reads local JSON files
    - Upserts events (uuid id)
    - Replaces matches per event
-   - Writes match_date + match_index
-   - Derives winner from games/result where needed
+   - Defaults W/L to 2-0 if games missing
    - Ingests byes
+   - Ingests standings → tournament_results
    - Calls rebuild_leaderboards()
 ========================================================= */
 
@@ -53,13 +53,20 @@ function normalizeSeries(series) {
   return null;
 }
 
+function isDraw({ result, gamesA, gamesB }) {
+  if (result === "D") return true;
+  const a = Number(gamesA);
+  const b = Number(gamesB);
+  return Number.isFinite(a) && Number.isFinite(b) && a === b;
+}
+
 function deriveWinner({ playerA, playerB, gamesA, gamesB, result, winner }) {
   if (result === "D") return null;
-
   if (winner) return winner;
 
   const a = Number(gamesA);
   const b = Number(gamesB);
+
   if (Number.isFinite(a) && Number.isFinite(b)) {
     if (a > b) return playerA;
     if (b > a) return playerB;
@@ -68,30 +75,21 @@ function deriveWinner({ playerA, playerB, gamesA, gamesB, result, winner }) {
   return null;
 }
 
-function isDraw({ result, gamesA, gamesB }) {
-  if (result === "D") return true;
-  const a = Number(gamesA);
-  const b = Number(gamesB);
-  return Number.isFinite(a) && Number.isFinite(b) && a === b;
-}
-
 function swissRoundNum(roundObj) {
-  // Support both formats: { round: 1 } or { round_number: 1 }
   return roundObj.round_number ?? roundObj.round ?? 0;
 }
 
 function elimRoundNumber(swissMax, phaseKey) {
-  // For a 5-round swiss: top8=6, semis=7, finals=8
   const order = { top8: 1, quarterfinals: 1, semifinals: 2, finals: 3 };
   return swissMax + (order[phaseKey] ?? 99);
 }
 
 /* =========================================================
-   Ingest Single File
+   EVENT UPSERT
 ========================================================= */
 
 async function getOrCreateEventId({ name, event_date, series }) {
-  // Try to find an existing event row (avoid duplicates)
+
   const { data: existing, error: selErr } = await supabase
     .from("events")
     .select("id")
@@ -103,7 +101,6 @@ async function getOrCreateEventId({ name, event_date, series }) {
   if (selErr) throw selErr;
   if (existing?.id) return existing.id;
 
-  // Insert new
   const { data: inserted, error: insErr } = await supabase
     .from("events")
     .insert({ name, event_date, series })
@@ -114,7 +111,12 @@ async function getOrCreateEventId({ name, event_date, series }) {
   return inserted.id;
 }
 
+/* =========================================================
+   INGEST FILE
+========================================================= */
+
 async function ingestFile(filename) {
+
   console.log(`\nIngesting ${filename}`);
 
   const fullPath = path.resolve(process.cwd(), filename);
@@ -140,7 +142,10 @@ async function ingestFile(filename) {
     series
   });
 
-  // Replace matches for this event
+  /* =============================
+     REPLACE MATCHES
+  ============================== */
+
   await supabase.from("matches").delete().eq("event_id", eventId);
 
   const matchRows = [];
@@ -148,19 +153,32 @@ async function ingestFile(filename) {
 
   const rounds = Array.isArray(json.rounds) ? [...json.rounds] : [];
   rounds.sort((a, b) => swissRoundNum(a) - swissRoundNum(b));
-
   const swissMax = rounds.reduce((mx, r) => Math.max(mx, swissRoundNum(r)), 0);
 
-  // Swiss matches + byes
   for (const round of rounds) {
-    const rn = swissRoundNum(round);
 
+    const rn = swissRoundNum(round);
     const matches = Array.isArray(round.matches) ? [...round.matches] : [];
     matches.sort((a, b) => (a.table ?? 0) - (b.table ?? 0));
 
     for (const m of matches) {
-      const draw = isDraw(m);
-      const winner = deriveWinner(m);
+
+      let gamesA = m.gamesA;
+      let gamesB = m.gamesB;
+
+      if (!gamesA && !gamesB) {
+        if (m.result === "W") {
+          gamesA = 2;
+          gamesB = 0;
+        }
+        if (m.result === "L") {
+          gamesA = 0;
+          gamesB = 2;
+        }
+      }
+
+      const draw = isDraw({ ...m, gamesA, gamesB });
+      const winner = deriveWinner({ ...m, gamesA, gamesB });
 
       matchRows.push({
         event_id: eventId,
@@ -170,13 +188,12 @@ async function ingestFile(filename) {
         is_elimination: false,
         player_a: m.playerA,
         player_b: m.playerB,
-        games_a: draw ? 0 : (m.gamesA ?? null),
-        games_b: draw ? 0 : (m.gamesB ?? null),
+        games_a: draw ? 1 : (gamesA ?? null),
+        games_b: draw ? 1 : (gamesB ?? null),
         winner
       });
     }
 
-    // Byes
     const byes = Array.isArray(round.byes) ? round.byes : [];
     for (const p of byes) {
       matchRows.push({
@@ -194,19 +211,23 @@ async function ingestFile(filename) {
     }
   }
 
-  // Elimination phases in deterministic order
+  /* =============================
+     ELIMINATION
+  ============================== */
+
   const elim = json.elimination || null;
   if (elim && typeof elim === "object") {
+
     const phases = ["top8", "quarterfinals", "semifinals", "finals"];
 
     for (const phaseKey of phases) {
+
       if (!Array.isArray(elim[phaseKey])) continue;
 
       const rn = elimRoundNumber(swissMax, phaseKey);
-      const matches = [...elim[phaseKey]];
-      matches.sort((a, b) => (a.table ?? 0) - (b.table ?? 0));
 
-      for (const m of matches) {
+      for (const m of elim[phaseKey]) {
+
         const draw = isDraw(m);
         const winner = deriveWinner(m);
 
@@ -218,8 +239,8 @@ async function ingestFile(filename) {
           is_elimination: true,
           player_a: m.playerA,
           player_b: m.playerB,
-          games_a: draw ? 0 : (m.gamesA ?? null),
-          games_b: draw ? 0 : (m.gamesB ?? null),
+          games_a: draw ? 1 : (m.gamesA ?? null),
+          games_b: draw ? 1 : (m.gamesB ?? null),
           winner
         });
       }
@@ -227,11 +248,55 @@ async function ingestFile(filename) {
   }
 
   if (matchRows.length) {
-    const { error: matchErr } = await supabase.from("matches").insert(matchRows);
-    if (matchErr) throw matchErr;
+    const { error } = await supabase.from("matches").insert(matchRows);
+    if (error) throw error;
   }
 
-  console.log(`Inserted ${matchRows.length} matches for event_id=${eventId}`);
+  console.log(`Inserted ${matchRows.length} matches.`);
+
+  /* =============================
+     STANDINGS → tournament_results
+  ============================== */
+
+  if (Array.isArray(json.standings) && json.standings.length > 0) {
+
+    await supabase
+      .from("tournament_results")
+      .delete()
+      .eq("tournament_id", eventId);
+
+    const rows = [];
+
+    for (const row of json.standings) {
+
+      const slug = row.player;
+      if (!slug) continue;
+
+      const { data: tp } = await supabase
+        .from("tournament_players")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (!tp?.id) continue;
+
+      rows.push({
+        tournament_id: eventId,
+        player_id: tp.id,
+        finish_rank: row.rank,
+        tq_awarded: 0
+      });
+    }
+
+    if (rows.length) {
+      const { error } = await supabase
+        .from("tournament_results")
+        .insert(rows);
+      if (error) throw error;
+    }
+
+    console.log(`Inserted ${rows.length} standings rows.`);
+  }
 }
 
 /* =========================================================
@@ -239,6 +304,7 @@ async function ingestFile(filename) {
 ========================================================= */
 
 async function main() {
+
   for (const file of EVENT_FILES) {
     await ingestFile(file);
   }

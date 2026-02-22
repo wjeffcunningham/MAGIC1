@@ -16,12 +16,19 @@ body {
 .logo { width: 120px; margin-bottom: 1.5rem; }
 table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
 th, td { padding: 0.7rem; border-bottom: 1px solid #ddd; vertical-align: top; }
-button { padding: 0.4rem 0.8rem; margin-right: 0.4rem; cursor: pointer; }
+button { padding: 0.5rem 0.9rem; cursor: pointer; font-weight: 600; }
 .section { margin-top: 3rem; }
 .small { font-size: 0.85rem; opacity: 0.75; }
 .err { color: #c0392b; font-weight: 700; margin-top: 0.75rem; }
+.ok { color: #2e7d32; font-weight: 700; margin-top: 0.75rem; }
 .row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem; }
 select { max-width: 520px; }
+input[type=file] { margin-top: 0.75rem; }
+.template-btn {
+  background: transparent;
+  border: 1px solid #111;
+  font-weight: 600;
+}
 </style>
 </head>
 
@@ -30,6 +37,28 @@ select { max-width: 520px; }
 <div id="global-menu-root"></div>
 <img src="/assets/BCPMMsvg.png" class="logo" alt="Logo">
 <h1>Admin Panel</h1>
+
+<!-- =====================================================
+     EVENT INGESTION
+===================================================== -->
+
+<div class="section">
+  <h2>Ingest New Event</h2>
+
+  <input type="file" id="event-file" accept=".json" />
+
+  <div class="row">
+    <button id="ingest-btn">Upload & Ingest</button>
+    <button id="rebuild-btn">Rebuild Leaderboards</button>
+    <a href="templatehelp.html">
+      <button type="button" class="template-btn">Template & Help</button>
+    </a>
+  </div>
+
+  <div id="ingest-status" class="small"></div>
+  <div id="ingest-error" class="err" style="display:none;"></div>
+  <div id="ingest-ok" class="ok" style="display:none;"></div>
+</div>
 
 <!-- Pending Claims -->
 <div class="section">
@@ -67,7 +96,7 @@ select { max-width: 520px; }
   </div>
   <div id="unassign-error" class="err" style="display:none;"></div>
   <div class="small" style="margin-top:0.5rem;">
-    Removes the approved claim link between a user and a player (i.e. undo a wrong verification).
+    Removes the approved claim link between a user and a player.
   </div>
 </div>
 
@@ -113,330 +142,74 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!window.auth || !window.auth._client) return;
   const supabase = window.auth._client;
 
-  const pendingError  = document.getElementById("pending-error");
-  const manualError   = document.getElementById("manual-error");
-  const unassignError = document.getElementById("unassign-error");
-  const adminError    = document.getElementById("admin-error");
-  const mergeError    = document.getElementById("merge-error");
-  const unmergeError  = document.getElementById("unmerge-error");
+  const ingestBtn = document.getElementById("ingest-btn");
+  const rebuildBtn = document.getElementById("rebuild-btn");
+  const fileInput = document.getElementById("event-file");
+  const status = document.getElementById("ingest-status");
+  const errBox = document.getElementById("ingest-error");
+  const okBox = document.getElementById("ingest-ok");
 
-  function showErr(el, msg) {
-    el.style.display = "block";
-    el.textContent = msg;
-  }
-  function clearErr(el) {
-    el.style.display = "none";
-    el.textContent = "";
-  }
-  function escapeHtml(s) {
-    return String(s || "").replace(/[&<>"']/g, c => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[c]));
+  function showErr(msg) {
+    errBox.style.display = "block";
+    errBox.textContent = msg;
   }
 
-  /* =====================================================
-     Admin Gate
-  ===================================================== */
-
-  const { data: sessionWrap } = await supabase.auth.getSession();
-  if (!sessionWrap?.session) {
-    window.location.href = "/join.html";
-    return;
+  function showOk(msg) {
+    okBox.style.display = "block";
+    okBox.textContent = msg;
   }
 
-  const currentUser = sessionWrap.session.user;
-
-  const { data: role, error: roleErr } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", currentUser.id)
-    .eq("role", "admin")
-    .maybeSingle();
-
-  if (roleErr || !role) {
-    alert("Admin access required.");
-    window.location.href = "/";
-    return;
+  function clearMessages() {
+    errBox.style.display = "none";
+    okBox.style.display = "none";
+    status.textContent = "";
   }
 
-  /* =====================================================
-     Pending Claims
-  ===================================================== */
+  ingestBtn.onclick = async () => {
+    clearMessages();
 
-  clearErr(pendingError);
-
-  const tbody = document.getElementById("pending-table");
-  tbody.innerHTML = "";
-
-  const { data: claims, error: claimsErr } = await supabase.rpc("admin_get_pending_claims");
-  if (claimsErr) showErr(pendingError, claimsErr.message);
-
-  if (!claims || claims.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3">No pending claims.</td></tr>`;
-  } else {
-    claims.forEach(row => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>
-          <strong>${escapeHtml(row.slug)}</strong><br>
-          <a href="/player.html?player=${encodeURIComponent(row.slug)}" target="_blank" rel="noopener">View Player Page</a>
-        </td>
-        <td>
-          <div><strong>${escapeHtml(row.email)}</strong></div>
-          <div class="small">user_id: ${escapeHtml(row.user_id)}</div>
-        </td>
-        <td>
-          <button class="approve" data-id="${row.claim_id}">Approve</button>
-          <button class="reject" data-id="${row.claim_id}">Reject</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  tbody.addEventListener("click", async (e) => {
-    const id = e.target?.dataset?.id;
-    if (!id) return;
-
-    if (e.target.classList.contains("approve")) {
-      await supabase.from("player_claims").update({ status: "approved" }).eq("id", id);
-      location.reload();
-    }
-
-    if (e.target.classList.contains("reject")) {
-      await supabase.from("player_claims").delete().eq("id", id);
-      location.reload();
-    }
-  });
-
-  /* =====================================================
-     Populate Users (admin_get_users returns: id, email [, alias])
-  ===================================================== */
-
-  clearErr(manualError);
-  clearErr(adminError);
-
-  const { data: users, error: usersErr } = await supabase.rpc("admin_get_users");
-  if (usersErr) {
-    showErr(manualError, usersErr.message);
-    showErr(adminError, usersErr.message);
-  }
-
-  const manualUser = document.getElementById("manual-user");
-  const adminUser = document.getElementById("admin-user");
-
-  manualUser.innerHTML = "";
-  adminUser.innerHTML = "";
-
-  const usersById = new Map();
-
-  (users || []).forEach(u => {
-    const uid = u.id; // IMPORTANT: RPC returns "id"
-    if (!uid) return;
-
-    usersById.set(uid, u);
-
-    const label = u.alias ? `${u.email} (${u.alias})` : u.email;
-
-    const opt1 = document.createElement("option");
-    opt1.textContent = label;
-    opt1.value = uid; // UUID
-    manualUser.appendChild(opt1);
-
-    const opt2 = document.createElement("option");
-    opt2.textContent = label;
-    opt2.value = uid; // UUID
-    adminUser.appendChild(opt2);
-  });
-
-  /* =====================================================
-     Populate Player Slugs
-  ===================================================== */
-
-  const { data: players, error: playersErr } = await supabase
-    .from("tournament_players")
-    .select("slug")
-    .order("slug");
-
-  if (playersErr) showErr(manualError, playersErr.message);
-
-  const slugSelect = document.getElementById("manual-slug");
-  const mergeSource = document.getElementById("merge-source");
-  const mergeTarget = document.getElementById("merge-target");
-
-  slugSelect.innerHTML = "";
-  mergeSource.innerHTML = "";
-  mergeTarget.innerHTML = "";
-
-  (players || []).forEach(p => {
-    if (!p.slug) return;
-    slugSelect.add(new Option(p.slug, p.slug));
-    mergeSource.add(new Option(p.slug, p.slug));
-    mergeTarget.add(new Option(p.slug, p.slug));
-  });
-
-  /* =====================================================
-     Manual Assignment (creates approved claim)
-  ===================================================== */
-
-  document.getElementById("assign-btn").onclick = async () => {
-
-    clearErr(manualError);
-
-    const userId = manualUser.value; // UUID
-    const slug = slugSelect.value;
-
-    const { error } = await supabase
-      .from("player_claims")
-      .insert({ user_id: userId, slug: slug, status: "approved" });
-
-    if (error) {
-      showErr(manualError, error.message);
+    const file = fileInput.files[0];
+    if (!file) {
+      showErr("Select a JSON file.");
       return;
     }
 
-    alert("Assigned.");
-    location.reload();
+    try {
+      status.textContent = "Reading file...";
+      const text = await file.text();
+      const payload = JSON.parse(text);
+
+      status.textContent = "Uploading...";
+
+const { data, error } = await supabase.functions.invoke("admin-ingest-event", {
+  body: { payload }
+});
+
+      if (error) {
+        showErr(error.message);
+        return;
+      }
+
+      status.textContent = "";
+      showOk("Event ingested successfully.");
+    } catch (e) {
+      showErr(e.message);
+    }
   };
 
-  /* =====================================================
-     Manual Separation (undo wrong verification)
-     Implementation: delete approved claim row.
-     (If you prefer status='revoked', tell me your allowed statuses.)
-  ===================================================== */
+  rebuildBtn.onclick = async () => {
+    clearMessages();
+    status.textContent = "Rebuilding leaderboards...";
 
-  const unassignSelect = document.getElementById("unassign-claim");
-  unassignSelect.innerHTML = "";
-
-  const { data: approvedClaims, error: approvedErr } = await supabase
-    .from("player_claims")
-    .select("id, slug, user_id, status")
-    .eq("status", "approved")
-    .order("slug");
-
-  if (approvedErr) showErr(unassignError, approvedErr.message);
-
-  (approvedClaims || []).forEach(c => {
-    const u = usersById.get(c.user_id);
-    const email = u?.email ? u.email : c.user_id;
-    const label = `${c.slug} — ${email}`;
-    unassignSelect.add(new Option(label, c.id));
-  });
-
-  document.getElementById("unassign-btn").onclick = async () => {
-
-    clearErr(unassignError);
-
-    const claimId = unassignSelect.value;
-    if (!claimId) return;
-
-    const ok = confirm("Unassign this verified claim? This will remove the user↔player link.");
-    if (!ok) return;
-
-    const { error } = await supabase
-      .from("player_claims")
-      .delete()
-      .eq("id", claimId);
+    const { error } = await supabase.rpc("rebuild_leaderboards");
 
     if (error) {
-      showErr(unassignError, error.message);
+      showErr(error.message);
       return;
     }
 
-    alert("Unassigned.");
-    location.reload();
-  };
-
-  /* =====================================================
-     Grant Admin
-  ===================================================== */
-
-  document.getElementById("grant-admin").onclick = async () => {
-
-    clearErr(adminError);
-
-    const userId = adminUser.value; // UUID
-
-    const { error } = await supabase
-      .rpc("admin_grant_admin", { target_user_id: userId });
-
-    if (error) {
-      showErr(adminError, error.message);
-      return;
-    }
-
-    alert("Admin granted.");
-  };
-
-  /* =====================================================
-     Merge Players (alias roll-up)
-  ===================================================== */
-
-  document.getElementById("merge-btn").onclick = async () => {
-
-    clearErr(mergeError);
-
-    const source = mergeSource.value;
-    const target = mergeTarget.value;
-
-    if (!source || !target || source === target) {
-      alert("Choose two different players.");
-      return;
-    }
-
-    const { error } = await supabase
-      .rpc("admin_merge_players", { source_slug: source, target_slug: target });
-
-    if (error) {
-      showErr(mergeError, error.message);
-      return;
-    }
-
-    alert("Players merged.");
-    location.reload();
-  };
-
-  /* =====================================================
-     Unmerge Alias (optional; only works if player_aliases exists)
-  ===================================================== */
-
-  const unmergeSelect = document.getElementById("unmerge-alias");
-  unmergeSelect.innerHTML = "";
-
-  const { data: aliases, error: aliasErr } = await supabase
-    .from("player_aliases")
-    .select("alias_slug")
-    .order("alias_slug");
-
-  if (aliasErr) {
-    showErr(unmergeError, aliasErr.message);
-  } else {
-    (aliases || []).forEach(a => {
-      if (!a.alias_slug) return;
-      unmergeSelect.add(new Option(a.alias_slug, a.alias_slug));
-    });
-  }
-
-  document.getElementById("unmerge-btn").onclick = async () => {
-
-    clearErr(unmergeError);
-
-    const alias = unmergeSelect.value;
-    if (!alias) return;
-
-    const ok = confirm(`Unmerge alias "${alias}"?`);
-    if (!ok) return;
-
-    const { error } = await supabase
-      .rpc("admin_unmerge_player", { alias_slug: alias });
-
-    if (error) {
-      showErr(unmergeError, error.message);
-      return;
-    }
-
-    alert("Alias removed.");
-    location.reload();
+    status.textContent = "";
+    showOk("Leaderboards rebuilt.");
   };
 
 });
