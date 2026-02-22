@@ -54,25 +54,44 @@ body {
   position: absolute;
   top: 0;
   left: -120%;
-  width: 55%;
+  width: 60%;
   height: 100%;
   background: linear-gradient(
     120deg,
     transparent 0%,
-    rgba(255,255,255,0.75) 45%,
-    rgba(255,255,255,0.95) 50%,
-    rgba(255,255,255,0.75) 55%,
+    rgba(255,255,255,0.6) 10%,
+    rgba(255,255,255,0.95) 30%,
+    rgba(255,255,255,0.6) 40%,
+    rgba(120,180,255,0.4) 90%,   /* subtle blue tint tail */
     transparent 100%
   );
   transform: skewX(-18deg);
-  animation: sunGlint 4.5s cubic-bezier(.4,.0,.2,1) infinite;
+  opacity: 0;
+  animation: sunGlint 3s cubic-bezier(.55,0,.15,1) infinite;
 }
 
 @keyframes sunGlint {
-  0%   { left: -120%; }
-  65%  { left: -120%; }   /* pause before sweep */
-  85%  { left: 120%; }    /* smooth glide */
-  100% { left: 120%; }
+
+  /* almost immediate */
+  0%   { left: -120%; opacity: 0; }
+
+  8%   { left: -120%; opacity: 0; }
+
+  /* quick glow */
+  18%  { left: -105%; opacity: 0.8; }
+
+  /* acceleration */
+  35%  { left: -30%; opacity: 1; }
+
+  /* sweep */
+  50%  { left: 120%; opacity: 1; }
+
+  /* colour tail fades */
+  65%  { opacity: 0.6; }
+
+  80%  { opacity: 0; }
+
+  100% { left: 120%; opacity: 0; }
 }
 
 /* =====================================

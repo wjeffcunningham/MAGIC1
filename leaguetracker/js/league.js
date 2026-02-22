@@ -302,16 +302,7 @@ async function loadLeaderboard() {
     showBcpmmCheckbox(false);
     document.body.classList.remove("bcpmm-only");
 
-    const { data } = await supabase
-      .from("leaderboard_elo")
-      .select("player,rating")
-      .order("rating", { ascending: false });
-
-    rows = (data || []).map(r => ({
-      player: r.player,
-      value: Number(r.rating || 0),
-      extra: ""
-    }));
+const { data } = await supabase
   }
 
   else if (currentMode === "league") {
