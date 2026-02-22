@@ -24,11 +24,6 @@ button { padding: 0.5rem 0.9rem; cursor: pointer; font-weight: 600; }
 .row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem; }
 select { max-width: 520px; }
 input[type=file] { margin-top: 0.75rem; }
-.template-btn {
-  background: transparent;
-  border: 1px solid #111;
-  font-weight: 600;
-}
 </style>
 </head>
 
@@ -38,10 +33,6 @@ input[type=file] { margin-top: 0.75rem; }
 <img src="/assets/BCPMMsvg.png" class="logo" alt="Logo">
 <h1>Admin Panel</h1>
 
-<!-- =====================================================
-     EVENT INGESTION
-===================================================== -->
-
 <div class="section">
   <h2>Ingest New Event</h2>
 
@@ -50,9 +41,7 @@ input[type=file] { margin-top: 0.75rem; }
   <div class="row">
     <button id="ingest-btn">Upload & Ingest</button>
     <button id="rebuild-btn">Rebuild Leaderboards</button>
-    <a href="templatehelp.html">
-      <button type="button" class="template-btn">Template & Help</button>
-    </a>
+    <a href="templatehelp.html"><button type="button">Template & Help</button></a>
   </div>
 
   <div id="ingest-status" class="small"></div>
@@ -60,7 +49,6 @@ input[type=file] { margin-top: 0.75rem; }
   <div id="ingest-ok" class="ok" style="display:none;"></div>
 </div>
 
-<!-- Pending Claims -->
 <div class="section">
   <h2>Pending Claims</h2>
   <div id="pending-error" class="err" style="display:none;"></div>
@@ -68,7 +56,7 @@ input[type=file] { margin-top: 0.75rem; }
     <thead>
       <tr>
         <th>Player</th>
-        <th>User Info</th>
+        <th>User</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -76,7 +64,6 @@ input[type=file] { margin-top: 0.75rem; }
   </table>
 </div>
 
-<!-- Manual Assignment -->
 <div class="section">
   <h2>Manual Assignment</h2>
   <div class="row">
@@ -87,54 +74,19 @@ input[type=file] { margin-top: 0.75rem; }
   <div id="manual-error" class="err" style="display:none;"></div>
 </div>
 
-<!-- Manual Separation / Unassign -->
 <div class="section">
-  <h2>Manual Separation (Unassign Verified Player)</h2>
-  <div class="row">
-    <select id="unassign-claim"></select>
-    <button id="unassign-btn">Unassign</button>
-  </div>
-  <div id="unassign-error" class="err" style="display:none;"></div>
-  <div class="small" style="margin-top:0.5rem;">
-    Removes the approved claim link between a user and a player.
-  </div>
-</div>
-
-<!-- Grant Admin -->
-<div class="section">
-  <h2>Grant Admin Role</h2>
-  <div class="row">
-    <select id="admin-user"></select>
-    <button id="grant-admin">Grant Admin</button>
-  </div>
-  <div id="admin-error" class="err" style="display:none;"></div>
-</div>
-
-<!-- Merge Players -->
-<div class="section">
-  <h2>Merge Players (Alias Roll-Up)</h2>
+  <h2>Merge Players</h2>
   <div class="row">
     <select id="merge-source"></select>
-    <span>→</span>
+    →
     <select id="merge-target"></select>
     <button id="merge-btn">Merge</button>
   </div>
   <div id="merge-error" class="err" style="display:none;"></div>
 </div>
 
-<!-- Unmerge Alias -->
-<div class="section">
-  <h2>Unmerge Alias</h2>
-  <div class="row">
-    <select id="unmerge-alias"></select>
-    <button id="unmerge-btn">Unmerge</button>
-  </div>
-  <div id="unmerge-error" class="err" style="display:none;"></div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth.js"></script>
-<script src="/js/bcpmm-shell.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
@@ -142,74 +94,110 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!window.auth || !window.auth._client) return;
   const supabase = window.auth._client;
 
-  const ingestBtn = document.getElementById("ingest-btn");
-  const rebuildBtn = document.getElementById("rebuild-btn");
-  const fileInput = document.getElementById("event-file");
-  const status = document.getElementById("ingest-status");
-  const errBox = document.getElementById("ingest-error");
-  const okBox = document.getElementById("ingest-ok");
-
-  function showErr(msg) {
-    errBox.style.display = "block";
-    errBox.textContent = msg;
+  const { data: sessionWrap } = await supabase.auth.getSession();
+  if (!sessionWrap?.session) {
+    window.location.href = "/join.html";
+    return;
   }
 
-  function showOk(msg) {
-    okBox.style.display = "block";
-    okBox.textContent = msg;
+  const currentUser = sessionWrap.session.user;
+
+  const { data: role } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", currentUser.id)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  if (!role) {
+    alert("Admin access required.");
+    window.location.href = "/";
+    return;
   }
 
-  function clearMessages() {
-    errBox.style.display = "none";
-    okBox.style.display = "none";
-    status.textContent = "";
-  }
+  /* =========================
+     LOAD USERS
+  ========================== */
 
-  ingestBtn.onclick = async () => {
-    clearMessages();
+  const { data: users } = await supabase.rpc("admin_get_users");
 
-    const file = fileInput.files[0];
-    if (!file) {
-      showErr("Select a JSON file.");
-      return;
-    }
+  const manualUser = document.getElementById("manual-user");
+  manualUser.innerHTML = "";
 
-    try {
-      status.textContent = "Reading file...";
-      const text = await file.text();
-      const payload = JSON.parse(text);
+  users?.forEach(u => {
+    const opt = document.createElement("option");
+    opt.value = u.id;
+    opt.textContent = u.email;
+    manualUser.appendChild(opt);
+  });
 
-      status.textContent = "Uploading...";
+  /* =========================
+     LOAD PLAYER SLUGS
+  ========================== */
 
-const { data, error } = await supabase.functions.invoke("admin-ingest-event", {
-  body: { payload }
-});
+  const { data: players } = await supabase
+    .from("tournament_players")
+    .select("slug")
+    .order("slug");
 
-      if (error) {
-        showErr(error.message);
-        return;
-      }
+  const slugSelect = document.getElementById("manual-slug");
+  const mergeSource = document.getElementById("merge-source");
+  const mergeTarget = document.getElementById("merge-target");
 
-      status.textContent = "";
-      showOk("Event ingested successfully.");
-    } catch (e) {
-      showErr(e.message);
-    }
+  slugSelect.innerHTML = "";
+  mergeSource.innerHTML = "";
+  mergeTarget.innerHTML = "";
+
+  players?.forEach(p => {
+    slugSelect.add(new Option(p.slug, p.slug));
+    mergeSource.add(new Option(p.slug, p.slug));
+    mergeTarget.add(new Option(p.slug, p.slug));
+  });
+
+  /* =========================
+     INGEST EDGE FUNCTION
+  ========================== */
+
+  document.getElementById("ingest-btn").onclick = async () => {
+    const file = document.getElementById("event-file").files[0];
+    if (!file) return alert("Select a file.");
+
+    const text = await file.text();
+    const payload = JSON.parse(text);
+
+    const { error } = await supabase.functions.invoke("admin-ingest-event", {
+      body: { payload }
+    });
+
+    if (error) return alert(error.message);
+
+    alert("Event ingested.");
   };
 
-  rebuildBtn.onclick = async () => {
-    clearMessages();
-    status.textContent = "Rebuilding leaderboards...";
-
+  document.getElementById("rebuild-btn").onclick = async () => {
     const { error } = await supabase.rpc("rebuild_leaderboards");
+    if (error) return alert(error.message);
+    alert("Leaderboards rebuilt.");
+  };
 
-    if (error) {
-      showErr(error.message);
-      return;
-    }
+  /* =========================
+     MERGE
+  ========================== */
 
-    status.textContent = "";
-    showOk("Leaderboards rebuilt.");
+  document.getElementById("merge-btn").onclick = async () => {
+    const source = mergeSource.value;
+    const target = mergeTarget.value;
+
+    if (source === target) return alert("Choose two different players.");
+
+    const { error } = await supabase.rpc("admin_merge_players", {
+      source_slug: source,
+      target_slug: target
+    });
+
+    if (error) return alert(error.message);
+
+    alert("Merged.");
   };
 
 });
