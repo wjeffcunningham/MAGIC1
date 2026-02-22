@@ -231,11 +231,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     alert("Event ingested.");
   };
 
-  document.getElementById("rebuild-btn").onclick = async () => {
-    const { error } = await supabase.rpc("rebuild_leaderboards");
-    if (error) return alert(error.message);
-    alert("Leaderboards rebuilt.");
-  };
+document.getElementById("rebuild-btn").onclick = async () => {
+  const { error } = await supabase.functions.invoke("admin-rebuild-leaderboards");
+  if (error) return alert(error.message);
+  alert("Leaderboards rebuilt.");
+};
 
   /* ================= ASSIGN ================= */
 
