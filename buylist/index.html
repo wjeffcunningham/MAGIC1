@@ -4,94 +4,110 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BCPMM Buylist</title>
+
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/auth.js"></script>
 
 <style>
 *{box-sizing:border-box}
 
-.buylist-wrap{max-width:1200px;margin:4rem auto;padding:0 1.5rem}
+.buylist-wrap{
+  max-width:1200px;
+  margin:6rem auto 4rem;
+  padding:0 1.5rem;
+}
 
 header{margin-bottom:2rem}
 header h1{margin:0 0 .5rem}
-header p{opacity:.75;font-size:.9rem}
+header p{opacity:.75;font-size:.95rem}
 
-.controls{margin:1.5rem 0 3rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center}
+.controls{
+  margin:1.5rem 0 2rem;
+  display:flex;
+  gap:1.5rem;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.admin-upload{
+  margin-bottom:2rem;
+  padding:1rem;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(255,255,255,0.04);
+  display:none;
+}
+
+.admin-upload input[type=file]{
+  margin-bottom:.5rem;
+}
 
 .section{margin-top:4rem}
-
 .category-headroom{margin-bottom:2.5rem}
+
 .category-pill{
-display:inline-block;
-padding:.6rem 1.2rem;
-border-radius:999px;
-border:1px solid var(--border);
-font-weight:700;
-letter-spacing:.5px;
-font-size:1rem;
+  display:inline-block;
+  padding:.6rem 1.2rem;
+  border-radius:999px;
+  border:1px solid var(--border);
+  font-weight:800;
+  letter-spacing:.5px;
+  font-size:1.05rem;
 }
 
-.category-description{
-margin-top:1rem;
-font-size:.95rem;
-opacity:.8;
-max-width:720px;
-white-space:pre-wrap;
+.stack{
+  display:flex;
+  align-items:flex-start;
+  padding-top:1rem;
 }
 
-.admin-category-box{
-margin-top:1rem;
-padding:1rem;
-border:1px solid var(--border);
-border-radius:10px;
-background:rgba(255,255,255,0.03);
-font-size:.85rem;
+.card{
+  width:140px;
+  position:relative;
+  transition:transform .15s ease;
 }
 
-.stack{display:flex;align-items:flex-start;padding-top:1rem}
+.card:not(:first-child){margin-left:-55px}
 
-.card{width:130px;position:relative;transition:transform .15s ease}
-.card:not(:first-child){margin-left:-45px}
-.card:hover{transform:translateY(-8px);z-index:20}
+.card:hover{
+  transform:translateY(-10px);
+  z-index:20;
+}
 
 .card img{
-width:100%;
-border-radius:8px;
-box-shadow:0 8px 18px rgba(0,0,0,.35)
+  width:100%;
+  border-radius:10px;
+  box-shadow:0 10px 22px rgba(0,0,0,.45);
 }
 
-.price{text-align:center;font-size:.85rem;margin-top:.4rem}
-.row{display:flex;justify-content:space-between}
+.price{
+  text-align:center;
+  font-size:.9rem;
+  margin-top:.5rem;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+}
 
 .red-dot{
-position:absolute;
-top:8px;
-right:8px;
-width:10px;
-height:10px;
-border-radius:50%;
-background:#ff3b30;
-box-shadow:0 0 6px rgba(255,0,0,.6)
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:#ff3b30;
+  box-shadow:0 0 8px rgba(255,0,0,.7);
 }
-
-.admin-panel{
-display:none;
-margin-top:.6rem;
-font-size:.8rem;
-padding:.6rem;
-border:1px solid var(--border);
-border-radius:8px;
-background:rgba(255,255,255,0.03);
-}
-
-.card.admin .admin-panel{display:block}
-
-input[type=number]{width:90px}
-textarea{width:100%;resize:vertical}
 </style>
 </head>
 
 <body>
+
+<div id="global-menu-root"></div>
 
 <div class="buylist-wrap">
 
@@ -101,20 +117,34 @@ textarea{width:100%;resize:vertical}
 </header>
 
 <div class="controls">
-<label><input type="checkbox" id="hideMarginal" onchange="render()"> Hide marginal editions</label>
+<label>
+<input type="checkbox" id="hideMarginal">
+Hide marginal editions
+</label>
 
-<label>Currency:
-<select id="currencySelect" onchange="render()">
+<label>
+Currency:
+<select id="currencySelect">
 <option value="USD">USD</option>
 <option value="CAD">CAD</option>
 </select>
 </label>
 
 <label id="adminToggleWrap" style="display:none">
-<input type="checkbox" id="adminToggle" onchange="render()"> Admin Mode
+<input type="checkbox" id="adminToggle">
+Admin Mode
 </label>
 
 <span id="fxLabel"></span>
+</div>
+
+<!-- CSV Upload Panel -->
+<div class="admin-upload" id="adminUpload">
+<strong>Import CSV</strong><br>
+<input type="file" id="csvFile" accept=".csv">
+<br>
+<button id="uploadCsvBtn">Upload & Import</button>
+<div id="uploadStatus" style="margin-top:.5rem;font-size:.9rem;"></div>
 </div>
 
 <div id="content">Loading…</div>
@@ -123,12 +153,11 @@ textarea{width:100%;resize:vertical}
 
 <script>
 
-/* ================= CONFIG ================= */
+/* ================= CLIENT ================= */
 
-const SUPABASE_URL = "https://dkzdfhzlewlvfmunywal.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI";
-
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function getClient(){
+  return window.auth ? window.auth._client : null;
+}
 
 let CARDS=[];
 let CATEGORIES=[];
@@ -140,201 +169,175 @@ let IS_ADMIN=false;
 function currency(){return document.getElementById("currencySelect").value}
 function convert(n){return currency()==="CAD"?n*FX:n}
 function money(n){
-if(!Number.isFinite(n)||n<=0)return "—"
-return (currency()==="CAD"?"CA$":"US$")+convert(n).toFixed(2)
+  if(!Number.isFinite(n)||n<=0)return "—";
+  return (currency()==="CAD"?"CA$":"US$")+convert(n).toFixed(2);
 }
 
 async function fetchFX(){
-try{
-const r=await fetch("https://api.exchangerate.host/latest?base=USD&symbols=CAD")
-const d=await r.json()
-FX=d.rates.CAD
-}catch(e){}
-document.getElementById("fxLabel").textContent=`1 USD = ${FX.toFixed(3)} CAD`
+  try{
+    const r=await fetch("https://api.exchangerate.host/latest?base=USD&symbols=CAD");
+    const d=await r.json();
+    FX=d.rates.CAD;
+  }catch(e){}
+  document.getElementById("fxLabel").textContent=`1 USD = ${FX.toFixed(3)} CAD`;
 }
 
 /* ================= SCRYFALL ================= */
 
 async function fetchMarket(card){
-if(card.lock_price)return
-let url = card.scryfall_id
-? "https://api.scryfall.com/cards/"+card.scryfall_id
-: `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(card.name)}&set=${card.set_code}`
-const r=await fetch(url)
-if(!r.ok)return
-const d=await r.json()
-card.market=parseFloat(d.prices.usd)||0
-card.image=d.image_uris?.small||d.card_faces?.[0]?.image_uris?.small
+  if(card.lock_price)return;
+
+  let url = card.scryfall_id
+    ? "https://api.scryfall.com/cards/"+card.scryfall_id
+    : `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(card.name)}&set=${card.set_code}`;
+
+  const r=await fetch(url);
+  if(!r.ok)return;
+  const d=await r.json();
+
+  card.market=parseFloat(d.prices.usd)||0;
+  card.image=d.image_uris?.small||d.card_faces?.[0]?.image_uris?.small;
 }
 
-/* ================= BUY LOGIC ================= */
+/* ================= CSV IMPORT ================= */
 
-function computeBuy(card,cat){
-if(card.not_buying)return null
-if(card.manual_buy_price)return card.manual_buy_price
-if(cat.buy_mode==="percent" && cat.buy_percent)
-return card.market*(cat.buy_percent/100)
-return null
-}
+document.getElementById("uploadCsvBtn").addEventListener("click", async () => {
+
+  const fileInput = document.getElementById("csvFile");
+  const status = document.getElementById("uploadStatus");
+
+  if(!fileInput.files.length){
+    status.textContent="Select a CSV file first.";
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const text = await file.text();
+
+  status.textContent="Uploading...";
+
+  try{
+
+    const sb = getClient();
+    const { data:{ session } } = await sb.auth.getSession();
+
+    const res = await fetch(`${sb.supabaseUrl}/functions/v1/import-buylist`,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":`Bearer ${session.access_token}`
+      },
+      body:JSON.stringify({ csv: text })
+    });
+
+    const json = await res.json();
+
+    if(res.ok){
+      status.textContent=`Imported ${json.imported} cards.`;
+      await loadData();
+    }else{
+      status.textContent="Error: "+JSON.stringify(json);
+    }
+
+  }catch(err){
+    status.textContent="Upload failed.";
+  }
+
+});
 
 /* ================= RENDER ================= */
 
 function render(){
 
-const container=document.getElementById("content")
-container.innerHTML=""
-
-const hideMarginal=document.getElementById("hideMarginal").checked
-const admin=document.getElementById("adminToggle")?.checked
+const container=document.getElementById("content");
+container.innerHTML="";
 
 CATEGORIES.forEach(cat=>{
 
-const cards=CARDS.filter(c=>c.category_id===cat.id)
-if(!cards.length)return
+const cards=CARDS.filter(c=>c.category_id===cat.id);
+if(!cards.length)return;
 
-const visible=cards.filter(c=>{
-if(hideMarginal && (c.edition_marginal||cat.marginal_default))
-return false
-return true
-})
-if(!visible.length)return
+const section=document.createElement("div");
+section.className="section";
 
-const section=document.createElement("div")
-section.className="section"
+const pill=document.createElement("div");
+pill.className="category-pill";
+pill.textContent=cat.name;
 
-const head=document.createElement("div")
-head.className="category-headroom"
+section.appendChild(pill);
 
-const pill=document.createElement("div")
-pill.className="category-pill"
-pill.textContent=cat.name
-head.appendChild(pill)
+const stack=document.createElement("div");
+stack.className="stack";
 
-if(cat.description){
-const desc=document.createElement("div")
-desc.className="category-description"
-desc.textContent=cat.description
-head.appendChild(desc)
-}
-
-if(admin){
-const box=document.createElement("div")
-box.className="admin-category-box"
-box.innerHTML=`
-Buy Mode:
-<select onchange="updateCategory('${cat.id}','buy_mode',this.value)">
-<option value="">None</option>
-<option value="percent" ${cat.buy_mode==="percent"?"selected":""}>Percent</option>
-</select>
-Percent:
-<input type="number" value="${cat.buy_percent||""}"
-onchange="updateCategory('${cat.id}','buy_percent',parseFloat(this.value)||null)">
-<br><br>
-<label><input type="checkbox" ${cat.marginal_default?"checked":""}
-onchange="updateCategory('${cat.id}','marginal_default',this.checked)">
-Marginal default</label>
-<br><br>
-Description:
-<textarea onchange="updateCategory('${cat.id}','description',this.value)">${cat.description||""}</textarea>
-`
-head.appendChild(box)
-}
-
-section.appendChild(head)
-
-const stack=document.createElement("div")
-stack.className="stack"
-
-visible.forEach(c=>{
-
-const el=document.createElement("div")
-el.className="card"
-if(admin)el.classList.add("admin")
-
-const buy=computeBuy(c,cat)
+cards.forEach(c=>{
+const el=document.createElement("div");
+el.className="card";
 
 el.innerHTML=`
 <img src="${c.image||""}">
 <div class="price">
 <div class="row"><span>Mkt</span><span>${money(c.market)}</span></div>
-${buy?`<div class="row"><span>Buy</span><span>${money(buy)}</span></div>`:""}
 </div>
-`
+`;
 
-if(c.not_buying){
-const dot=document.createElement("div")
-dot.className="red-dot"
-el.appendChild(dot)
-}
+stack.appendChild(el);
+});
 
-if(admin){
-const panel=document.createElement("div")
-panel.className="admin-panel"
-panel.innerHTML=`
-<label><input type="checkbox" ${c.not_buying?"checked":""}
-onchange="updateCard('${c.id}','not_buying',this.checked)"> Not buying</label><br>
-<label><input type="checkbox" ${c.edition_marginal?"checked":""}
-onchange="updateCard('${c.id}','edition_marginal',this.checked)"> Marginal edition</label><br>
-<label><input type="checkbox" ${c.lock_price?"checked":""}
-onchange="updateCard('${c.id}','lock_price',this.checked)"> Lock market</label><br>
-Manual buy:
-<input type="number" value="${c.manual_buy_price||""}"
-onchange="updateCard('${c.id}','manual_buy_price',parseFloat(this.value)||null)">
-`
-el.appendChild(panel)
-}
-
-stack.appendChild(el)
-})
-
-section.appendChild(stack)
-container.appendChild(section)
-
-})
-}
-
-/* ================= ADMIN ================= */
-
-async function updateCard(id,field,value){
-await sb.from("buylist_cards").update({[field]:value}).eq("id",id)
-await loadData()
-}
-
-async function updateCategory(id,field,value){
-await sb.from("buylist_categories").update({[field]:value}).eq("id",id)
-await loadData()
+section.appendChild(stack);
+container.appendChild(section);
+});
 }
 
 /* ================= LOAD ================= */
 
 async function loadData(){
-const {data:cats}=await sb.from("buylist_categories").select("*").order("name")
-CATEGORIES=cats||[]
-const {data:cards}=await sb.from("buylist_cards").select("*")
-CARDS=cards||[]
-await Promise.all(CARDS.map(fetchMarket))
-render()
+
+const sb=getClient();
+if(!sb)return;
+
+const {data:cats}=await sb.from("buylist_categories").select("*").order("name");
+CATEGORIES=cats||[];
+
+const {data:cards}=await sb.from("buylist_cards").select("*");
+CARDS=cards||[];
+
+await Promise.all(CARDS.map(fetchMarket));
+
+/* detect admin */
+const {data:{session}}=await sb.auth.getSession();
+if(session){
+const {data:role}=await sb
+.from("user_roles")
+.select("role")
+.eq("user_id",session.user.id)
+.single();
+
+if(role?.role==="admin"){
+IS_ADMIN=true;
+document.getElementById("adminToggleWrap").style.display="inline-block";
+}
+}
+
+render();
 }
 
 /* ================= INIT ================= */
 
 (async function(){
-await fetchFX()
-const {data:{user}}=await sb.auth.getUser()
-if(user){
-const {data:role}=await sb
-.from("user_roles")
-.select("role")
-.eq("user_id",user.id)
-.single()
-if(role?.role==="admin"){
-IS_ADMIN=true
-document.getElementById("adminToggleWrap").style.display="block"
-}
-}
-await loadData()
-})()
+await fetchFX();
+await loadData();
+})();
+
+/* Show upload panel when admin mode toggled */
+
+document.getElementById("adminToggle").addEventListener("change",function(){
+  document.getElementById("adminUpload").style.display=
+    this.checked && IS_ADMIN ? "block" : "none";
+});
 
 </script>
+
+<script src="/js/bcpmm-shell.js"></script>
+
 </body>
 </html>
