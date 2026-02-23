@@ -3,239 +3,338 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Buylist · BCPMM</title>
+<title>BCPMM Buylist</title>
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-* { box-sizing: border-box; }
+*{box-sizing:border-box}
 
-.buylist-wrap {
-  max-width: 1100px;
-  margin: 4rem auto;
-  padding: 0 1.5rem;
+.buylist-wrap{max-width:1200px;margin:4rem auto;padding:0 1.5rem}
+
+header{margin-bottom:2rem}
+header h1{margin:0 0 .5rem}
+header p{opacity:.75;font-size:.9rem}
+
+.controls{margin:1.5rem 0 3rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center}
+
+.section{margin-top:4rem}
+
+.category-headroom{margin-bottom:2.5rem}
+.category-pill{
+display:inline-block;
+padding:.6rem 1.2rem;
+border-radius:999px;
+border:1px solid var(--border);
+font-weight:700;
+letter-spacing:.5px;
+font-size:1rem;
 }
 
-/* ===== CATEGORY ===== */
-
-.section {
-  margin-top: 3.5rem;
+.category-description{
+margin-top:1rem;
+font-size:.95rem;
+opacity:.8;
+max-width:720px;
+white-space:pre-wrap;
 }
 
-.section h2 {
-  font-size: 1.1rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.4rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.admin-category-box{
+margin-top:1rem;
+padding:1rem;
+border:1px solid var(--border);
+border-radius:10px;
+background:rgba(255,255,255,0.03);
+font-size:.85rem;
 }
 
-.note-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
+.stack{display:flex;align-items:flex-start;padding-top:1rem}
+
+.card{width:130px;position:relative;transition:transform .15s ease}
+.card:not(:first-child){margin-left:-45px}
+.card:hover{transform:translateY(-8px);z-index:20}
+
+.card img{
+width:100%;
+border-radius:8px;
+box-shadow:0 8px 18px rgba(0,0,0,.35)
 }
 
-/* ===== STACKED CARD ROW ===== */
+.price{text-align:center;font-size:.85rem;margin-top:.4rem}
+.row{display:flex;justify-content:space-between}
 
-.stack {
-  display: flex;
-  align-items: flex-start;
+.red-dot{
+position:absolute;
+top:8px;
+right:8px;
+width:10px;
+height:10px;
+border-radius:50%;
+background:#ff3b30;
+box-shadow:0 0 6px rgba(255,0,0,.6)
 }
 
-.card {
-  width: 115px;
-  position: relative;
-  transition: transform 0.15s ease;
+.admin-panel{
+display:none;
+margin-top:.6rem;
+font-size:.8rem;
+padding:.6rem;
+border:1px solid var(--border);
+border-radius:8px;
+background:rgba(255,255,255,0.03);
 }
 
-.card:not(:first-child) {
-  margin-left: -30px;
-}
+.card.admin .admin-panel{display:block}
 
-.card:hover {
-  transform: translateY(-6px);
-  z-index: 10;
-}
-
-.card img {
-  width: 100%;
-  border-radius: 6px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-}
-
-.price {
-  text-align: center;
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-.card-note-indicator {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-/* ===== NOTE PANEL ===== */
-
-.note-panel {
-  margin-top: 0.75rem;
-  font-size: 0.85rem;
-  opacity: 0.85;
-  display: none;
-}
-
-.note-panel.active {
-  display: block;
-}
+input[type=number]{width:90px}
+textarea{width:100%;resize:vertical}
 </style>
 </head>
 
 <body>
+
 <div class="buylist-wrap">
-<div id="content">Loading...</div>
+
+<header>
+<h1>BCPMM Buylist</h1>
+<p>Market prices from Scryfall (USD). Converted to CAD if selected.</p>
+</header>
+
+<div class="controls">
+<label><input type="checkbox" id="hideMarginal" onchange="render()"> Hide marginal editions</label>
+
+<label>Currency:
+<select id="currencySelect" onchange="render()">
+<option value="USD">USD</option>
+<option value="CAD">CAD</option>
+</select>
+</label>
+
+<label id="adminToggleWrap" style="display:none">
+<input type="checkbox" id="adminToggle" onchange="render()"> Admin Mode
+</label>
+
+<span id="fxLabel"></span>
+</div>
+
+<div id="content">Loading…</div>
+
 </div>
 
 <script>
 
-let CARDS = [];
+/* ================= CONFIG ================= */
 
-const CATEGORY_ORDER = [
-  "Reserved List Picks",
-  "One-print Art",
-  "Premodern-legal FNM Foils",
-  "Hot staples",
-  "Snow-covered Lands",
-  "Foils of undervalued cards",
-  "GoldBorder picks",
-  "Mirrodin picks",
-  "Alliances picks",
-  "Slivers",
-  "Ancillary picks",
-  "Other"
-];
+const SUPABASE_URL = "https://dkzdfhzlewlvfmunywal.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI";
 
-const ONE_PRINT_ART = new Set([
-  "Squee, Goblin Nabob",
-  "Grim Lavamancer",
-  "Quirion Dryad"
-]);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function isFNMFoil(card) {
-  const set = (card.set || "").toLowerCase();
-  const mod = (card.modifier || "").toLowerCase();
-  return set.startsWith("f0") || (set.startsWith("f") && mod.includes("foil"));
+let CARDS=[];
+let CATEGORIES=[];
+let FX=1.35;
+let IS_ADMIN=false;
+
+/* ================= FX ================= */
+
+function currency(){return document.getElementById("currencySelect").value}
+function convert(n){return currency()==="CAD"?n*FX:n}
+function money(n){
+if(!Number.isFinite(n)||n<=0)return "—"
+return (currency()==="CAD"?"CA$":"US$")+convert(n).toFixed(2)
 }
 
-function shouldHide(card) {
-  const isFoil = (card.modifier || "").toLowerCase().includes("foil");
-  if (isFoil && !isFNMFoil(card)) return true;
-  return false;
+async function fetchFX(){
+try{
+const r=await fetch("https://api.exchangerate.host/latest?base=USD&symbols=CAD")
+const d=await r.json()
+FX=d.rates.CAD
+}catch(e){}
+document.getElementById("fxLabel").textContent=`1 USD = ${FX.toFixed(3)} CAD`
 }
 
-function assignCategory(card) {
-  if (card.reserved) return "Reserved List Picks";
-  if (ONE_PRINT_ART.has(card.name)) return "One-print Art";
-  if (card.name.includes("Snow-Covered")) return "Snow-covered Lands";
-  if (card.types.includes("Sliver")) return "Slivers";
-  return "Ancillary picks";
+/* ================= SCRYFALL ================= */
+
+async function fetchMarket(card){
+if(card.lock_price)return
+let url = card.scryfall_id
+? "https://api.scryfall.com/cards/"+card.scryfall_id
+: `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(card.name)}&set=${card.set_code}`
+const r=await fetch(url)
+if(!r.ok)return
+const d=await r.json()
+card.market=parseFloat(d.prices.usd)||0
+card.image=d.image_uris?.small||d.card_faces?.[0]?.image_uris?.small
 }
 
-function fmt(n) {
-  if (!Number.isFinite(n)) return "—";
-  return "$" + n.toFixed(2);
+/* ================= BUY LOGIC ================= */
+
+function computeBuy(card,cat){
+if(card.not_buying)return null
+if(card.manual_buy_price)return card.manual_buy_price
+if(cat.buy_mode==="percent" && cat.buy_percent)
+return card.market*(cat.buy_percent/100)
+return null
 }
 
-async function fetchMarket(card) {
-  const res = await fetch("https://api.scryfall.com/cards/" + card.scryfall_id);
-  const data = await res.json();
+/* ================= RENDER ================= */
 
-  const prices = [];
-  ["usd","usd_foil","usd_etched"].forEach(k=>{
-    const v = parseFloat(data.prices[k]);
-    if (!isNaN(v)) prices.push(v);
-  });
+function render(){
 
-  prices.sort((a,b)=>a-b);
+const container=document.getElementById("content")
+container.innerHTML=""
 
-  const min = prices[0] || 0;
-  const max = prices[prices.length-1] || 0;
-  const mid = prices.length ? (min + max)/2 : 0;
+const hideMarginal=document.getElementById("hideMarginal").checked
+const admin=document.getElementById("adminToggle")?.checked
 
-  card.market = mid;
-  card.reserved = data.reserved;
-  card.image = data.image_uris?.small ||
-               data.card_faces?.[0]?.image_uris?.small;
+CATEGORIES.forEach(cat=>{
+
+const cards=CARDS.filter(c=>c.category_id===cat.id)
+if(!cards.length)return
+
+const visible=cards.filter(c=>{
+if(hideMarginal && (c.edition_marginal||cat.marginal_default))
+return false
+return true
+})
+if(!visible.length)return
+
+const section=document.createElement("div")
+section.className="section"
+
+const head=document.createElement("div")
+head.className="category-headroom"
+
+const pill=document.createElement("div")
+pill.className="category-pill"
+pill.textContent=cat.name
+head.appendChild(pill)
+
+if(cat.description){
+const desc=document.createElement("div")
+desc.className="category-description"
+desc.textContent=cat.description
+head.appendChild(desc)
 }
 
-function group(cards) {
-  const map = new Map();
-  CATEGORY_ORDER.forEach(c=>map.set(c,[]));
-
-  cards.forEach(card=>{
-    if (shouldHide(card)) return;
-    card.category = assignCategory(card);
-    if (!map.has(card.category)) map.set(card.category,[]);
-    map.get(card.category).push(card);
-  });
-
-  for (let arr of map.values()) {
-    arr.sort((a,b)=>b.market - a.market);
-  }
-
-  return map;
+if(admin){
+const box=document.createElement("div")
+box.className="admin-category-box"
+box.innerHTML=`
+Buy Mode:
+<select onchange="updateCategory('${cat.id}','buy_mode',this.value)">
+<option value="">None</option>
+<option value="percent" ${cat.buy_mode==="percent"?"selected":""}>Percent</option>
+</select>
+Percent:
+<input type="number" value="${cat.buy_percent||""}"
+onchange="updateCategory('${cat.id}','buy_percent',parseFloat(this.value)||null)">
+<br><br>
+<label><input type="checkbox" ${cat.marginal_default?"checked":""}
+onchange="updateCategory('${cat.id}','marginal_default',this.checked)">
+Marginal default</label>
+<br><br>
+Description:
+<textarea onchange="updateCategory('${cat.id}','description',this.value)">${cat.description||""}</textarea>
+`
+head.appendChild(box)
 }
 
-function render() {
-  const container = document.getElementById("content");
-  container.innerHTML = "";
+section.appendChild(head)
 
-  const groups = group(CARDS);
+const stack=document.createElement("div")
+stack.className="stack"
 
-  CATEGORY_ORDER.forEach(cat=>{
-    const list = groups.get(cat);
-    if (!list || !list.length) return;
+visible.forEach(c=>{
 
-    const section = document.createElement("div");
-    section.className="section";
+const el=document.createElement("div")
+el.className="card"
+if(admin)el.classList.add("admin")
 
-    const header = document.createElement("h2");
-    header.innerHTML = cat;
-    section.appendChild(header);
+const buy=computeBuy(c,cat)
 
-    const stack = document.createElement("div");
-    stack.className="stack";
+el.innerHTML=`
+<img src="${c.image||""}">
+<div class="price">
+<div class="row"><span>Mkt</span><span>${money(c.market)}</span></div>
+${buy?`<div class="row"><span>Buy</span><span>${money(buy)}</span></div>`:""}
+</div>
+`
 
-    list.forEach(c=>{
-      const card = document.createElement("div");
-      card.className="card";
-      card.innerHTML = `
-        <img src="${c.image || ''}">
-        <div class="price">${fmt(c.market)}</div>
-      `;
-      stack.appendChild(card);
-    });
-
-    section.appendChild(stack);
-    container.appendChild(section);
-  });
+if(c.not_buying){
+const dot=document.createElement("div")
+dot.className="red-dot"
+el.appendChild(dot)
 }
 
-(async function init(){
-  const res = await fetch("cards.json");
-  CARDS = await res.json();
+if(admin){
+const panel=document.createElement("div")
+panel.className="admin-panel"
+panel.innerHTML=`
+<label><input type="checkbox" ${c.not_buying?"checked":""}
+onchange="updateCard('${c.id}','not_buying',this.checked)"> Not buying</label><br>
+<label><input type="checkbox" ${c.edition_marginal?"checked":""}
+onchange="updateCard('${c.id}','edition_marginal',this.checked)"> Marginal edition</label><br>
+<label><input type="checkbox" ${c.lock_price?"checked":""}
+onchange="updateCard('${c.id}','lock_price',this.checked)"> Lock market</label><br>
+Manual buy:
+<input type="number" value="${c.manual_buy_price||""}"
+onchange="updateCard('${c.id}','manual_buy_price',parseFloat(this.value)||null)">
+`
+el.appendChild(panel)
+}
 
-  await Promise.all(CARDS.map(c => fetchMarket(c)));
+stack.appendChild(el)
+})
 
-  render();
-})();
+section.appendChild(stack)
+container.appendChild(section)
+
+})
+}
+
+/* ================= ADMIN ================= */
+
+async function updateCard(id,field,value){
+await sb.from("buylist_cards").update({[field]:value}).eq("id",id)
+await loadData()
+}
+
+async function updateCategory(id,field,value){
+await sb.from("buylist_categories").update({[field]:value}).eq("id",id)
+await loadData()
+}
+
+/* ================= LOAD ================= */
+
+async function loadData(){
+const {data:cats}=await sb.from("buylist_categories").select("*").order("name")
+CATEGORIES=cats||[]
+const {data:cards}=await sb.from("buylist_cards").select("*")
+CARDS=cards||[]
+await Promise.all(CARDS.map(fetchMarket))
+render()
+}
+
+/* ================= INIT ================= */
+
+(async function(){
+await fetchFX()
+const {data:{user}}=await sb.auth.getUser()
+if(user){
+const {data:role}=await sb
+.from("user_roles")
+.select("role")
+.eq("user_id",user.id)
+.single()
+if(role?.role==="admin"){
+IS_ADMIN=true
+document.getElementById("adminToggleWrap").style.display="block"
+}
+}
+await loadData()
+})()
+
 </script>
 </body>
 </html>
