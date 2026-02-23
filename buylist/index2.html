@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Buylist · B.C. Premodern Masters</title>
+
+<link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg" />
+<link rel="stylesheet" href="/css/bcpmm-shell.css" />
+
+<style>
+
+.buylist-wrap {
+  max-width: 1100px;
+  margin: 2.5rem auto 3rem;
+  padding: 0 1.25rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
+
+h1 { text-align:center; margin-bottom:0.25rem; }
+
+.subtitle {
+  text-align:center;
+  color:var(--muted);
+  margin-bottom:0.15rem;
+  font-size:0.9rem;
+}
+
+.note {
+  text-align:center;
+  font-size:0.8rem;
+  color:var(--muted);
+  margin-bottom:0.25rem;
+}
+
+.edition-flag {
+  text-align:center;
+  font-size:0.75rem;
+  color:var(--muted);
+  margin-bottom:1rem;
+}
+
+.section-title {
+  margin:1.75rem 0 0.75rem;
+  font-size:1rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  border-bottom:1px solid var(--muted);
+  padding-bottom:0.3rem;
+}
+
+.view-bar {
+  text-align:center;
+  margin-bottom:1rem;
+}
+
+.view-bar button {
+  font-weight:700;
+  padding:0.3rem 0.65rem;
+  margin:0 0.25rem;
+  border:1px solid var(--muted);
+  background:transparent;
+  cursor:pointer;
+  font-size:0.85rem;
+}
+
+.view-bar button.active {
+  background:var(--fg);
+  color:var(--bg);
+}
+
+/* 1/4 width grid */
+.card-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+}
+
+.card-tile {
+  text-align:center;
+  padding:6px 4px;
+}
+
+.card-tile img {
+  width:48px;
+  height:auto;
+  border-radius:6px;
+  display:block;
+  margin:0 auto 0.25rem;
+}
+
+.card-meta {
+  font-size:0.68rem;
+  line-height:1.2;
+}
+
+.card-name { font-weight:700; }
+.card-price { font-weight:700; }
+
+.market {
+  font-size:0.65rem;
+  color:var(--muted);
+}
+
+.arrow-up { color:green; font-weight:700; }
+.arrow-down { color:red; font-weight:700; }
+
+table.buylist {
+  width:100%;
+  border-collapse:collapse;
+  font-size:0.85rem;
+}
+
+.buylist th,
+.buylist td {
+  padding:0.4rem 0.65rem;
+  border-bottom:1px solid var(--muted);
+}
+
+.buylist th.sortable { cursor:pointer; }
+
+.hidden { display:none; }
+
+.footer-email {
+  margin-top:2rem;
+  text-align:center;
+  font-size:0.85rem;
+  color:var(--muted);
+}
+
+/* Responsive adjustments */
+@media (max-width:1000px){
+  .card-grid { grid-template-columns:repeat(3,1fr); }
+}
+
+@media (max-width:700px){
+  .card-grid { grid-template-columns:repeat(2,1fr); }
+}
+
+.sort-bar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
+  align-items:center;
+  margin: 0.75rem 0 1rem;
+  font-size:0.85rem;
+  color:var(--muted);
+}
+.sort-bar .label { font-weight:700; color:var(--fg); }
+.sort-bar button{
+  font-weight:700;
+  padding:0.28rem 0.6rem;
+  border:1px solid var(--muted);
+  background:transparent;
+  cursor:pointer;
+  font-size:0.82rem;
+}
+.sort-bar button.active{
+  background:var(--fg);
+  color:var(--bg);
+}
+.badge{
+  display:inline-block;
+  padding:0.12rem 0.38rem;
+  border:1px solid var(--muted);
+  border-radius:999px;
+  font-size:0.62rem;
+  color:var(--muted);
+  margin-left:0.25rem;
+}
+
+</style>
+</head>
+
+<body>
+<div class="buylist-wrap">
+
+<a href="/" class="back-link">← Back to main</a>
+
+<h1>Buylist</h1>
+<div class="subtitle">NM only · Your prices in CAD</div>
+<div class="note">Market ranges pulled live from Scryfall (usually USD). Your list will later support “delta $” and “delta %” sorts once you finalize CAD buy prices.</div>
+<div class="edition-flag">Feb 22 Update</div>
+
+<div class="view-bar">
+  View:
+  <button id="tile-btn" class="active" type="button">Tile</button>
+  <button id="list-btn" type="button">List</button>
+</div>
+
+<div class="sort-bar">
+  <span class="label">List sort:</span>
+  <button id="sort-buy" class="active" type="button">Buy (CAD)</button>
+  <button id="sort-delta-abs" type="button">Delta $</button>
+  <button id="sort-delta-pct" type="button">Delta %</button>
+  <button id="sort-dir" type="button">Desc ↓</button>
+</div>
+
+<!-- Dynamic sections render here (Tile view) -->
+<div id="sections"></div>
+
+<table id="list-view" class="buylist hidden">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Category</th>
+      <th>Card</th>
+      <th>Set</th>
+      <th>Qty</th>
+      <th>Buy (CAD)</th>
+      <th>Market range (USD)</th>
+      <th>Market mid (USD)</th>
+      <th>Δ$ (USD)</th>
+      <th>Δ% (USD)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div class="footer-email">
+  Contact: <a href="mailto:bcpremodermasters@gmail.com">bcpremodermasters@gmail.com</a>
+</div>
+
+</div>
+
+<script>
+/*
+  Buylist v2:
+  - Data source: local CSV → embedded cards array (exact printings via Scryfall IDs)
+  - Categories: your custom buckets + auto “Reserved List Picks” when Scryfall flags reserved:true
+  - Market range: min..max from prices.usd / usd_foil / usd_etched (whatever exists)
+  - Sorting (List view): Buy CAD, Delta $, Delta %
+*/
+
+const CATEGORY_ORDER = [
+  "Reserved List Picks",
+  "One-print Art",
+  "Premodern-legal FNM Foils",
+  "Hot staples",
+  "Snow-covered Lands",
+  "Foils of undervalued cards",
+  "GoldBorder picks",
+  "Ancillary picks",
+  "Mirrodin picks",
+  "Alliances picks",
+  "Slivers"
+];
+
+const cards = [{"name":"Abeyance","scry":"1025ced4-9cec-45ab-98de-801c77a3ad1e","qty":1,"buy":5.49,"bucket":"GoldBorder picks","setLabel":"World Championship Decks 1997","set":"wc97"},{"name":"Abeyance","scry":"9987d80f-d2cb-4cc1-b728-1506d2d41cde","qty":1,"buy":6.49,"bucket":"GoldBorder picks","setLabel":"World Championship Decks 1998","set":"wc98"},{"name":"Academy Rector","scry":"4367bc78-0912-4abd-8edd-bc792558d01a","qty":1,"buy":79.99,"bucket":"Hot staples","setLabel":"Urza's Destiny","set":"uds"},{"name":"Accumulated Knowledge","scry":"dc65a1b2-c183-433e-b4b2-d3e7f612c724","qty":4,"buy":11.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2004","set":"f04"},{"name":"Acidic Sliver","scry":"2d92c3f7-a589-4c87-aa17-0d9707605ff4","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Stronghold","set":"sth"},{"name":"Aluren","scry":"268403bc-733d-446e-a7c1-abc957c42bc2","qty":1,"buy":64.99,"bucket":"Hot staples","setLabel":"Tempest","set":"tmp"},{"name":"Annul","scry":"8ba18ec8-e82f-41be-9ed8-b1a4ae9b7426","qty":1,"buy":10.99,"bucket":"Mirrodin picks","setLabel":"Mirrodin","set":"mrd"},{"name":"Armor Sliver","scry":"c275aba7-cac6-48e8-b12c-6bd77a5c38fe","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Atog","scry":"a15397bc-c400-4f8d-b206-08a4d65e76ff","qty":1,"buy":4.99,"bucket":"Mirrodin picks","setLabel":"Mirrodin","set":"mrd"},{"name":"Auratog","scry":"86dca066-d5e3-442a-95a0-e695c1d5850c","qty":1,"buy":1.79,"bucket":"Hot staples","setLabel":"Tempest","set":"tmp"},{"name":"Avalanche Riders","scry":"f4fa943a-f2eb-4cf8-b8bd-0fe2b2da74a9","qty":1,"buy":3.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2004","set":"f04"},{"name":"Barbed Sliver","scry":"19bddea7-daa7-4bdb-9b91-f7fcbc0d7a57","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Blade Sliver","scry":"a8d6f7a6-7b6a-44f4-be04-7c02806b9f09","qty":1,"buy":0.39,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Bottle Gnomes","scry":"75522385-2f94-4c7c-b7d2-e8827ea1164f","qty":1,"buy":19.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Bottle Gnomes","scry":"018dcb37-221a-4552-9e72-2b9492883eae","qty":1,"buy":2.49,"bucket":"Mirrodin picks","setLabel":"Mirrodin","set":"mrd"},{"name":"Brood Sliver","scry":"33803c12-1d78-49fe-a3a3-7f47c60a96b6","qty":1,"buy":6.49,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Capsize","scry":"a51c1a95-e484-41e4-9c49-ffb115a7d1cc","qty":1,"buy":54.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Carrion Feeder","scry":"3392eec6-c4cb-4c48-b291-4ea8755a4e1c","qty":1,"buy":24.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2004","set":"f04"},{"name":"Cathodion","scry":"e223e822-a7a0-48d1-9bb7-88ee3d939c6f","qty":1,"buy":3.99,"bucket":"Mirrodin picks","setLabel":"Mirrodin","set":"mrd"},{"name":"City of Brass","scry":"f4e32327-380d-471e-813b-4c27477787ce","qty":1,"buy":949.99,"bucket":"Hot staples","setLabel":"Arabian Nights","set":"arn"},{"name":"City of Brass","scry":"61e9c770-f05b-40df-a01f-82b734db1733","qty":1,"buy":44.99,"bucket":"Hot staples","setLabel":"Chronicles","set":"chr"},{"name":"Clot Sliver","scry":"fdead1f4-a6e4-4370-80ae-811881a90d01","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Crypt Sliver","scry":"507097eb-6b50-47ae-a545-df76b743b2bd","qty":1,"buy":0.79,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Crystalline Sliver","scry":"06551990-713c-4b8b-bebb-4e849babb5bb","qty":1,"buy":2.99,"bucket":"Slivers","setLabel":"Stronghold","set":"sth"},{"name":"Deranged Hermit","scry":"bf0e94c9-61c4-4cc0-b5ce-db62bc2660ee","qty":1,"buy":84.99,"bucket":"Hot staples","setLabel":"Urza's Legacy","set":"ulg"},{"name":"Disenchant","scry":"32316acb-9206-459b-83b3-64be3bf4d396","qty":1,"buy":18.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Eladamri, Lord of Leaves","scry":"0b1689f3-9dfa-4525-90b3-7af15f7eb720","qty":1,"buy":89.99,"bucket":"Hot staples","setLabel":"Tempest","set":"tmp"},{"name":"Elvish Champion","scry":"c19bb473-03b0-4e6d-a7da-0ec1e7707a68","qty":1,"buy":24.99,"bucket":"Hot staples","setLabel":"Invasion","set":"inv"},{"name":"Elvish Spirit Guide","scry":"5b94f37f-ebdf-4b79-a615-58331d27cf4e","qty":1,"buy":6.49,"bucket":"Alliances picks","setLabel":"Alliances","set":"all"},{"name":"Engineered Plague","scry":"27e158d5-efb2-4f90-8898-60ede98f7d29","qty":1,"buy":10.99,"bucket":"Hot staples","setLabel":"Urza's Legacy","set":"ulg"},{"name":"Essence Sliver","scry":"1346fa14-1d9f-4c6a-887d-d3a93de00743","qty":1,"buy":11.99,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Fyndhorn Elves","scry":"e30053d3-f6b2-4f8c-b24e-9ed518c25bfd","qty":1,"buy":3.99,"bucket":"Hot staples","setLabel":"Deckmasters","set":"dkm"},{"name":"Goblin Bombardment","scry":"9a1960e6-00b5-44c6-9fd1-dca49f58f433","qty":1,"buy":109.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Grim Lavamancer","scry":"5dd72697-24be-42c7-a6d9-a837bdbd4662","qty":1,"buy":20.99,"bucket":"One-print Art","setLabel":"Torment","set":"tor"},{"name":"Heart Sliver","scry":"27a83ab6-0d15-49e4-90e3-b3a2a095c632","qty":1,"buy":0.79,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Hermit Druid","scry":"3efc0622-ac2c-4722-ba05-961cc98c5940","qty":1,"buy":16.99,"bucket":"Hot staples","setLabel":"Stronghold","set":"sth"},{"name":"Hibernation Sliver","scry":"94934d64-6518-4c5e-90d9-a3bf23b8973f","qty":1,"buy":1.49,"bucket":"Slivers","setLabel":"Stronghold","set":"sth"},{"name":"Horned Sliver","scry":"d0175cec-e64c-45c6-9208-76127e76a7cf","qty":1,"buy":5.49,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Humility","scry":"a2fb7128-806b-4148-80fe-eb967f248021","qty":1,"buy":64.99,"bucket":"Hot staples","setLabel":"Tempest","set":"tmp"},{"name":"Hunter Sliver","scry":"ca9aea1a-6f50-4f66-9f36-2e214dce41b4","qty":1,"buy":0.69,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Icy Manipulator","scry":"c1709854-3647-4482-8495-fba5703ad6ec","qty":1,"buy":2.29,"bucket":"Foils of undervalued cards","setLabel":"Deckmasters","set":"dkm"},{"name":"Icy Manipulator","scry":"3d1bdbe2-4163-469b-aa8c-00fd8208ec27","qty":1,"buy":0.79,"bucket":"Mirrodin picks","setLabel":"Mirrodin","set":"mrd"},{"name":"Intuition","scry":"c99f6785-e5a1-4fdc-9fb5-e1a372e7e848","qty":1,"buy":279.99,"bucket":"Hot staples","setLabel":"Tempest","set":"tmp"},{"name":"Intuition","scry":"3292ac2c-11cf-4fa1-aec5-5ce9a7ba2afb","qty":1,"buy":1599.99,"bucket":"Foils of undervalued cards","setLabel":"Judge Gift Cards 2003","set":"g03"},{"name":"Karplusan Forest","scry":"3c7740b9-f2a9-40fc-b865-ce040f947212","qty":1,"buy":6.99,"bucket":"Hot staples","setLabel":"Deckmasters","set":"dkm"},{"name":"Krosan Tusker","scry":"df9b9093-e322-43da-95b9-13a0a1ec447e","qty":1,"buy":4.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Krovikan Horror","scry":"e1f3cb1c-6bde-4b55-b5bc-5b64b56930f2","qty":1,"buy":17.99,"bucket":"Alliances picks","setLabel":"Alliances","set":"all"},{"name":"Lightning Rift","scry":"838bc07d-ed3e-4ba5-9a75-d008d9546582","qty":1,"buy":2.79,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2004","set":"f04"},{"name":"Living Death","scry":"6c820476-fbda-4073-baf6-51e71f45ed58","qty":1,"buy":13.99,"bucket":"Hot staples","setLabel":"Tempest","set":"tmp"},{"name":"Lotus Vale","scry":"2e5cd12a-2a07-44a8-8eac-de00d26fe9e3","qty":1,"buy":37.99,"bucket":"Hot staples","setLabel":"Weatherlight","set":"wth"},{"name":"Magma Sliver","scry":"9091d908-456f-4127-857d-b22fdb4f2fd9","qty":1,"buy":11.99,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Meditate","scry":"edb79a97-c1fc-4aa3-bb13-3d24a6dabeea","qty":1,"buy":12.99,"bucket":"Hot staples","setLabel":"Tempest","set":"tmp"},{"name":"Merchant Scroll","scry":"d4133ceb-6176-411a-9eb8-51721c1bb435","qty":1,"buy":9.49,"bucket":"Hot staples","setLabel":"Homelands","set":"hml"},{"name":"Metallic Sliver","scry":"30143f4f-9846-448d-8797-8fe0bc0cc5df","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Mind Over Matter","scry":"6e091dd6-149f-46ea-bae0-224e79e3aacb","qty":1,"buy":44.99,"bucket":"Hot staples","setLabel":"Exodus","set":"exo"},{"name":"Mindwhip Sliver","scry":"fa966fbb-140d-4057-a4fc-998ebe07c307","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Mistform Sliver","scry":"79a53c29-6753-4f6b-b4ee-00c1adf7e9c6","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Mistform Ultimus","scry":"e3be21c3-9b83-430b-be0a-792de9a680e3","qty":1,"buy":0.69,"bucket":"Hot staples","setLabel":"Legions","set":"lgn"},{"name":"Mnemonic Sliver","scry":"2b167347-2f8f-4338-a651-c7543d812597","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Mother of Runes","scry":"11bce850-487d-41ca-a012-d591daf3687b","qty":1,"buy":34.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2004","set":"f04"},{"name":"Mountain","scry":"4714b305-c017-4e1f-b788-79331de3dae1","qty":4,"buy":0.59,"bucket":"Hot staples","setLabel":"Anthologies","set":"ath"},{"name":"Mox Diamond","scry":"28028830-83ed-45e2-b495-3b9ad9d3e988","qty":1,"buy":1399.99,"bucket":"Hot staples","setLabel":"Stronghold","set":"sth"},{"name":"Muscle Sliver","scry":"fe45d58c-9831-418a-a588-f530af3dc36f","qty":1,"buy":18.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Opalescence","scry":"3c0071fb-afa5-47b5-b266-2b10a4f5a98a","qty":1,"buy":44.99,"bucket":"Hot staples","setLabel":"Urza's Destiny","set":"uds"},{"name":"Palinchron","scry":"5621db3f-a9e7-4350-9c6a-0ba04a628947","qty":1,"buy":44.99,"bucket":"Hot staples","setLabel":"Urza's Legacy","set":"ulg"},{"name":"Phyrexian Devourer","scry":"319430fa-11e4-426e-8297-67df8474c3cc","qty":1,"buy":54.99,"bucket":"Alliances picks","setLabel":"Alliances","set":"all"},{"name":"Plated Sliver","scry":"82846d31-4981-4ef1-85c3-703569146a84","qty":1,"buy":0.79,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Powder Keg","scry":"6e2ffcb9-e94f-4799-ae42-797091df2e09","qty":1,"buy":32.99,"bucket":"GoldBorder picks","setLabel":"World Championship Decks 1999","set":"wc99"},{"name":"Powder Keg","scry":"2b77caf8-711b-4597-a5a5-dead81568e5b","qty":1,"buy":79.99,"bucket":"Foils of undervalued cards","setLabel":"Magic Player Rewards 2004","set":"p04"},{"name":"Priest of Titania","scry":"4c23b2d4-fdbc-4c62-8e5b-c9235c53c96e","qty":1,"buy":84.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Quick Sliver","scry":"30a60b2d-aeeb-4dbf-bf1a-20a274fe323f","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Quirion Dryad","scry":"f6841ae6-b15f-488e-9cae-2cc5ec668278","qty":1,"buy":4.49,"bucket":"One-print Art","setLabel":"Planeshift","set":"pls"},{"name":"Reanimate","scry":"d0391889-b3a6-4723-814f-aebec1c2a64f","qty":1,"buy":94.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2004","set":"f04"},{"name":"Recurring Nightmare","scry":"c74501e7-b14c-484f-91d2-99a014849fec","qty":1,"buy":16.99,"bucket":"GoldBorder picks","setLabel":"World Championship Decks 1998","set":"wc98"},{"name":"Replenish","scry":"6c900f34-1bd2-43c7-be33-cf5cc02a62ea","qty":1,"buy":74.99,"bucket":"GoldBorder picks","setLabel":"World Championship Decks 2000","set":"wc00"},{"name":"Root Sliver","scry":"fdf5a106-5fb7-40e4-82a7-db559302a923","qty":1,"buy":5.49,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Sarcomancy","scry":"eb5730f5-a44c-4f75-a26f-90815cfcd31e","qty":1,"buy":21.99,"bucket":"Hot staples","setLabel":"Tempest","set":"tmp"},{"name":"Scragnoth","scry":"c355e0e2-6854-437f-9fff-86f98bd16f34","qty":1,"buy":3.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Shifting Sliver","scry":"1f68c4c2-91b5-4ffe-9dff-a6834038aa94","qty":1,"buy":2.29,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Silver Knight","scry":"8c3fca0b-354f-43d1-9f1f-bbb7b52b416b","qty":1,"buy":5.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2004","set":"f04"},{"name":"Sliver Overlord","scry":"3c16915b-c50d-4fb5-830f-9ca4597a9c0f","qty":1,"buy":49.99,"bucket":"Slivers","setLabel":"Scourge","set":"scg"},{"name":"Sliver Queen","scry":"235c0ece-aed0-4120-99cc-5d0e28fa70ab","qty":1,"buy":299.99,"bucket":"Slivers","setLabel":"Stronghold","set":"sth"},{"name":"Smother","scry":"1089ee82-518b-4b0e-bc53-1c5ef66beca5","qty":1,"buy":8.49,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Snow-Covered Forest","scry":"4c0ad95c-d62c-4138-ada0-fa39a63a449e","qty":1,"buy":2.29,"bucket":"Snow-covered Lands","setLabel":"Ice Age","set":"ice"},{"name":"Snow-Covered Island","scry":"ad8b77cf-b53e-4da3-9c27-3851b7b25a98","qty":1,"buy":4.49,"bucket":"Snow-covered Lands","setLabel":"Ice Age","set":"ice"},{"name":"Snow-Covered Mountain","scry":"ccd3afb3-5574-4f2d-adbe-969a428f1c63","qty":1,"buy":1.99,"bucket":"Snow-covered Lands","setLabel":"Ice Age","set":"ice"},{"name":"Snow-Covered Plains","scry":"cb3ac778-fb45-4fd3-a9af-8a0791f833e8","qty":1,"buy":2.29,"bucket":"Snow-covered Lands","setLabel":"Ice Age","set":"ice"},{"name":"Snow-Covered Swamp","scry":"65a3c27f-6b15-49b6-ac89-36cfb79b3b54","qty":1,"buy":2.29,"bucket":"Snow-covered Lands","setLabel":"Ice Age","set":"ice"},{"name":"Sparksmith","scry":"f337250e-3491-4ff8-b79a-1711d55c6ca8","qty":1,"buy":2.79,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Spectral Sliver","scry":"bec97e3c-7b75-4abb-a50e-86bc8cc3bf06","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Spined Sliver","scry":"9a8a9442-7b08-4cc8-94ec-bddb8feab1a8","qty":1,"buy":0.49,"bucket":"Slivers","setLabel":"Stronghold","set":"sth"},{"name":"Squee, Goblin Nabob","scry":"4ba8325a-1203-4125-9111-94d9e2b1f14b","qty":1,"buy":32.99,"bucket":"One-print Art","setLabel":"Mercadian Masques","set":"mmq"},{"name":"Stroke of Genius","scry":"5e977755-8ea4-4a8b-90c4-dd175321e05d","qty":1,"buy":6.49,"bucket":"Hot staples","setLabel":"Urza's Saga","set":"usg"},{"name":"Survival of the Fittest","scry":"004a0178-b523-473f-8410-480e6aaec242","qty":1,"buy":84.99,"bucket":"GoldBorder picks","setLabel":"World Championship Decks 1998","set":"wc98"},{"name":"Synapse Sliver","scry":"8bf966ff-0fd0-404d-be91-5b0c21035d73","qty":1,"buy":10.99,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Talon Sliver","scry":"f186c4b1-b7ec-46eb-a961-257411b401b0","qty":1,"buy":0.35,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Toxin Sliver","scry":"c04ab6b6-27ee-4c93-a87c-cbc3743f4faf","qty":1,"buy":2.79,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Treetop Village","scry":"4eae1639-c460-460a-ae3d-f427f75accd5","qty":1,"buy":12.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2004","set":"f04"},{"name":"Triskelion","scry":"8b997abd-8eae-4e87-97fc-36dde95ef8c7","qty":1,"buy":8.99,"bucket":"Mirrodin picks","setLabel":"Mirrodin","set":"mrd"},{"name":"Underground River","scry":"fd57fe1d-257a-4440-92e5-604c830a5af6","qty":1,"buy":9.99,"bucket":"Hot staples","setLabel":"Deckmasters","set":"dkm"},{"name":"Victual Sliver","scry":"5e58908e-7095-4fb9-b7cb-a67d12f33b8a","qty":1,"buy":0.39,"bucket":"Slivers","setLabel":"Stronghold","set":"sth"},{"name":"Volrath's Shapeshifter","scry":"ec89ee13-34ef-41c8-8fe4-0a6b21df2032","qty":1,"buy":14.99,"bucket":"Hot staples","setLabel":"Stronghold","set":"sth"},{"name":"Ward Sliver","scry":"e264369a-ab81-4938-9fa6-7c3e069442f4","qty":1,"buy":0.79,"bucket":"Slivers","setLabel":"Legions","set":"lgn"},{"name":"Whipcorder","scry":"297f11b1-aa18-4dd2-87e8-cf43f9b78a4b","qty":1,"buy":5.99,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"},{"name":"Willbender","scry":"83608297-a2e3-4bf5-84aa-00e0a7743d1e","qty":1,"buy":2.79,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2004","set":"f04"},{"name":"Winged Sliver","scry":"03aa58b4-dbc2-414e-aa7a-f09360d59b3c","qty":1,"buy":1.29,"bucket":"Slivers","setLabel":"Tempest","set":"tmp"},{"name":"Withered Wretch","scry":"691135e8-1c41-41c4-9426-48bffe23bfd8","qty":1,"buy":9.49,"bucket":"Premodern-legal FNM Foils","setLabel":"Friday Night Magic 2003","set":"f03"}];
+
+let enriched = [];
+let listSortKey = "buy";
+let listSortDesc = true;
+
+function slugify(s){
+  return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+}
+
+function pickMarketRange(prices){
+  // prices fields are strings like "12.34" or null
+  const keys = ["usd","usd_foil","usd_etched"];
+  const vals = keys
+    .map(k => prices?.[k])
+    .filter(v => v !== null && v !== undefined && v !== "")
+    .map(v => parseFloat(v))
+    .filter(n => Number.isFinite(n) && n > 0);
+
+  if (!vals.length) return { low:null, high:null, mid:null };
+  const low = Math.min(...vals);
+  const high = Math.max(...vals);
+  const mid = (low + high) / 2;
+  return { low, high, mid };
+}
+
+function fmtMoney(n, digits=0){
+  if (n === null || n === undefined || !Number.isFinite(n)) return "";
+  const pow = Math.pow(10, digits);
+  const v = Math.round(n * pow) / pow;
+  return v.toFixed(digits);
+}
+
+function computeDeltas(buyCad, marketMidUsd){
+  // Until we add FX or CAD market prices, we compute deltas in USD only when buy is provided in USD.
+  // For now: if buyCad is missing, or marketMidUsd missing -> null deltas.
+  // (You said you'll set your price later; once you choose a currency convention, we can make this exact.)
+  if (!Number.isFinite(buyCad) || !Number.isFinite(marketMidUsd) || marketMidUsd <= 0) {
+    return { deltaAbs:null, deltaPct:null };
+  }
+  // Placeholder assumption: treat buy as if it were USD for delta ranking.
+  // If you want this to be strictly correct, we can switch buy fields to USD or pull CAD market if present.
+  const deltaAbs = buyCad - marketMidUsd;
+  const deltaPct = (buyCad / marketMidUsd) - 1;
+  return { deltaAbs, deltaPct };
+}
+
+async function enrichCards(){
+  enriched = [];
+
+  for (const c of cards){
+    const url = `https://api.scryfall.com/cards/${c.scry}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.object === "error") continue;
+
+    const range = pickMarketRange(data.prices);
+    const marketLow = range.low;
+    const marketHigh = range.high;
+    const marketMid = range.mid;
+
+    const buy = (c.buy !== null && c.buy !== undefined) ? Number(c.buy) : null;
+
+    // Auto “Reserved List Picks” (your bucket list, but let RL win)
+    let bucket = c.bucket || "Hot staples";
+    if (data.reserved) bucket = "Reserved List Picks";
+
+    const deltas = computeDeltas(buy, marketMid);
+
+    enriched.push({
+      name: c.name,
+      qty: c.qty || 1,
+      bucket,
+      setName: data.set_name,
+      setLabel: c.setLabel || data.set_name,
+      image: data.image_uris?.small ?? "",
+      scryUrl: data.scryfall_uri ?? "",
+      reserved: !!data.reserved,
+
+      marketLow,
+      marketHigh,
+      marketMid,
+      buy,
+
+      deltaAbs: deltas.deltaAbs,
+      deltaPct: deltas.deltaPct
+    });
+  }
+
+  renderTile();
+  renderList();
+}
+
+function categorySortKey(cat){
+  const idx = CATEGORY_ORDER.indexOf(cat);
+  return idx === -1 ? 999 : idx;
+}
+
+function renderTile(){
+  const root = document.getElementById("sections");
+  root.innerHTML = "";
+
+  const byCat = new Map();
+  for (const card of enriched){
+    if (!byCat.has(card.bucket)) byCat.set(card.bucket, []);
+    byCat.get(card.bucket).push(card);
+  }
+
+  const cats = Array.from(byCat.keys()).sort((a,b)=>categorySortKey(a)-categorySortKey(b));
+
+  for (const cat of cats){
+    const sectionId = "grid-" + slugify(cat);
+    root.insertAdjacentHTML("beforeend", `
+      <div class="section-title">${cat}</div>
+      <div id="${sectionId}" class="card-grid"></div>
+    `);
+
+    const target = document.getElementById(sectionId);
+    const group = byCat.get(cat).slice().sort((a,b)=>(b.buy||0)-(a.buy||0));
+
+    group.forEach(card=>{
+      const marketTxt = (Number.isFinite(card.marketLow) && Number.isFinite(card.marketHigh))
+        ? `$${fmtMoney(card.marketLow,0)}–${fmtMoney(card.marketHigh,0)}`
+        : "";
+
+      const buyTxt = Number.isFinite(card.buy) ? `$${fmtMoney(card.buy,0)}` : "—";
+
+      target.insertAdjacentHTML("beforeend", `
+        <div class="card-tile">
+          <a href="${card.scryUrl || ("https://scryfall.com/search?q="+encodeURIComponent(card.name))}" target="_blank" rel="noopener">
+            <img src="${card.image}" alt="${card.name}">
+          </a>
+          <div class="card-meta">
+            <div class="card-name">${card.name}</div>
+            <div class="card-price">${buyTxt} <span class="badge">x${card.qty}</span></div>
+            <div class="market">${marketTxt ? ("Market: "+marketTxt+" (USD)") : "Market: —"}</div>
+          </div>
+        </div>
+      `);
+    });
+  }
+}
+
+function applySortButtons(){
+  const map = {
+    buy: document.getElementById("sort-buy"),
+    deltaAbs: document.getElementById("sort-delta-abs"),
+    deltaPct: document.getElementById("sort-delta-pct")
+  };
+  Object.values(map).forEach(b=>b.classList.remove("active"));
+  map[listSortKey]?.classList.add("active");
+  document.getElementById("sort-dir").textContent = listSortDesc ? "Desc ↓" : "Asc ↑";
+}
+
+function sortValue(card){
+  if (listSortKey === "buy") return Number.isFinite(card.buy) ? card.buy : -Infinity;
+  if (listSortKey === "deltaAbs") return Number.isFinite(card.deltaAbs) ? card.deltaAbs : -Infinity;
+  if (listSortKey === "deltaPct") return Number.isFinite(card.deltaPct) ? card.deltaPct : -Infinity;
+  return 0;
+}
+
+function renderList(){
+  applySortButtons();
+
+  const body = document.querySelector("#list-view tbody");
+  body.innerHTML = "";
+
+  const sorted = [...enriched].sort((a,b)=>{
+    const av = sortValue(a);
+    const bv = sortValue(b);
+    return listSortDesc ? (bv - av) : (av - bv);
+  });
+
+  sorted.forEach((card,i)=>{
+    const rangeTxt = (Number.isFinite(card.marketLow) && Number.isFinite(card.marketHigh))
+      ? `$${fmtMoney(card.marketLow,2)}–${fmtMoney(card.marketHigh,2)}`
+      : "";
+
+    const midTxt = Number.isFinite(card.marketMid) ? `$${fmtMoney(card.marketMid,2)}` : "";
+    const buyTxt = Number.isFinite(card.buy) ? `$${fmtMoney(card.buy,2)}` : "";
+
+    const dAbsTxt = Number.isFinite(card.deltaAbs) ? `$${fmtMoney(card.deltaAbs,2)}` : "";
+    const dPctTxt = Number.isFinite(card.deltaPct) ? `${fmtMoney(card.deltaPct*100,1)}%` : "";
+
+    body.insertAdjacentHTML("beforeend", `
+      <tr>
+        <td>${i+1}</td>
+        <td>${card.bucket}</td>
+        <td><a href="${card.scryUrl}" target="_blank" rel="noopener">${card.name}</a></td>
+        <td>${card.setName ?? ""}</td>
+        <td>${card.qty}</td>
+        <td>${buyTxt}</td>
+        <td>${rangeTxt}</td>
+        <td>${midTxt}</td>
+        <td>${dAbsTxt}</td>
+        <td>${dPctTxt}</td>
+      </tr>
+    `);
+  });
+}
+
+// View toggles (same behavior as your current page)
+document.getElementById("tile-btn").onclick = () => {
+  document.getElementById("tile-btn").classList.add("active");
+  document.getElementById("list-btn").classList.remove("active");
+  document.getElementById("sections").classList.remove("hidden");
+  document.getElementById("list-view").classList.add("hidden");
+};
+
+document.getElementById("list-btn").onclick = () => {
+  document.getElementById("list-btn").classList.add("active");
+  document.getElementById("tile-btn").classList.remove("active");
+  document.getElementById("sections").classList.add("hidden");
+  document.getElementById("list-view").classList.remove("hidden");
+};
+
+// Sort controls (List view)
+document.getElementById("sort-buy").onclick = () => { listSortKey = "buy"; renderList(); };
+document.getElementById("sort-delta-abs").onclick = () => { listSortKey = "deltaAbs"; renderList(); };
+document.getElementById("sort-delta-pct").onclick = () => { listSortKey = "deltaPct"; renderList(); };
+document.getElementById("sort-dir").onclick = () => { listSortDesc = !listSortDesc; renderList(); };
+
+enrichCards();
+</script>
+
+</body>
+</html>
