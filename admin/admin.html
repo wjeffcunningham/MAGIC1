@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  /* ================= INGEST ================= */
+  /* ================= INGEST (RAW FETCH) ================= */
 
   document.getElementById("ingest-btn").onclick = async () => {
     const file = document.getElementById("event-file").files[0];
@@ -107,15 +107,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       const text = await file.text();
       const payload = JSON.parse(text);
 
-      const { data, error } = await supabase.functions.invoke(
-        "admin-ingest-event",
-        { body: payload }
+      const res = await fetch(
+        "https://auth.magic1.ca/functions/v1/admin-ingest-event",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        }
       );
 
-      if (error) {
-        console.error("Invoke error:", error);
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        console.error("RAW BACKEND ERROR:", body);
         statusEl.textContent = "";
-        alert(error.context?.body?.error || error.message || "Unknown error");
+        alert(body.error || JSON.stringify(body) || "Unknown server error");
         return;
       }
 
@@ -134,11 +142,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("rebuild-btn").onclick = async () => {
     statusEl.textContent = "Rebuilding leaderboards…";
 
-    const { error } = await supabase.functions.invoke("admin-rebuild-leaderboards");
+    const res = await fetch(
+      "https://auth.magic1.ca/functions/v1/admin-rebuild-leaderboards",
+      { method: "POST" }
+    );
 
-    if (error) {
+    const body = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error("RAW BACKEND ERROR:", body);
       statusEl.textContent = "";
-      alert(error.context?.body?.error || error.message || "Unknown error");
+      alert(body.error || JSON.stringify(body) || "Unknown server error");
       return;
     }
 
