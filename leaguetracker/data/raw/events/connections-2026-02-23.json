@@ -41,7 +41,7 @@
       "matches": [
         { "playerA": "alex-kim", "playerB": "jeff-cunningham", "gamesA": 2, "gamesB": 1 },
         { "playerA": "arlen-wiesenthal", "playerB": "chad-g", "gamesA": 0, "gamesB": 2 },
-        { "playerA": "caitlyn-bethune", "playerB": "spencer-shaw-jaworek", "gamesA": 2, "gamesB": 1 },
+        { "playerA": "caitlyn-bethune", "playerB": "spencer-shaw-jaworek", "gamesA": 0, "gamesB": 2 },
         { "playerA": "elliot-fisher", "playerB": "rachael-hernandez", "gamesA": 2, "gamesB": 0 },
         { "playerA": "lucine-windy", "playerB": "malcolm-bradbury", "gamesA": 2, "gamesB": 0 },
         { "playerA": "romulo-ramos", "playerB": "cody-frizzell", "gamesA": 0, "gamesB": 2 }
@@ -74,7 +74,7 @@
     { "rank": 8, "player": "nat-h", "match_points": 6 },
     { "rank": 9, "player": "dakota-blais", "match_points": 4 },
     { "rank": 10, "player": "jeff-cunningham", "match_points": 4 },
-    { "rank": 11, "player": "caitlyn-bethune", "match_points": 3 },
+    { "rank": 11, "player": "caitlyn-bethune", "match_points": 4 },
     { "rank": 12, "player": "rachael-hernandez", "match_points": 3 },
     { "rank": 13, "player": "arlen-wiesenthal", "match_points": 3 },
     { "rank": 14, "player": "romulo-ramos", "match_points": 0 },
