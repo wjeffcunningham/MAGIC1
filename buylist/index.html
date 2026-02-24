@@ -12,95 +12,115 @@
 <style>
 *{box-sizing:border-box}
 
+/* ================= LAYOUT ================= */
+
 .buylist-wrap{
-  max-width:1200px;
+  max-width:1500px;
   margin:6rem auto 4rem;
-  padding:0 1.5rem;
+  padding:0 2rem;
 }
 
-header{margin-bottom:2rem}
-header h1{margin:0 0 .5rem}
-header p{opacity:.75;font-size:.95rem}
+header{
+  display:flex;
+  align-items:center;
+  gap:1.25rem;
+  margin-bottom:3rem;
+}
+
+.logo{ width:64px; }
+
+header h1{
+  margin:0;
+  font-size:2rem;
+}
+
+header p{
+  margin:.25rem 0 0;
+  opacity:.7;
+  font-size:.9rem;
+}
 
 .controls{
-  margin:1.5rem 0 2rem;
+  margin:2rem 0 3rem;
   display:flex;
-  gap:1.5rem;
+  gap:2rem;
   flex-wrap:wrap;
   align-items:center;
 }
 
+/* ================= ADMIN ================= */
+
 .admin-upload{
-  margin-bottom:2rem;
-  padding:1rem;
+  margin-bottom:3rem;
+  padding:1.25rem;
   border:1px solid var(--border);
-  border-radius:10px;
+  border-radius:12px;
   background:rgba(255,255,255,0.04);
   display:none;
 }
 
-.admin-upload input[type=file]{
-  margin-bottom:.5rem;
+.admin-upload button{
+  margin-top:.5rem;
 }
 
-.section{margin-top:4rem}
-.category-headroom{margin-bottom:2.5rem}
+/* ================= CATEGORY ================= */
+
+.section{
+  margin-bottom:4.5rem;
+}
 
 .category-pill{
   display:inline-block;
-  padding:.6rem 1.2rem;
+  padding:.55rem 1.25rem;
   border-radius:999px;
   border:1px solid var(--border);
   font-weight:800;
-  letter-spacing:.5px;
-  font-size:1.05rem;
+  letter-spacing:.4px;
+  font-size:.95rem;
+  margin-bottom:1.75rem;
 }
 
-.stack{
-  display:flex;
-  align-items:flex-start;
-  padding-top:1rem;
+/* ================= GRID ================= */
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(8, 1fr);
+  gap:0.9rem 0.7rem;
 }
+
+@media (max-width: 1400px){
+  .grid{ grid-template-columns:repeat(6, 1fr); }
+}
+
+@media (max-width: 1000px){
+  .grid{ grid-template-columns:repeat(4, 1fr); }
+}
+
+@media (max-width: 650px){
+  .grid{ grid-template-columns:repeat(2, 1fr); }
+}
+
+/* ================= CARD ================= */
 
 .card{
-  width:140px;
-  position:relative;
-  transition:transform .15s ease;
-}
-
-.card:not(:first-child){margin-left:-55px}
-
-.card:hover{
-  transform:translateY(-10px);
-  z-index:20;
+  text-align:center;
 }
 
 .card img{
   width:100%;
-  border-radius:10px;
-  box-shadow:0 10px 22px rgba(0,0,0,.45);
+  border-radius:8px;
+  box-shadow:0 6px 14px rgba(0,0,0,.45);
+  transition:transform .15s ease;
+}
+
+.card img:hover{
+  transform:translateY(-4px);
 }
 
 .price{
-  text-align:center;
-  font-size:.9rem;
-  margin-top:.5rem;
-}
-
-.row{
-  display:flex;
-  justify-content:space-between;
-}
-
-.red-dot{
-  position:absolute;
-  top:8px;
-  right:8px;
-  width:12px;
-  height:12px;
-  border-radius:50%;
-  background:#ff3b30;
-  box-shadow:0 0 8px rgba(255,0,0,.7);
+  margin-top:.35rem;
+  font-weight:600;
+  font-size:.8rem;
 }
 </style>
 </head>
@@ -112,16 +132,14 @@ header p{opacity:.75;font-size:.95rem}
 <div class="buylist-wrap">
 
 <header>
+<img src="/assets/BCPMM.svg" class="logo" />
+<div>
 <h1>BCPMM Buylist</h1>
-<p>Market prices from Scryfall (USD). Converted to CAD if selected.</p>
+<p>Near Mint prices via Scryfall → TCGplayer Market (USD). Converted live to CAD.</p>
+</div>
 </header>
 
 <div class="controls">
-<label>
-<input type="checkbox" id="hideMarginal">
-Hide marginal editions
-</label>
-
 <label>
 Currency:
 <select id="currencySelect">
@@ -138,13 +156,14 @@ Admin Mode
 <span id="fxLabel"></span>
 </div>
 
-<!-- CSV Upload Panel -->
+<!-- ================= ADMIN UPLOAD ================= -->
+
 <div class="admin-upload" id="adminUpload">
-<strong>Import CSV</strong><br>
+<strong>Upload New Buylist CSV</strong><br>
 <input type="file" id="csvFile" accept=".csv">
 <br>
-<button id="uploadCsvBtn">Upload & Import</button>
-<div id="uploadStatus" style="margin-top:.5rem;font-size:.9rem;"></div>
+<button id="uploadCsvBtn">Upload & Replace Buylist</button>
+<div id="uploadStatus" style="margin-top:.5rem;font-size:.85rem;"></div>
 </div>
 
 <div id="content">Loading…</div>
@@ -153,11 +172,7 @@ Admin Mode
 
 <script>
 
-/* ================= CLIENT ================= */
-
-function getClient(){
-  return window.auth ? window.auth._client : null;
-}
+/* ================= STATE ================= */
 
 let CARDS=[];
 let CATEGORIES=[];
@@ -179,29 +194,132 @@ async function fetchFX(){
     const d=await r.json();
     FX=d.rates.CAD;
   }catch(e){}
-  document.getElementById("fxLabel").textContent=`1 USD = ${FX.toFixed(3)} CAD`;
+  document.getElementById("fxLabel").textContent=
+    `1 USD = ${FX.toFixed(3)} CAD`;
 }
 
 /* ================= SCRYFALL ================= */
 
 async function fetchMarket(card){
-  if(card.lock_price)return;
 
-  let url = card.scryfall_id
-    ? "https://api.scryfall.com/cards/"+card.scryfall_id
-    : `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(card.name)}&set=${card.set_code}`;
+  if(card.market) return;
 
-  const r=await fetch(url);
-  if(!r.ok)return;
-  const d=await r.json();
+  const sb = window.auth._client;
 
-  card.market=parseFloat(d.prices.usd)||0;
-  card.image=d.image_uris?.small||d.card_faces?.[0]?.image_uris?.small;
+  const r = await fetch(
+    `${sb.supabaseUrl}/functions/v1/scryfall-proxy`,
+    {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        id:card.scryfall_id,
+        name:card.name,
+        set:card.set_code
+      })
+    }
+  );
+
+  if(!r.ok) return;
+
+  const d = await r.json();
+
+  card.market = parseFloat(d.prices?.usd)||0;
+
+  card.image =
+    d.image_uris?.normal ||
+    d.card_faces?.[0]?.image_uris?.normal;
 }
 
-/* ================= CSV IMPORT ================= */
+/* ================= RENDER ================= */
 
-document.getElementById("uploadCsvBtn").addEventListener("click", async () => {
+function render(){
+
+const container=document.getElementById("content");
+container.innerHTML="";
+
+const validCategories = CATEGORIES.filter(c =>
+  c.name.toLowerCase() !== "maybeboard"
+);
+
+validCategories.sort((a,b)=>{
+  if(a.name==="Reserved List Picks") return -1;
+  if(b.name==="Reserved List Picks") return 1;
+  return a.name.localeCompare(b.name);
+});
+
+validCategories.forEach(cat=>{
+
+const cards=CARDS
+  .filter(c=>c.category_id===cat.id)
+  .sort((a,b)=>(b.market||0)-(a.market||0));
+
+if(!cards.length) return;
+
+const section=document.createElement("div");
+section.className="section";
+
+const pill=document.createElement("div");
+pill.className="category-pill";
+pill.textContent=cat.name;
+
+const grid=document.createElement("div");
+grid.className="grid";
+
+cards.forEach(c=>{
+const el=document.createElement("div");
+el.className="card";
+el.innerHTML=`
+<img src="${c.image||""}">
+<div class="price">${money(c.market)}</div>
+`;
+grid.appendChild(el);
+});
+
+section.appendChild(pill);
+section.appendChild(grid);
+container.appendChild(section);
+
+});
+
+}
+
+/* ================= LOAD ================= */
+
+async function loadData(){
+
+const sb = window.auth? window.auth._client : null;
+if(!sb) return;
+
+const {data:cats}=await sb.from("buylist_categories").select("*");
+CATEGORIES=cats||[];
+
+const {data:cards}=await sb.from("buylist_cards").select("*");
+CARDS=cards||[];
+
+await Promise.all(CARDS.map(fetchMarket));
+
+/* detect admin */
+const {data:{session}}=await sb.auth.getSession();
+if(session){
+  const {data:role}=await sb
+    .from("user_roles")
+    .select("role")
+    .eq("user_id",session.user.id)
+    .single();
+
+  if(role?.role==="admin"){
+    IS_ADMIN=true;
+    document.getElementById("adminToggleWrap").style.display="inline-block";
+  }
+}
+
+render();
+}
+
+/* ================= CSV UPLOAD ================= */
+
+document.getElementById("uploadCsvBtn")
+.addEventListener("click", async () => {
 
   const fileInput = document.getElementById("csvFile");
   const status = document.getElementById("uploadStatus");
@@ -217,18 +335,20 @@ document.getElementById("uploadCsvBtn").addEventListener("click", async () => {
   status.textContent="Uploading...";
 
   try{
-
-    const sb = getClient();
+    const sb = window.auth._client;
     const { data:{ session } } = await sb.auth.getSession();
 
-    const res = await fetch(`${sb.supabaseUrl}/functions/v1/import-buylist`,{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "Authorization":`Bearer ${session.access_token}`
-      },
-      body:JSON.stringify({ csv: text })
-    });
+    const res = await fetch(
+      `${sb.supabaseUrl}/functions/v1/import-buylist`,
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":`Bearer ${session.access_token}`
+        },
+        body:JSON.stringify({ csv:text })
+      }
+    );
 
     const json = await res.json();
 
@@ -245,82 +365,6 @@ document.getElementById("uploadCsvBtn").addEventListener("click", async () => {
 
 });
 
-/* ================= RENDER ================= */
-
-function render(){
-
-const container=document.getElementById("content");
-container.innerHTML="";
-
-CATEGORIES.forEach(cat=>{
-
-const cards=CARDS.filter(c=>c.category_id===cat.id);
-if(!cards.length)return;
-
-const section=document.createElement("div");
-section.className="section";
-
-const pill=document.createElement("div");
-pill.className="category-pill";
-pill.textContent=cat.name;
-
-section.appendChild(pill);
-
-const stack=document.createElement("div");
-stack.className="stack";
-
-cards.forEach(c=>{
-const el=document.createElement("div");
-el.className="card";
-
-el.innerHTML=`
-<img src="${c.image||""}">
-<div class="price">
-<div class="row"><span>Mkt</span><span>${money(c.market)}</span></div>
-</div>
-`;
-
-stack.appendChild(el);
-});
-
-section.appendChild(stack);
-container.appendChild(section);
-});
-}
-
-/* ================= LOAD ================= */
-
-async function loadData(){
-
-const sb=getClient();
-if(!sb)return;
-
-const {data:cats}=await sb.from("buylist_categories").select("*").order("name");
-CATEGORIES=cats||[];
-
-const {data:cards}=await sb.from("buylist_cards").select("*");
-CARDS=cards||[];
-
-await Promise.all(CARDS.map(fetchMarket));
-
-/* detect admin */
-const {data:{session}}=await sb.auth.getSession();
-if(session){
-const {data:role}=await sb
-.from("user_roles")
-.select("role")
-.eq("user_id",session.user.id)
-.single();
-
-if(role?.role==="admin"){
-IS_ADMIN=true;
-document.getElementById("adminToggleWrap").style.display="inline-block";
-}
-}
-
-render();
-}
-
 /* ================= INIT ================= */
 
 (async function(){
@@ -328,9 +372,11 @@ await fetchFX();
 await loadData();
 })();
 
-/* Show upload panel when admin mode toggled */
+document.getElementById("currencySelect")
+.addEventListener("change",render);
 
-document.getElementById("adminToggle").addEventListener("change",function(){
+document.getElementById("adminToggle")
+?.addEventListener("change",function(){
   document.getElementById("adminUpload").style.display=
     this.checked && IS_ADMIN ? "block" : "none";
 });
@@ -338,6 +384,5 @@ document.getElementById("adminToggle").addEventListener("change",function(){
 </script>
 
 <script src="/js/bcpmm-shell.js"></script>
-
 </body>
 </html>
