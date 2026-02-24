@@ -38,7 +38,9 @@ input[type=file] { margin-top: 0.75rem; }
   <div class="row">
     <button id="ingest-btn">Upload & Ingest</button>
     <button id="rebuild-btn">Rebuild Leaderboards</button>
-    <a href="templatehelp.html"><button type="button">Template & Help</button></a>
+    <a href="templatehelp.html">
+      <button type="button">Template & Help</button>
+    </a>
   </div>
 
   <div id="ingest-status" class="small"></div>
@@ -72,12 +74,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ================= ADMIN GATE ================= */
 
   const { data: sessionWrap } = await supabase.auth.getSession();
+
   if (!sessionWrap?.session) {
     window.location.href = "/join.html";
     return;
   }
 
-  const user = sessionWrap.session.user;
+  const session = sessionWrap.session;
+  const accessToken = session.access_token;
+  const user = session.user;
 
   const { data: role } = await supabase
     .from("user_roles")
@@ -92,10 +97,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  /* ================= INGEST (RAW FETCH) ================= */
+  /* ================= INGEST ================= */
 
   document.getElementById("ingest-btn").onclick = async () => {
-    const file = document.getElementById("event-file").files[0];
+
+    const fileInput = document.getElementById("event-file");
+    const file = fileInput.files[0];
+
     if (!file) {
       alert("Select a JSON file.");
       return;
@@ -112,7 +120,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`
           },
           body: JSON.stringify(payload)
         }
@@ -121,9 +130,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        console.error("RAW BACKEND ERROR:", body);
+        console.error("BACKEND ERROR:", body);
         statusEl.textContent = "";
-        alert(body.error || JSON.stringify(body) || "Unknown server error");
+        alert(body.error || body.message || JSON.stringify(body));
         return;
       }
 
@@ -140,19 +149,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ================= REBUILD ================= */
 
   document.getElementById("rebuild-btn").onclick = async () => {
+
     statusEl.textContent = "Rebuilding leaderboards…";
 
     const res = await fetch(
       "https://auth.magic1.ca/functions/v1/admin-rebuild-leaderboards",
-      { method: "POST" }
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`
+        }
+      }
     );
 
     const body = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      console.error("RAW BACKEND ERROR:", body);
+      console.error("BACKEND ERROR:", body);
       statusEl.textContent = "";
-      alert(body.error || JSON.stringify(body) || "Unknown server error");
+      alert(body.error || body.message || JSON.stringify(body));
       return;
     }
 
