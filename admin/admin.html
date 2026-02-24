@@ -18,11 +18,8 @@ table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
 th, td { padding: 0.7rem; border-bottom: 1px solid #ddd; vertical-align: top; }
 button { padding: 0.5rem 0.9rem; cursor: pointer; font-weight: 600; }
 .section { margin-top: 3rem; }
-.small { font-size: 0.85rem; opacity: 0.75; }
-.err { color: #c0392b; font-weight: 700; margin-top: 0.75rem; display:none; }
-.ok { color: #2e7d32; font-weight: 700; margin-top: 0.75rem; display:none; }
+.small { font-size: 0.85rem; opacity: 0.75; margin-top: 0.75rem; }
 .row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem; }
-select { max-width: 520px; }
 input[type=file] { margin-top: 0.75rem; }
 </style>
 </head>
@@ -70,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!window.auth || !window.auth._client) return;
   const supabase = window.auth._client;
+  const statusEl = document.getElementById("ingest-status");
 
   /* ================= ADMIN GATE ================= */
 
@@ -96,14 +94,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* ================= INGEST ================= */
 
-  const statusEl = document.getElementById("ingest-status");
-
   document.getElementById("ingest-btn").onclick = async () => {
-    const fileInput = document.getElementById("event-file");
-    const file = fileInput.files[0];
-
+    const file = document.getElementById("event-file").files[0];
     if (!file) {
-      alert("Select a JSON file first.");
+      alert("Select a JSON file.");
       return;
     }
 
@@ -115,22 +109,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const { data, error } = await supabase.functions.invoke(
         "admin-ingest-event",
-        { body: payload }  // raw payload supported
+        { body: payload }
       );
 
       if (error) {
+        console.error("Invoke error:", error);
         statusEl.textContent = "";
-        alert(error.message);
+        alert(error.context?.body?.error || error.message || "Unknown error");
         return;
       }
 
       statusEl.textContent = "Event ingested successfully.";
+      alert("Event ingested successfully.");
 
     } catch (err) {
+      console.error("Frontend error:", err);
       statusEl.textContent = "";
       alert("Invalid JSON file.");
     }
   };
+
+  /* ================= REBUILD ================= */
 
   document.getElementById("rebuild-btn").onclick = async () => {
     statusEl.textContent = "Rebuilding leaderboards…";
@@ -139,11 +138,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (error) {
       statusEl.textContent = "";
-      alert(error.message);
+      alert(error.context?.body?.error || error.message || "Unknown error");
       return;
     }
 
     statusEl.textContent = "Leaderboards rebuilt.";
+    alert("Leaderboards rebuilt.");
   };
 
 });
