@@ -80,9 +80,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const session = sessionWrap.session;
-  const accessToken = session.access_token;
-  const user = session.user;
+  const user = sessionWrap.session.user;
 
   const { data: role } = await supabase
     .from("user_roles")
@@ -101,11 +99,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("ingest-btn").onclick = async () => {
 
-    const fileInput = document.getElementById("event-file");
-    const file = fileInput.files[0];
-
+    const file = document.getElementById("event-file").files[0];
     if (!file) {
       alert("Select a JSON file.");
+      return;
+    }
+
+    // Always get a fresh token at click time
+    const { data: freshSession } = await supabase.auth.getSession();
+    const accessToken = freshSession?.session?.access_token;
+
+    if (!accessToken) {
+      alert("Missing session token.");
       return;
     }
 
@@ -149,6 +154,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ================= REBUILD ================= */
 
   document.getElementById("rebuild-btn").onclick = async () => {
+
+    const { data: freshSession } = await supabase.auth.getSession();
+    const accessToken = freshSession?.session?.access_token;
+
+    if (!accessToken) {
+      alert("Missing session token.");
+      return;
+    }
 
     statusEl.textContent = "Rebuilding leaderboards…";
 
