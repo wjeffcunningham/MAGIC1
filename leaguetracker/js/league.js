@@ -133,7 +133,7 @@ async function getTrophyMap() {
   return map;
 }
 
-/* Flames from consecutive WINS in matches (not Elo deltas) */
+/* Flames from consecutive WINS (Swiss + Elim + Byes) */
 async function getStreakMap() {
   const supabase = getClient();
   if (!supabase) return {};
@@ -147,18 +147,26 @@ async function getStreakMap() {
   const grouped = {};
 
   matches.forEach(m => {
-    if (!m.player_a || !m.player_b) return;
 
-    [m.player_a, m.player_b].forEach(slug => {
-      if (!grouped[slug]) grouped[slug] = [];
-      grouped[slug].push(m);
-    });
+    // Register A
+    if (m.player_a) {
+      if (!grouped[m.player_a]) grouped[m.player_a] = [];
+      grouped[m.player_a].push(m);
+    }
+
+    // Register B
+    if (m.player_b) {
+      if (!grouped[m.player_b]) grouped[m.player_b] = [];
+      grouped[m.player_b].push(m);
+    }
   });
 
   const streakMap = {};
 
   for (const [slug, rows] of Object.entries(grouped)) {
+
     const sorted = [...rows].sort((a, b) => {
+
       const ad = safeTime(a.match_date);
       const bd = safeTime(b.match_date);
       if (bd !== ad) return bd - ad;
@@ -177,10 +185,22 @@ async function getStreakMap() {
     });
 
     let streak = 0;
+
     for (const m of sorted) {
+
       if (!m.winner) break;
-      if (m.winner === slug) streak++;
-      else break;
+
+      // Bye case (player_b null and winner = player_a)
+      if (!m.player_b && m.winner === slug) {
+        streak++;
+        continue;
+      }
+
+      if (m.winner === slug) {
+        streak++;
+      } else {
+        break;
+      }
     }
 
     streakMap[slug] = streak;
@@ -188,7 +208,6 @@ async function getStreakMap() {
 
   return streakMap;
 }
-
 /* =========================================================
    Pagination (stable + clamped)
 ========================================================= */
@@ -228,36 +247,29 @@ function renderPager(totalRows) {
   });
 }
 
-/* =========================================================
-   League: month_standings (January) loader
-========================================================= */
+async function loadLatestMonthStandings(supabase) {
+  // Step 1: find the most recent month_index
+  const { data: months, error: monthErr } = await supabase
+    .from("month_standings")
+    .select("month_index")
+    .order("month_index", { ascending: false })
+    .limit(1);
 
-async function loadJanuaryStandings(supabase) {
-  const tries = [
-    () => supabase
+  if (!monthErr && months && months.length) {
+    const latestIndex = months[0].month_index;
+
+    const { data, error } = await supabase
       .from("month_standings")
-      .select("player,points,wins,losses,month_index,month_id")
-      .eq("month_index", 0)
-      .order("points", { ascending: false }),
+      .select("player,points,wins,losses")
+      .eq("month_index", latestIndex)
+      .order("points", { ascending: false });
 
-    () => supabase
-      .from("month_standings")
-      .select("player,points,wins,losses,month_id")
-      .order("points", { ascending: false }),
-
-    () => supabase
-      .from("month_standings")
-      .select("player,points")
-      .order("points", { ascending: false })
-  ];
-
-  for (const fn of tries) {
-    const { data, error } = await fn();
     if (!error && data && data.length) {
       return data.map(r => {
         const w = Number(r.wins ?? NaN);
         const l = Number(r.losses ?? NaN);
         const isTwoOh = Number.isFinite(w) && Number.isFinite(l) && w === 2 && l === 0;
+
         return {
           player: r.player,
           points: Number(r.points || 0),
@@ -267,6 +279,7 @@ async function loadJanuaryStandings(supabase) {
     }
   }
 
+  // Fallback → leaderboard_league
   const { data: fallback } = await supabase
     .from("leaderboard_league")
     .select("player,points")
@@ -317,18 +330,26 @@ async function loadLeaderboard() {
     }
   }
 
-  else if (currentMode === "league") {
-    showBcpmmCheckbox(false);
-    document.body.classList.remove("bcpmm-only");
+else if (currentMode === "league") {
+  showBcpmmCheckbox(false);
+  document.body.classList.remove("bcpmm-only");
 
-    const standings = await loadJanuaryStandings(supabase);
+  const { data, error } = await supabase
+    .from("leaderboard_league")
+    .select("player,points")
+    .order("points", { ascending: false });
 
-    rows = (standings || []).map(r => ({
+  if (error) {
+    console.error("League load error:", error);
+    rows = [];
+  } else {
+    rows = (data || []).map(r => ({
       player: r.player,
       value: Number(r.points || 0),
-      extra: r.miniTrophy || ""
+      extra: ""
     }));
   }
+}
 
   else {
     championshipOnly = isBcpmmOnly();

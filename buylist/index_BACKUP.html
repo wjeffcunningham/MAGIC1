@@ -185,7 +185,7 @@ header p{
 }
 
 .admin-edit input{
-  width:120px;
+  width:110px;
   padding:.35rem .5rem;
   border-radius:8px;
   border:1px solid var(--border);
@@ -195,21 +195,6 @@ header p{
 
 .admin-edit button{
   padding:.35rem .6rem;
-}
-
-.lock-row{
-  display:none;
-  margin-top:.35rem;
-  gap:.35rem;
-  justify-content:center;
-  align-items:center;
-  flex-wrap:wrap;
-  font-size:.78rem;
-  opacity:.9;
-}
-
-.lock-row input[type="checkbox"]{
-  transform: translateY(1px);
 }
 </style>
 </head>
@@ -224,7 +209,7 @@ header p{
 <img src="/assets/BCPMM.svg" class="logo" />
 <div>
 <h1>BCPMM Buylist</h1>
-<p>Market = USD (TCGplayer Market). F2F = CAD (Sell-to-us). Toggle currency to view converted.</p>
+<p>Near Mint prices via Scryfall → TCGplayer Market (USD). Converted live to CAD.</p>
 </div>
 </header>
 
@@ -254,7 +239,7 @@ Admin Mode
   <button id="refreshF2FBlankBtn">Refresh F2F Prices (Only Blanks)</button>
 </div>
 <div class="small-note">
-Runs in batches. Keep this tab open while it works. If it errors, re-run “Only Blanks” to pick up stragglers.
+Runs in batches and may take several minutes. You can leave this tab open while it works. Cards that can’t be matched will be left blank.
 </div>
 <div class="kpi" id="f2fKpis"></div>
 <div class="progress" id="f2fProgress"></div>
@@ -279,52 +264,29 @@ Runs in batches. Keep this tab open while it works. If it errors, re-run “Only
 
 let CARDS = [];
 let CATEGORIES = [];
-let FX = 1.35; // 1 USD -> CAD
+let FX = 1.35;
 let IS_ADMIN = false;
 let ADMIN_MODE = false;
-
-/* IMPORTANT: your Edge function name */
-const F2F_FN_NAME = "refresh-f2f-prices";
-
-/* ================= AUTH READY ================= */
-
-async function waitForClient(){
-  for(let i=0;i<80;i++){
-    if(window.auth && window.auth._client) return window.auth._client;
-    await new Promise(r=>setTimeout(r, 75));
-  }
-  return null;
-}
 
 /* ================= HELPERS ================= */
 
 function currency(){ return document.getElementById("currencySelect").value; }
-
-function moneyUSDbase(nUSD){
-  if(!Number.isFinite(nUSD) || nUSD<=0) return "—";
-  if(currency()==="USD") return "US$" + nUSD.toFixed(2);
-  return "CA$" + (nUSD * FX).toFixed(2);
+function convert(n){ return currency()==="CAD" ? n*FX : n; }
+function money(n){
+  if(!Number.isFinite(n) || n<=0) return "—";
+  return (currency()==="CAD" ? "CA$" : "US$") + convert(n).toFixed(2);
 }
-
-function moneyCADbase(nCAD){
-  if(!Number.isFinite(nCAD) || nCAD<=0) return "—";
-  if(currency()==="CAD") return "CA$" + nCAD.toFixed(2);
-  return "US$" + (nCAD / FX).toFixed(2);
+function moneyRawUSD(n){
+  if(!Number.isFinite(n) || n<=0) return "—";
+  return "US$" + n.toFixed(2);
 }
-
-function fmtMD(v){
-  if(!v) return "—";
-  if(/^\d{2}\/\d{2}$/.test(v)) return v;
-  const d = new Date(v);
+function fmtDate(iso){
+  if(!iso) return "—";
+  const d = new Date(iso);
   if(Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(undefined, { month:"short", day:"numeric" });
+  return d.toLocaleString(undefined, { year:"numeric", month:"short", day:"2-digit", hour:"2-digit", minute:"2-digit" });
 }
-
 function sleep(ms){ return new Promise(res => setTimeout(res, ms)); }
-
-function mmddNow(){
-  return String(new Date().getMonth()+1).padStart(2,"0") + "/" + String(new Date().getDate()).padStart(2,"0");
-}
 
 /* ================= FX ================= */
 
@@ -332,7 +294,7 @@ async function fetchFX(){
   try{
     const r = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=CAD");
     const d = await r.json();
-    if(d?.rates?.CAD) FX = d.rates.CAD;
+    FX = d.rates.CAD;
   }catch(e){}
   document.getElementById("fxLabel").textContent = `1 USD = ${FX.toFixed(3)} CAD`;
 }
@@ -374,7 +336,7 @@ function renderAdminKpis(){
   if(!el) return;
 
   const total = CARDS.length;
-  const have = CARDS.filter(c => Number.isFinite(c.f2f_buy_price) && c.f2f_buy_price > 0).length;
+  const have = CARDS.filter(c => Number.isFinite(c.f2f_price) && c.f2f_price > 0).length;
   const blank = total - have;
 
   const newest = CARDS
@@ -386,7 +348,7 @@ function renderAdminKpis(){
   el.innerHTML = `
     <span><strong>F2F filled:</strong> ${have}/${total}</span>
     <span><strong>Blanks:</strong> ${blank}</span>
-    <span><strong>Latest update:</strong> ${fmtMD(newest)}</span>
+    <span><strong>Latest update:</strong> ${fmtDate(newest)}</span>
   `;
 }
 
@@ -427,27 +389,12 @@ function render(){
 
     cards.forEach(c => {
 
-      const marketLine = moneyUSDbase(c.market);
+      const marketLine = money(c.market);
+      const f2fLine = (Number.isFinite(c.f2f_price) && c.f2f_price>0)
+        ? money(c.f2f_price)
+        : "—";
 
-      const f2fBuyLine = moneyCADbase(c.f2f_buy_price);
-      const updated = c.f2f_last_updated ? `F2F: ${fmtMD(c.f2f_last_updated)}` : "";
-
-      // retail hidden unless admin mode
-      const retailLine = (ADMIN_MODE && IS_ADMIN)
-        ? `<div class="meta">F2F retail: ${moneyCADbase(c.f2f_retail_price)}</div>`
-        : "";
-
-      const lockLine = (ADMIN_MODE && IS_ADMIN)
-        ? `
-          <div class="lock-row" data-id="${c.id}">
-            <label>
-              <input type="checkbox" data-field="lock_price" ${c.lock_price ? "checked" : ""}>
-              Lock F2F scrape
-            </label>
-            <button data-action="save-lock">Save Lock</button>
-          </div>
-        `
-        : "";
+      const f2fMeta = c.f2f_last_updated ? `F2F: ${fmtDate(c.f2f_last_updated)}` : "";
 
       const el = document.createElement("div");
       el.className = "card";
@@ -455,25 +402,14 @@ function render(){
         <img src="${c.image||""}" loading="lazy">
         <div class="price">
           <div><strong>Market:</strong> ${marketLine}</div>
-          <div><strong>F2F buy:</strong> ${f2fBuyLine}</div>
-          <div class="meta">${updated}</div>
-          ${retailLine}
+          <div><strong>F2F buy:</strong> ${f2fLine}</div>
+          <div class="meta">${f2fMeta}</div>
 
-          <!-- FULL ADMIN FUNCTIONALITY: OUR BUY + MANUAL F2F + (optional) MANUAL RETAIL -->
           <div class="admin-edit" data-id="${c.id}">
-            <input type="number" step="0.01" min="0" placeholder="OUR BUY (USD)"
-              data-field="our_buy" value="${Number.isFinite(c.our_buy)?c.our_buy:""}">
-
-            <input type="number" step="0.01" min="0" placeholder="F2F BUY (CAD)"
-              data-field="f2f_buy_price" value="${Number.isFinite(c.f2f_buy_price)?c.f2f_buy_price:""}">
-
-            <input type="number" step="0.01" min="0" placeholder="F2F RETAIL (CAD)"
-              data-field="f2f_retail_price" value="${Number.isFinite(c.f2f_retail_price)?c.f2f_retail_price:""}">
-
+            <input type="number" step="0.01" min="0" placeholder="OUR BUY (USD)" data-field="our_buy" value="${Number.isFinite(c.our_buy)?c.our_buy:""}">
+            <input type="number" step="0.01" min="0" placeholder="F2F buy (USD)" data-field="f2f_price" value="${Number.isFinite(c.f2f_price)?c.f2f_price:""}">
             <button data-action="save">Save</button>
           </div>
-
-          ${lockLine}
         </div>
       `;
       grid.appendChild(el);
@@ -485,11 +421,8 @@ function render(){
 
   });
 
+  // toggle admin edit UI visibility
   document.querySelectorAll(".admin-edit").forEach(row=>{
-    row.style.display = (ADMIN_MODE && IS_ADMIN) ? "flex" : "none";
-  });
-
-  document.querySelectorAll(".lock-row").forEach(row=>{
     row.style.display = (ADMIN_MODE && IS_ADMIN) ? "flex" : "none";
   });
 
@@ -500,22 +433,18 @@ function render(){
 
 async function loadData(){
 
-  const sb = await waitForClient();
-  if(!sb){
-    document.getElementById("content").textContent = "Auth client not ready.";
-    return;
-  }
+  const sb = window.auth ? window.auth._client : null;
+  if(!sb) return;
 
-  const { data: cats, error: catErr } = await sb.from("buylist_categories").select("*");
-  if(catErr){ document.getElementById("content").textContent = "Failed to load categories."; return; }
+  const { data: cats } = await sb.from("buylist_categories").select("*");
   CATEGORIES = cats || [];
 
-  const { data: cards, error: cardErr } = await sb.from("buylist_cards").select("*");
-  if(cardErr){ document.getElementById("content").textContent = "Failed to load cards."; return; }
+  const { data: cards } = await sb.from("buylist_cards").select("*");
   CARDS = cards || [];
 
-  await Promise.allSettled(CARDS.map(fetchMarket));
+  await Promise.all(CARDS.map(fetchMarket));
 
+  /* detect admin */
   const { data:{ session } } = await sb.auth.getSession();
   if(session){
     const { data: role } = await sb
@@ -533,7 +462,7 @@ async function loadData(){
   render();
 }
 
-/* ================= CSV UPLOAD (KEEP CRITICAL) ================= */
+/* ================= CSV UPLOAD ================= */
 
 document.getElementById("uploadCsvBtn")
 .addEventListener("click", async () => {
@@ -552,11 +481,8 @@ document.getElementById("uploadCsvBtn")
   status.textContent="Uploading...";
 
   try{
-    const sb = await waitForClient();
-    if(!sb){ status.textContent="Auth not ready."; return; }
-
+    const sb = window.auth._client;
     const { data:{ session } } = await sb.auth.getSession();
-    if(!session){ status.textContent="You must be signed in."; return; }
 
     const res = await fetch(
       `${sb.supabaseUrl}/functions/v1/import-buylist`,
@@ -570,12 +496,11 @@ document.getElementById("uploadCsvBtn")
       }
     );
 
-    const json = await res.json().catch(()=> ({}));
+    const json = await res.json();
 
     if(res.ok){
-      status.textContent=`Imported ${json.imported} cards. Reloading…`;
-      await loadData();
       status.textContent=`Imported ${json.imported} cards.`;
+      await loadData();
     }else{
       status.textContent="Error: " + JSON.stringify(json);
     }
@@ -586,146 +511,96 @@ document.getElementById("uploadCsvBtn")
 
 });
 
-/* ================= ADMIN: SAVE INLINE EDIT (RESTORED) ================= */
+/* ================= ADMIN: SAVE INLINE EDIT ================= */
 
 document.addEventListener("click", async (e) => {
   const t = e.target;
   if(!(t instanceof HTMLElement)) return;
+  if(t.dataset.action !== "save") return;
 
-  /* Save prices */
-  if(t.dataset.action === "save"){
-    const wrap = t.closest(".admin-edit");
-    if(!wrap) return;
+  const wrap = t.closest(".admin-edit");
+  if(!wrap) return;
 
-    const id = wrap.getAttribute("data-id");
-    if(!id) return;
+  const id = wrap.getAttribute("data-id");
+  if(!id) return;
 
-    const ourBuyEl = wrap.querySelector('input[data-field="our_buy"]');
-    const f2fBuyEl = wrap.querySelector('input[data-field="f2f_buy_price"]');
-    const f2fRetailEl = wrap.querySelector('input[data-field="f2f_retail_price"]');
+  const ourBuyEl = wrap.querySelector('input[data-field="our_buy"]');
+  const f2fEl = wrap.querySelector('input[data-field="f2f_price"]');
 
-    const our_buy = ourBuyEl && ourBuyEl.value !== "" ? parseFloat(ourBuyEl.value) : null;
-    const f2f_buy_price = f2fBuyEl && f2fBuyEl.value !== "" ? parseFloat(f2fBuyEl.value) : null;
-    const f2f_retail_price = f2fRetailEl && f2fRetailEl.value !== "" ? parseFloat(f2fRetailEl.value) : null;
+  const our_buy = ourBuyEl && (ourBuyEl.value !== "") ? parseFloat(ourBuyEl.value) : null;
+  const f2f_price = f2fEl && (f2fEl.value !== "") ? parseFloat(f2fEl.value) : null;
 
-    try{
-      const sb = await waitForClient();
-      if(!sb){ alert("Auth not ready."); return; }
-
-      const payload = {
+  try{
+    const sb = window.auth._client;
+    const { error } = await sb
+      .from("buylist_cards")
+      .update({
         our_buy,
-        f2f_buy_price,
-        f2f_retail_price,
-        f2f_last_updated: (f2f_buy_price || f2f_retail_price) ? mmddNow() : null
-      };
+        f2f_price,
+        // if admin manually edits F2F, count that as an update timestamp too
+        f2f_last_updated: f2f_price ? new Date().toISOString() : null
+      })
+      .eq("id", id);
 
-      const { error } = await sb
-        .from("buylist_cards")
-        .update(payload)
-        .eq("id", id);
-
-      if(error){
-        alert("Save failed: " + error.message);
-        return;
-      }
-
-      const c = CARDS.find(x => String(x.id) === String(id));
-      if(c){
-        c.our_buy = our_buy;
-        c.f2f_buy_price = f2f_buy_price;
-        c.f2f_retail_price = f2f_retail_price;
-        c.f2f_last_updated = (f2f_buy_price || f2f_retail_price) ? mmddNow() : c.f2f_last_updated;
-      }
-
-      render();
-
-    }catch(err){
-      alert("Save failed.");
+    if(error){
+      alert("Save failed: " + error.message);
+      return;
     }
 
-    return;
-  }
-
-  /* Save lock */
-  if(t.dataset.action === "save-lock"){
-    const wrap = t.closest(".lock-row");
-    if(!wrap) return;
-
-    const id = wrap.getAttribute("data-id");
-    if(!id) return;
-
-    const chk = wrap.querySelector('input[data-field="lock_price"]');
-    const lock_price = !!(chk && chk.checked);
-
-    try{
-      const sb = await waitForClient();
-      if(!sb){ alert("Auth not ready."); return; }
-
-      const { error } = await sb
-        .from("buylist_cards")
-        .update({ lock_price })
-        .eq("id", id);
-
-      if(error){
-        alert("Lock save failed: " + error.message);
-        return;
-      }
-
-      const c = CARDS.find(x => String(x.id) === String(id));
-      if(c) c.lock_price = lock_price;
-
-      render();
-
-    }catch(err){
-      alert("Lock save failed.");
+    // update local cache
+    const c = CARDS.find(x => String(x.id) === String(id));
+    if(c){
+      c.our_buy = our_buy;
+      c.f2f_price = f2f_price;
+      c.f2f_last_updated = f2f_price ? new Date().toISOString() : null;
     }
+    render();
 
-    return;
+  }catch(err){
+    alert("Save failed.");
   }
 });
 
-/* ================= ADMIN: REFRESH F2F (BATCH LOOP, STABLE) ================= */
+/* ================= ADMIN: REFRESH F2F (BATCH LOOP) ================= */
+
+/* ================= ADMIN: REFRESH F2F (BATCH LOOP) ================= */
 
 async function refreshF2FPrices({ onlyBlank=false } = {}){
 
-  const sb = await waitForClient();
-  if(!sb) return;
-
+  const sb = window.auth._client;
   const { data:{ session } } = await sb.auth.getSession();
-  if(!session){
-    document.getElementById("f2fProgress").textContent = "You must be signed in.";
-    return;
-  }
 
   const prog = document.getElementById("f2fProgress");
   const btnAll = document.getElementById("refreshF2FBtn");
   const btnBlank = document.getElementById("refreshF2FBlankBtn");
 
+  const total = CARDS.length;
   let offset = 0;
   let updatedTotal = 0;
   let processedTotal = 0;
   let loops = 0;
-
-  // IMPORTANT: match your Edge function default batch (we tuned it smaller)
-  const batch_size = 15;
 
   if(prog) prog.textContent = "Starting…";
   if(btnAll) btnAll.disabled = true;
   if(btnBlank) btnBlank.disabled = true;
 
   try{
+
     while(true){
       loops++;
 
       const res = await fetch(
-        `${sb.supabaseUrl}/functions/v1/${F2F_FN_NAME}`,
+        `${sb.supabaseUrl}/functions/v1/refresh-f2f-prices`,
         {
           method:"POST",
           headers:{
             "Content-Type":"application/json",
             "Authorization":`Bearer ${session.access_token}`
           },
-          body: JSON.stringify({ offset, only_blank: onlyBlank, batch_size })
+          body: JSON.stringify({
+            offset,
+            only_blank: onlyBlank
+          })
         }
       );
 
@@ -744,22 +619,19 @@ async function refreshF2FPrices({ onlyBlank=false } = {}){
           (onlyBlank ? " · only blanks" : "");
       }
 
-      // stop condition
       if((json.processed || 0) === 0) break;
 
-      // IMPORTANT: if onlyBlank, offset paging is still OK because query uses range();
-      // blanks shrink over time, but that's fine; rerun Only Blanks if needed.
-      offset = json.next_offset ?? (offset + batch_size);
+      offset = json.next_offset ?? (offset + 40);
 
-      // small yield to keep UI responsive + be polite
-      await sleep(250);
+      await new Promise(res => setTimeout(res, 350));
 
-      // safety
-      if(loops > 5000) break;
+      if(!onlyBlank && offset >= total) break;
+      if(loops > 999) break;
     }
 
     if(prog) prog.textContent = `Done. Updated ${updatedTotal}. Reloading…`;
     await loadData();
+
     if(prog) prog.textContent = `Done. Updated ${updatedTotal}.`;
 
   }catch(err){
@@ -769,13 +641,6 @@ async function refreshF2FPrices({ onlyBlank=false } = {}){
     if(btnBlank) btnBlank.disabled = false;
   }
 }
-
-/* ✅ BUTTON WIRING */
-document.getElementById("refreshF2FBtn")
-  ?.addEventListener("click", () => refreshF2FPrices({ onlyBlank:false }));
-
-document.getElementById("refreshF2FBlankBtn")
-  ?.addEventListener("click", () => refreshF2FPrices({ onlyBlank:true }));
 
 /* ================= INIT ================= */
 

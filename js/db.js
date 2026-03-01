@@ -1,14 +1,23 @@
-// /js/db.js
-import { supabase } from "./config.js";
+/* =====================================================
+   db.js — Single Supabase Client (Stable)
+===================================================== */
+
+/* -------------------------------------------------------
+   Use Global Auth Client
+-------------------------------------------------------- */
+
+const supabase = window.auth._client;
 
 /* -------------------------------------------------------
    CONSTANTS
 -------------------------------------------------------- */
+
 export const CURRENT_SEASON = "BCWL-2026";
 
 /* -------------------------------------------------------
    AUTH
 -------------------------------------------------------- */
+
 export async function getAuthUser() {
   const { data, error } = await supabase.auth.getUser();
   if (error) return null;
@@ -18,6 +27,7 @@ export async function getAuthUser() {
 /* -------------------------------------------------------
    PROFILE (site_users)
 -------------------------------------------------------- */
+
 export async function getProfile() {
   const user = await getAuthUser();
   if (!user) return null;
@@ -33,7 +43,6 @@ export async function getProfile() {
     return null;
   }
 
-  // Auto-create profile if missing
   if (!data) {
     const { data: created, error: createErr } = await supabase
       .from("site_users")
@@ -97,6 +106,7 @@ export async function saveProfile(updates) {
 /* -------------------------------------------------------
    AVATAR UPLOAD
 -------------------------------------------------------- */
+
 export async function uploadAvatar(file) {
   const user = await getAuthUser();
   if (!user) return { error: new Error("Not logged in") };
@@ -120,6 +130,7 @@ export async function uploadAvatar(file) {
 /* -------------------------------------------------------
    LEAGUE MEMBERSHIP
 -------------------------------------------------------- */
+
 export async function getMyLeagueMembership() {
   const user = await getAuthUser();
   if (!user) return null;
@@ -168,6 +179,7 @@ export async function joinCurrentLeague() {
 /* -------------------------------------------------------
    LEAGUE ROSTER
 -------------------------------------------------------- */
+
 export async function getLeagueRoster() {
   const { data: members, error } = await supabase
     .from("league_members")

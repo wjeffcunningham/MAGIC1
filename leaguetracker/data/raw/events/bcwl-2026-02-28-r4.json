@@ -1,0 +1,46 @@
+{
+  "event": {
+    "id": "bcwl-2026-02-28-r4",
+    "name": "BC Winter League – Round 4",
+    "series": "BCWL",
+    "format": "Premodern",
+    "date": "2026-02-28",
+    "round": 4
+  },
+
+  "standings": [
+    { "rank": 1, "player": "gaetan-zell", "match_points": 12, "record": "4-0-0" },
+    { "rank": 2, "player": "spencer-sj", "match_points": 9, "record": "3-1-0" },
+    { "rank": 3, "player": "james-jost", "match_points": 9, "record": "3-1-0" },
+    { "rank": 4, "player": "kevin-mittertreiner", "match_points": 9, "record": "3-1-0" },
+    { "rank": 5, "player": "clint-taylor", "match_points": 6, "record": "2-2-0" },
+    { "rank": 6, "player": "elliot-fisher", "match_points": 6, "record": "2-2-0" },
+    { "rank": 7, "player": "james-onions", "match_points": 6, "record": "2-2-0" },
+    { "rank": 8, "player": "cody-foley", "match_points": 6, "record": "2-2-0" },
+    { "rank": 9, "player": "gerard-cadger", "match_points": 6, "record": "2-2-0" },
+    { "rank": 10, "player": "dakota-blais", "match_points": 3, "record": "1-1-0" },
+    { "rank": 11, "player": "alastair-mclellan", "match_points": 3, "record": "1-3-0" },
+    { "rank": 12, "player": "arlen-wiesenthal", "match_points": 3, "record": "1-3-0" },
+    { "rank": 13, "player": "marvin-goncalves-de-aquino", "match_points": 0, "record": "0-4-0" }
+  ],
+
+  "rounds": [
+    {
+      "round": 4,
+      "matches": [
+        { "table": 1, "playerA": "spencer-sj", "playerB": "james-jost", "gamesA": 2, "gamesB": 0 },
+        { "table": 2, "playerA": "gaetan-zell", "playerB": "clint-taylor", "gamesA": 2, "gamesB": 0 },
+        { "table": 3, "playerA": "elliot-fisher", "playerB": "kevin-mittertreiner", "gamesA": 1, "gamesB": 2 },
+        { "table": 4, "playerA": "james-onions", "playerB": "alastair-mclellan", "gamesA": 2, "gamesB": 1 },
+        { "table": 5, "playerA": "gerard-cadger", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 0 },
+        { "table": 6, "playerA": "marvin-goncalves-de-aquino", "playerB": "cody-foley", "gamesA": 1, "gamesB": 2 }
+      ]
+    }
+  ],
+
+  "notes": [
+    "Final round of February league",
+    "Standings reflect final cumulative record after four rounds",
+    "Results finalized and published 2026-02-28"
+  ]
+}

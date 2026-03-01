@@ -303,25 +303,42 @@ async function loadMatchHistory(supabase, slug) {
   // 2) created_at desc (if present)
   // 3) round_number desc (later rounds first)
   // 4) match_index desc (later matches first)
-  const sorted = [...history].sort((a, b) => {
-    const ad = safeTime(a.match_date);
-    const bd = safeTime(b.match_date);
-    if (bd !== ad) return bd - ad;
+const LEAGUE_PRIORITY = {
+  bcwl: 0,
+  bcpmm: 1,
+  shg: 2,
+  connections: 3
+};
 
-    const ac = safeTime(a.created_at);
-    const bc = safeTime(b.created_at);
-    if (bc !== ac) return bc - ac;
+const sorted = [...history].sort((a, b) => {
+  // 1) Date (newest first)
+  const ad = safeTime(a.match_date);
+  const bd = safeTime(b.match_date);
+  if (bd !== ad) return bd - ad;
 
-    const ar = numOrNegInf(a.round_number);
-    const br = numOrNegInf(b.round_number);
-    if (br !== ar) return br - ar;
+  // 2) League priority (BCWL first on same day)
+  const ap = LEAGUE_PRIORITY[(a.league || "").toLowerCase()] ?? 9;
+  const bp = LEAGUE_PRIORITY[(b.league || "").toLowerCase()] ?? 9;
+if (ap !== bp) return bp - ap;
 
-    const am = numOrNegInf(a.match_index);
-    const bm = numOrNegInf(b.match_index);
-    if (bm !== am) return bm - am;
+  // 3) Round (later rounds first)
+  const ar = numOrNegInf(a.round_number);
+  const br = numOrNegInf(b.round_number);
+  if (br !== ar) return br - ar;
 
-    return 0;
-  });
+  // 4) Match index
+  const am = numOrNegInf(a.match_index);
+  const bm = numOrNegInf(b.match_index);
+  if (bm !== am) return bm - am;
+
+  // 5) Created_at fallback
+  const ac = safeTime(a.created_at);
+  const bc = safeTime(b.created_at);
+  if (bc !== ac) return bc - ac;
+
+  return 0;
+});
+
 
   tbody.innerHTML = sorted
     .map((row) => {

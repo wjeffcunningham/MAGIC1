@@ -25,78 +25,17 @@ body {
   text-align: center;
 }
 
-/* =====================================
-   HERO LOGO
-===================================== */
-
 .logo {
   width: 170px;
   margin-bottom: 2.2rem;
 }
 
-/* =====================================
-   SLOGAN — SMOOTH SILVER GLINT
-===================================== */
-
 .slogan {
   font-size: 2rem;
   font-weight: 900;
   font-style: italic;
-  letter-spacing: 0.06em;
-  position: relative;
-  display: inline-block;
   margin-bottom: 1.6rem;
-  overflow: hidden;
 }
-
-.slogan::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -120%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(
-    120deg,
-    transparent 0%,
-    rgba(255,255,255,0.6) 10%,
-    rgba(255,255,255,0.95) 30%,
-    rgba(255,255,255,0.6) 40%,
-    rgba(120,180,255,0.4) 90%,   /* subtle blue tint tail */
-    transparent 100%
-  );
-  transform: skewX(-18deg);
-  opacity: 0;
-  animation: sunGlint 3s cubic-bezier(.55,0,.15,1) infinite;
-}
-
-@keyframes sunGlint {
-
-  /* almost immediate */
-  0%   { left: -120%; opacity: 0; }
-
-  8%   { left: -120%; opacity: 0; }
-
-  /* quick glow */
-  18%  { left: -105%; opacity: 0.8; }
-
-  /* acceleration */
-  35%  { left: -30%; opacity: 1; }
-
-  /* sweep */
-  50%  { left: 120%; opacity: 1; }
-
-  /* colour tail fades */
-  65%  { opacity: 0.6; }
-
-  80%  { opacity: 0; }
-
-  100% { left: 120%; opacity: 0; }
-}
-
-/* =====================================
-   FORM
-===================================== */
 
 .section { margin-top: 2rem; }
 
@@ -108,18 +47,6 @@ input {
   font-size: 0.95rem;
   background: var(--surface);
   color: var(--fg);
-}
-
-input:focus {
-  outline: none;
-  border-color: #1f6feb;
-}
-
-.password-hint {
-  font-size: 0.8rem;
-  color: var(--muted);
-  margin-bottom: 1rem;
-  text-align: left;
 }
 
 button {
@@ -134,11 +61,7 @@ button {
   color: var(--fg);
 }
 
-button:hover {
-  background: var(--border);
-}
-
-.oauth button { margin-bottom: 0.5rem; }
+button:hover { background: var(--border); }
 
 .status {
   margin-top: 1rem;
@@ -175,18 +98,7 @@ button:hover {
   <h3>Email</h3>
 
   <input type="email" id="email" placeholder="Email address" autocomplete="email">
-
-  <input 
-    type="password" 
-    id="password" 
-    placeholder="Password" 
-    minlength="8"
-    autocomplete="new-password"
-  >
-
-  <div class="password-hint">
-    Password must be at least <strong>8 characters</strong>.
-  </div>
+  <input type="password" id="password" placeholder="Password" minlength="8" autocomplete="current-password">
 
   <button id="signup-btn">Sign Up</button>
   <button id="signin-btn">Sign In</button>
@@ -204,126 +116,125 @@ button:hover {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/auth.js"></script>
 <script src="/js/bcpmm-shell.js"></script>
 
 <script>
-/* =====================================
-   Supabase Init (SAFE — no shadowing)
-===================================== */
+document.addEventListener("DOMContentLoaded", async () => {
 
-const SUPABASE_URL = "https://auth.magic1.ca";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRremRmaHpsZXdsdmZtdW55d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNTU5OTIsImV4cCI6MjA3ODgzMTk5Mn0.zhUaZm6FkGkVEatHQ8UzU8IOj1siWJckXKZ9UgIYknI";
-
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
+  if (!window.auth || !window.auth._client) {
+    console.error("Auth client not ready.");
+    return;
   }
-);
 
-const statusBox = document.getElementById("status");
+  const supabase = window.auth._client;
+  const statusBox = document.getElementById("status");
 
-function setStatus(msg, type="") {
-  statusBox.className = "status " + type;
-  statusBox.textContent = msg;
-}
+  function setStatus(msg, type="") {
+    statusBox.className = "status " + type;
+    statusBox.textContent = msg;
+  }
 
-/* =====================================
-   Session Redirect
-===================================== */
+  /* =====================================================
+     SESSION CHECK (STABLE)
+  ===================================================== */
 
-(async () => {
-  const { data } = await supabaseClient.auth.getSession();
-  if (data?.session) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
     window.location.href = "/profile-edit.html";
-  }
-})();
-
-/* =====================================
-   Sign Up
-===================================== */
-
-document.getElementById("signup-btn").onclick = async () => {
-
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  if (!email || !password) {
-    setStatus("Enter email and password.", "error");
     return;
   }
 
-  if (password.length < 8) {
-    setStatus("Password must be at least 8 characters.", "error");
-    return;
-  }
+  /* =====================================================
+     SIGN UP
+  ===================================================== */
 
-  setStatus("Creating account…");
+  const signupBtn = document.getElementById("signup-btn");
+  if (signupBtn) {
+    signupBtn.addEventListener("click", async () => {
 
-  const { error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: window.location.origin + "/profile-edit.html"
-    }
-  });
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-  if (error) {
-    setStatus(error.message, "error");
-    return;
-  }
-
-  setStatus("Check your email to confirm your account.", "success");
-};
-
-/* =====================================
-   Sign In
-===================================== */
-
-document.getElementById("signin-btn").onclick = async () => {
-
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  if (!email || !password) {
-    setStatus("Enter email and password.", "error");
-    return;
-  }
-
-  setStatus("Signing in…");
-
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-    setStatus(error.message, "error");
-    return;
-  }
-
-  window.location.href = "/profile-edit.html";
-};
-
-/* =====================================
-   OAuth
-===================================== */
-
-document.querySelectorAll("[data-provider]").forEach(btn => {
-  btn.onclick = async () => {
-    const provider = btn.dataset.provider;
-    await supabaseClient.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: window.location.origin + "/profile-edit.html"
+      if (!email || !password) {
+        setStatus("Enter email and password.", "error");
+        return;
       }
+
+      if (password.length < 8) {
+        setStatus("Password must be at least 8 characters.", "error");
+        return;
+      }
+
+      setStatus("Creating account…");
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + "/profile-edit.html"
+        }
+      });
+
+      if (error) {
+        setStatus(error.message, "error");
+        return;
+      }
+
+      setStatus("Check your email to confirm your account.", "success");
     });
-  };
+  }
+
+  /* =====================================================
+     SIGN IN
+  ===================================================== */
+
+  const signinBtn = document.getElementById("signin-btn");
+  if (signinBtn) {
+    signinBtn.addEventListener("click", async () => {
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!email || !password) {
+        setStatus("Enter email and password.", "error");
+        return;
+      }
+
+      setStatus("Signing in…");
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        setStatus(error.message, "error");
+        return;
+      }
+
+      window.location.href = "/profile-edit.html";
+    });
+  }
+
+  /* =====================================================
+     OAUTH
+  ===================================================== */
+
+  document.querySelectorAll("[data-provider]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+
+      const provider = btn.dataset.provider;
+
+      await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin + "/profile-edit.html"
+        }
+      });
+    });
+  });
+
 });
 </script>
 

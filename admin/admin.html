@@ -29,38 +29,39 @@ input[type=file] { margin-top: 0.75rem; }
 
 <body>
 
+<!-- GLOBAL MENU -->
 <div id="global-menu-root"></div>
+
 <img src="/assets/BCPMMsvg.png" class="logo" alt="Logo">
 <h1>Admin Panel</h1>
 
 <!-- ================= EVENT INGEST ================= -->
 
 <div class="section">
-  <h2>Ingest New Event</h2>
+  <h2>Ingest Event</h2>
 
   <input type="file" id="event-file" accept=".json" />
 
   <div class="row">
     <button id="ingest-btn">Upload & Ingest</button>
     <button id="rebuild-btn">Rebuild Leaderboards</button>
-    <a href="templatehelp.html"><button type="button">Template & Help</button></a>
+    <a href="templatehelp.html">
+      <button type="button">Template & Help</button>
+    </a>
   </div>
 
   <div id="ingest-status" class="small"></div>
-  <div id="ingest-error" class="err"></div>
-  <div id="ingest-ok" class="ok"></div>
 </div>
 
 <!-- ================= PENDING CLAIMS ================= -->
 
 <div class="section">
   <h2>Pending Claims</h2>
-  <div id="pending-error" class="err"></div>
   <table>
     <thead>
       <tr>
-        <th>Player</th>
-        <th>User Info</th>
+        <th>Slug</th>
+        <th>User</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -77,29 +78,16 @@ input[type=file] { margin-top: 0.75rem; }
     <select id="manual-slug"></select>
     <button id="assign-btn">Assign</button>
   </div>
-  <div id="manual-error" class="err"></div>
 </div>
 
 <!-- ================= UNASSIGN ================= -->
 
 <div class="section">
-  <h2>Manual Separation</h2>
+  <h2>Unassign Claim</h2>
   <div class="row">
     <select id="unassign-claim"></select>
     <button id="unassign-btn">Unassign</button>
   </div>
-  <div id="unassign-error" class="err"></div>
-</div>
-
-<!-- ================= GRANT ADMIN ================= -->
-
-<div class="section">
-  <h2>Grant Admin Role</h2>
-  <div class="row">
-    <select id="admin-user"></select>
-    <button id="grant-admin">Grant Admin</button>
-  </div>
-  <div id="admin-error" class="err"></div>
 </div>
 
 <!-- ================= MERGE ================= -->
@@ -112,7 +100,6 @@ input[type=file] { margin-top: 0.75rem; }
     <select id="merge-target"></select>
     <button id="merge-btn">Merge</button>
   </div>
-  <div id="merge-error" class="err"></div>
 </div>
 
 <!-- ================= UNMERGE ================= -->
@@ -123,8 +110,9 @@ input[type=file] { margin-top: 0.75rem; }
     <select id="unmerge-alias"></select>
     <button id="unmerge-btn">Unmerge</button>
   </div>
-  <div id="unmerge-error" class="err"></div>
 </div>
+
+<!-- ================= SCRIPTS ================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth.js"></script>
@@ -133,8 +121,8 @@ input[type=file] { margin-top: 0.75rem; }
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
 
-  if (!window.auth || !window.auth._client) return;
-  const supabase = window.auth._client;
+  const supabase = window.auth?._client;
+  if (!supabase) return;
 
   /* ================= ADMIN GATE ================= */
 
@@ -154,7 +142,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     .maybeSingle();
 
   if (!role) {
-    alert("Admin access required.");
     window.location.href = "/";
     return;
   }
@@ -164,30 +151,74 @@ document.addEventListener("DOMContentLoaded", async () => {
   const { data: users } = await supabase.rpc("admin_get_users");
 
   const manualUser = document.getElementById("manual-user");
-  const adminUser = document.getElementById("admin-user");
 
   users?.forEach(u => {
-    const opt1 = new Option(u.email, u.id);
-    const opt2 = new Option(u.email, u.id);
-    manualUser.add(opt1);
-    adminUser.add(opt2);
+    manualUser.add(new Option(u.email, u.id));
   });
 
-  /* ================= LOAD PLAYER SLUGS ================= */
+  /* ================= LOAD SLUGS ================= */
 
   const { data: players } = await supabase
     .from("tournament_players")
     .select("slug")
     .order("slug");
 
-  const slugSelect = document.getElementById("manual-slug");
+  const manualSlug = document.getElementById("manual-slug");
   const mergeSource = document.getElementById("merge-source");
   const mergeTarget = document.getElementById("merge-target");
 
   players?.forEach(p => {
-    slugSelect.add(new Option(p.slug, p.slug));
+    manualSlug.add(new Option(p.slug, p.slug));
     mergeSource.add(new Option(p.slug, p.slug));
     mergeTarget.add(new Option(p.slug, p.slug));
+  });
+
+  /* ================= LOAD PENDING CLAIMS ================= */
+
+  async function loadPending() {
+    const { data: claims } = await supabase
+      .from("player_claims")
+      .select("id, slug, user_id")
+      .eq("status", "pending");
+
+    const table = document.getElementById("pending-table");
+    table.innerHTML = "";
+
+    claims?.forEach(c => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${c.slug}</td>
+        <td>${c.user_id}</td>
+        <td>
+          <button data-id="${c.id}" data-action="approve">Approve</button>
+          <button data-id="${c.id}" data-action="deny">Deny</button>
+        </td>
+      `;
+      table.appendChild(row);
+    });
+  }
+
+  await loadPending();
+
+  document.addEventListener("click", async (e) => {
+    if (!e.target.dataset.action) return;
+
+    const id = e.target.dataset.id;
+    const action = e.target.dataset.action;
+
+    if (action === "approve") {
+      await supabase.from("player_claims")
+        .update({ status: "approved" })
+        .eq("id", id);
+    }
+
+    if (action === "deny") {
+      await supabase.from("player_claims")
+        .delete()
+        .eq("id", id);
+    }
+
+    await loadPending();
   });
 
   /* ================= LOAD APPROVED CLAIMS ================= */
@@ -198,7 +229,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     .eq("status", "approved");
 
   const unassignSelect = document.getElementById("unassign-claim");
-
   approved?.forEach(c => {
     unassignSelect.add(new Option(`${c.slug} — ${c.user_id}`, c.id));
   });
@@ -207,11 +237,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const { data: aliases } = await supabase
     .from("player_slug_redirects")
-    .select("old_slug");
+    .select("from_slug");
 
   const unmergeSelect = document.getElementById("unmerge-alias");
   aliases?.forEach(a => {
-    unmergeSelect.add(new Option(a.old_slug, a.old_slug));
+    unmergeSelect.add(new Option(a.from_slug, a.from_slug));
   });
 
   /* ================= INGEST ================= */
@@ -231,60 +261,47 @@ document.addEventListener("DOMContentLoaded", async () => {
     alert("Event ingested.");
   };
 
-document.getElementById("rebuild-btn").onclick = async () => {
-  const { error } = await supabase.functions.invoke("admin-rebuild-leaderboards");
-  if (error) return alert(error.message);
-  alert("Leaderboards rebuilt.");
-};
+  document.getElementById("rebuild-btn").onclick = async () => {
+    const { error } = await supabase.functions.invoke("admin-rebuild-leaderboards");
+    if (error) return alert(error.message);
+    alert("Leaderboards rebuilt.");
+  };
 
   /* ================= ASSIGN ================= */
 
   document.getElementById("assign-btn").onclick = async () => {
-    const { error } = await supabase.from("player_claims")
-      .insert({ user_id: manualUser.value, slug: slugSelect.value, status: "approved" });
+    await supabase.from("player_claims")
+      .insert({
+        user_id: manualUser.value,
+        slug: manualSlug.value,
+        status: "approved"
+      });
 
-    if (error) return alert(error.message);
     alert("Assigned.");
   };
 
   document.getElementById("unassign-btn").onclick = async () => {
-    const { error } = await supabase.from("player_claims")
+    await supabase.from("player_claims")
       .delete()
       .eq("id", unassignSelect.value);
 
-    if (error) return alert(error.message);
     alert("Unassigned.");
-  };
-
-  /* ================= GRANT ADMIN ================= */
-
-  document.getElementById("grant-admin").onclick = async () => {
-    const { error } = await supabase.rpc("admin_grant_admin", {
-      target_user_id: adminUser.value
-    });
-
-    if (error) return alert(error.message);
-    alert("Admin granted.");
   };
 
   /* ================= MERGE ================= */
 
   document.getElementById("merge-btn").onclick = async () => {
-    const { error } = await supabase.rpc("admin_merge_players", {
+    await supabase.rpc("admin_merge_players", {
       source_slug: mergeSource.value,
       target_slug: mergeTarget.value
     });
-
-    if (error) return alert(error.message);
     alert("Merged.");
   };
 
   document.getElementById("unmerge-btn").onclick = async () => {
-    const { error } = await supabase.rpc("admin_unmerge_player", {
+    await supabase.rpc("admin_unmerge_player", {
       old_slug: unmergeSelect.value
     });
-
-    if (error) return alert(error.message);
     alert("Unmerged.");
   };
 

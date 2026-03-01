@@ -1,5 +1,14 @@
-import { supabase } from "./config.js";
+/* =====================================================
+   Admin Dashboard — Stable Auth Version
+===================================================== */
+
 import { getProfile, CURRENT_SEASON } from "./db.js";
+
+/* -------------------------------------------------------
+   Supabase Client (Single Source of Truth)
+-------------------------------------------------------- */
+
+const supabase = window.auth._client;
 
 /* -------------------------------------------------------
    DOM
@@ -202,10 +211,18 @@ async function loadLeague() {
 }
 
 /* -------------------------------------------------------
-   INIT
+   INIT (Auth-Stable)
 -------------------------------------------------------- */
 
 async function init() {
+
+  const session = await window.auth.getSession();
+
+  if (!session) {
+    notLogged.classList.remove("hidden");
+    return;
+  }
+
   const profile = await getProfile();
 
   if (!profile) {
@@ -219,6 +236,7 @@ async function init() {
   }
 
   adminPanel.classList.remove("hidden");
+
   await loadUsers();
   await loadLeague();
 }
