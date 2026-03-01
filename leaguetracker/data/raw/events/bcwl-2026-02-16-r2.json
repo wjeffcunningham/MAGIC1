@@ -7,41 +7,36 @@
     "date": "2026-02-16",
     "round": 2
   },
-
   "standings": [
-    { "rank": 1, "player": "gaetan-zell", "match_points": 6, "record": "2-0-0" },
-    { "rank": 2, "player": "spencer-sj", "match_points": 6, "record": "2-0-0" },
-    { "rank": 3, "player": "kevin-mittertreiner", "match_points": 6, "record": "2-0-0" },
-    { "rank": 4, "player": "james-jost", "match_points": 6, "record": "2-0-0" },
-
-    { "rank": 5, "player": "elliot-fisher", "match_points": 3, "record": "1-1-0" },
-    { "rank": 6, "player": "clint-taylor", "match_points": 3, "record": "1-1-0" },
-    { "rank": 7, "player": "james-onions", "match_points": 3, "record": "1-1-0" },
-    { "rank": 8, "player": "gerard-cadger", "match_points": 3, "record": "1-1-0" },
-
-    { "rank": 9, "player": "arlen-wiesenthal", "match_points": 0, "record": "0-2-0" },
-    { "rank": 10, "player": "alastair-mclellan", "match_points": 0, "record": "0-2-0" },
-    { "rank": 11, "player": "dakota-blais", "match_points": 0, "record": "0-2-0" },
-    { "rank": 12, "player": "marvin-goncalves-de-aquino", "match_points": 0, "record": "0-2-0" },
-    { "rank": 13, "player": "cody-foley", "match_points": 0, "record": "0-2-0" }
+    { "rank": 1, "player": "clint-taylor", "match_points": 6, "record": "2-0-0" },
+    { "rank": 2, "player": "gaetan-zell", "match_points": 6, "record": "2-0-0" },
+    { "rank": 3, "player": "james-jost", "match_points": 6, "record": "2-0-0" },
+    { "rank": 4, "player": "james-onions", "match_points": 3, "record": "1-1-0" },
+    { "rank": 5, "player": "dakota-blais", "match_points": 3, "record": "1-1-0" },
+    { "rank": 6, "player": "kevin-mittertreiner", "match_points": 3, "record": "1-1-0" },
+    { "rank": 7, "player": "elliot-fisher", "match_points": 3, "record": "1-1-0" },
+    { "rank": 8, "player": "spencer-sj", "match_points": 3, "record": "1-1-0" },
+    { "rank": 9, "player": "cody-foley", "match_points": 3, "record": "1-1-0" },
+    { "rank": 10, "player": "arlen-wiesenthal", "match_points": 0, "record": "0-2-0" },
+    { "rank": 11, "player": "alastair-mclellan", "match_points": 0, "record": "0-2-0" },
+    { "rank": 12, "player": "gerard-cadger", "match_points": 0, "record": "0-2-0" },
+    { "rank": 13, "player": "marvin-goncalves-de-aquino", "match_points": 0, "record": "0-2-0" }
   ],
-
   "rounds": [
     {
       "round": 2,
       "matches": [
-        { "table": 1, "playerA": "gaetan-zell", "playerB": "elliot-fisher", "gamesA": 2, "gamesB": 1 },
-        { "table": 2, "playerA": "spencer-sj", "playerB": "clint-taylor", "gamesA": 2, "gamesB": 0 },
-        { "table": 3, "playerA": "kevin-mittertreiner", "playerB": "james-onions", "gamesA": 2, "gamesB": 0 },
-        { "table": 4, "playerA": "james-jost", "playerB": "gerard-cadger", "gamesA": 2, "gamesB": 1 },
-        { "table": 5, "playerA": "arlen-wiesenthal", "playerB": "dakota-blais", "gamesA": 2, "gamesB": 1 },
-        { "table": 6, "playerA": "alastair-mclellan", "playerB": "marvin-goncalves-de-aquino", "gamesA": 2, "gamesB": 0 }
-      ]
+        { "table": 1, "playerA": "elliot-fisher", "playerB": "spencer-sj", "gamesA": 1, "gamesB": 2 },
+        { "table": 2, "playerA": "kevin-mittertreiner", "playerB": "clint-taylor", "gamesA": 1, "gamesB": 2 },
+        { "table": 3, "playerA": "gaetan-zell", "playerB": "alastair-mclellan", "gamesA": 2, "gamesB": 1 },
+        { "table": 4, "playerA": "james-onions", "playerB": "marvin-goncalves-de-aquino", "gamesA": 2, "gamesB": 0 },
+        { "table": 5, "playerA": "arlen-wiesenthal", "playerB": "james-jost", "gamesA": 0, "gamesB": 2 },
+        { "table": 6, "playerA": "cody-foley", "playerB": "gerard-cadger", "gamesA": 2, "gamesB": 1 }
+      ],
+      "byes": ["dakota-blais"]
     }
   ],
-
   "notes": [
-    "Standings reflect cumulative record after two rounds",
-    "Results finalized and published 2026-02-16"
+    "Corrected from EventLink raw photos (Round 2 tab): includes bye and correct pairings/results."
   ]
 }

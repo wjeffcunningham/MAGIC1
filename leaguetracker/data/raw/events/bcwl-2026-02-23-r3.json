@@ -7,7 +7,6 @@
     "date": "2026-02-23",
     "round": 3
   },
-
   "standings": [
     { "rank": 1, "player": "gaetan-zell", "match_points": 9, "record": "3-0-0" },
     { "rank": 2, "player": "james-jost", "match_points": 9, "record": "3-0-0" },
@@ -15,15 +14,14 @@
     { "rank": 4, "player": "spencer-sj", "match_points": 6, "record": "2-1-0" },
     { "rank": 5, "player": "elliot-fisher", "match_points": 6, "record": "2-1-0" },
     { "rank": 6, "player": "kevin-mittertreiner", "match_points": 6, "record": "2-1-0" },
-    { "rank": 7, "player": "alastair-mclellan", "match_points": 3, "record": "1-2-0" },
-    { "rank": 8, "player": "james-onions", "match_points": 3, "record": "1-2-0" },
-    { "rank": 9, "player": "cody-foley", "match_points": 3, "record": "1-2-0" },
-    { "rank": 10, "player": "arlen-wiesenthal", "match_points": 3, "record": "1-2-0" },
-    { "rank": 11, "player": "gerard-cadger", "match_points": 3, "record": "1-2-0" },
-    { "rank": 12, "player": "dakota-blais", "match_points": 3, "record": "1-1-0" },
+    { "rank": 7, "player": "dakota-blais", "match_points": 3, "record": "1-1-0" },
+    { "rank": 8, "player": "alastair-mclellan", "match_points": 3, "record": "1-2-0" },
+    { "rank": 9, "player": "james-onions", "match_points": 3, "record": "1-2-0" },
+    { "rank": 10, "player": "cody-foley", "match_points": 3, "record": "1-2-0" },
+    { "rank": 11, "player": "arlen-wiesenthal", "match_points": 3, "record": "1-2-0" },
+    { "rank": 12, "player": "gerard-cadger", "match_points": 3, "record": "1-2-0" },
     { "rank": 13, "player": "marvin-goncalves-de-aquino", "match_points": 0, "record": "0-3-0" }
   ],
-
   "rounds": [
     {
       "round": 3,
@@ -37,9 +35,7 @@
       ]
     }
   ],
-
   "notes": [
-    "Standings reflect cumulative league record after three rounds",
-    "Results finalized and published 2026-02-23"
+    "Corrected from EventLink raw photos (Round 3 tab): pairings are distinct from Round 2 (no duplicate Kevin/Onions), and no bye shown."
   ]
 }
