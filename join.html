@@ -30,12 +30,45 @@ body {
   margin-bottom: 2.2rem;
 }
 
+/* =====================================================
+   Animated Slogan (Stable + Smooth)
+===================================================== */
+
 .slogan {
   font-size: 2rem;
   font-weight: 900;
   font-style: italic;
   margin-bottom: 1.6rem;
+
+  background: linear-gradient(
+    270deg,
+    #d4af37,
+    #ffffff,
+    #d4af37,
+    #c0392b
+  );
+
+  background-size: 600% 600%;
+  animation: sloganShimmer 12s ease-in-out infinite;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
+
+@keyframes sloganShimmer {
+  0%   { background-position: 0% 50%; }
+  25%  { background-position: 50% 50%; }
+  50%  { background-position: 100% 50%; }
+  75%  { background-position: 50% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* =====================================================
+   Form
+===================================================== */
 
 .section { margin-top: 2rem; }
 
@@ -47,6 +80,11 @@ input {
   font-size: 0.95rem;
   background: var(--surface);
   color: var(--fg);
+}
+
+input:focus {
+  outline: none;
+  border-color: #1f6feb;
 }
 
 button {
@@ -135,91 +173,69 @@ document.addEventListener("DOMContentLoaded", async () => {
     statusBox.textContent = msg;
   }
 
-  /* =====================================================
-     SESSION CHECK (STABLE)
-  ===================================================== */
-
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
     window.location.href = "/profile-edit.html";
     return;
   }
 
-  /* =====================================================
-     SIGN UP
-  ===================================================== */
+  document.getElementById("signup-btn").addEventListener("click", async () => {
 
-  const signupBtn = document.getElementById("signup-btn");
-  if (signupBtn) {
-    signupBtn.addEventListener("click", async () => {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
+    if (!email || !password) {
+      setStatus("Enter email and password.", "error");
+      return;
+    }
 
-      if (!email || !password) {
-        setStatus("Enter email and password.", "error");
-        return;
+    if (password.length < 8) {
+      setStatus("Password must be at least 8 characters.", "error");
+      return;
+    }
+
+    setStatus("Creating account…");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin + "/profile-edit.html"
       }
-
-      if (password.length < 8) {
-        setStatus("Password must be at least 8 characters.", "error");
-        return;
-      }
-
-      setStatus("Creating account…");
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + "/profile-edit.html"
-        }
-      });
-
-      if (error) {
-        setStatus(error.message, "error");
-        return;
-      }
-
-      setStatus("Check your email to confirm your account.", "success");
     });
-  }
 
-  /* =====================================================
-     SIGN IN
-  ===================================================== */
+    if (error) {
+      setStatus(error.message, "error");
+      return;
+    }
 
-  const signinBtn = document.getElementById("signin-btn");
-  if (signinBtn) {
-    signinBtn.addEventListener("click", async () => {
+    setStatus("Check your email to confirm your account.", "success");
+  });
 
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
+  document.getElementById("signin-btn").addEventListener("click", async () => {
 
-      if (!email || !password) {
-        setStatus("Enter email and password.", "error");
-        return;
-      }
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-      setStatus("Signing in…");
+    if (!email || !password) {
+      setStatus("Enter email and password.", "error");
+      return;
+    }
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+    setStatus("Signing in…");
 
-      if (error) {
-        setStatus(error.message, "error");
-        return;
-      }
-
-      window.location.href = "/profile-edit.html";
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
     });
-  }
 
-  /* =====================================================
-     OAUTH
-  ===================================================== */
+    if (error) {
+      setStatus(error.message, "error");
+      return;
+    }
+
+    window.location.href = "/profile-edit.html";
+  });
 
   document.querySelectorAll("[data-provider]").forEach(btn => {
     btn.addEventListener("click", async () => {

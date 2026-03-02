@@ -11,322 +11,172 @@
 
 <style>
 *{box-sizing:border-box}
+.buylist-wrap{max-width:1500px;margin:6rem auto 4rem;padding:0 2rem;}
+header{display:flex;align-items:center;gap:1.25rem;margin-bottom:2rem;}
+.logo{width:64px;}
+header h1{margin:0;font-size:2rem;}
+header p{margin:.25rem 0 0;opacity:.7;font-size:.9rem;}
+.kpi-row{opacity:.85;font-size:.9rem;margin-top:.35rem;line-height:1.35}
+.status-row{margin-top:.4rem;font-size:.85rem;opacity:.85}
 
-/* ================= LAYOUT ================= */
+.controls{margin:1.5rem 0 2rem;display:flex;gap:2rem;flex-wrap:wrap;align-items:center;}
 
-.buylist-wrap{
-  max-width:1500px;
-  margin:6rem auto 4rem;
-  padding:0 2rem;
-}
-
-header{
-  display:flex;
-  align-items:center;
-  gap:1.25rem;
-  margin-bottom:3rem;
-}
-
-.logo{ width:64px; }
-
-header h1{
-  margin:0;
-  font-size:2rem;
-}
-
-header p{
-  margin:.25rem 0 0;
-  opacity:.7;
-  font-size:.9rem;
-}
-
-.controls{
-  margin:2rem 0 3rem;
-  display:flex;
-  gap:2rem;
-  flex-wrap:wrap;
-  align-items:center;
-}
-
-/* ================= ADMIN ================= */
-
+.admin-tools,
 .admin-upload{
-  margin-bottom:1.25rem;
-  padding:1.25rem;
+  margin:0 0 2rem;
+  padding:1rem;
   border:1px solid var(--border);
   border-radius:12px;
   background:rgba(255,255,255,0.04);
   display:none;
 }
+.admin-tools .row{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.6rem;align-items:center;}
+.admin-tools button,
+.admin-upload button{padding:.55rem .9rem;}
+.progress{margin-top:.6rem;font-size:.85rem;opacity:.9;line-height:1.35}
+.small-note{font-size:.85rem;opacity:.75;margin-top:.4rem;line-height:1.35}
 
-.admin-upload button{
-  margin-top:.5rem;
-}
-
-.admin-tools{
-  margin-bottom:3rem;
-  padding:1.25rem;
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:rgba(255,255,255,0.04);
-  display:none;
-}
-
-.admin-tools .row{
-  display:flex;
-  gap:.75rem;
-  flex-wrap:wrap;
-  align-items:center;
-  margin-top:.75rem;
-}
-
-.admin-tools button{
-  padding:.55rem .9rem;
-}
-
-.small-note{
-  font-size:.85rem;
-  opacity:.75;
-  margin-top:.5rem;
-  line-height:1.3;
-}
-
-.kpi{
-  display:flex;
-  gap:1rem;
-  flex-wrap:wrap;
-  margin-top:.75rem;
-  font-size:.85rem;
-  opacity:.85;
-}
-
-.progress{
-  margin-top:.75rem;
-  font-size:.85rem;
-  opacity:.9;
-}
-
-/* ================= CATEGORY ================= */
-
-.section{
-  margin-bottom:4.5rem;
-}
-
+.section{margin-bottom:4.5rem;}
 .category-pill{
-  display:inline-block;
-  padding:.55rem 1.25rem;
-  border-radius:999px;
+  display:inline-block;padding:.55rem 1.25rem;border-radius:999px;
   border:1px solid var(--border);
-  font-weight:800;
-  letter-spacing:.4px;
-  font-size:.95rem;
-  margin-bottom:1.75rem;
+  font-weight:800;font-size:.95rem;margin-bottom:1.3rem;
 }
 
-/* ================= GRID ================= */
+.grid{display:grid;grid-template-columns:repeat(8,1fr);gap:0.9rem 0.7rem;}
+@media (max-width:1400px){.grid{grid-template-columns:repeat(6,1fr);}}
+@media (max-width:1000px){.grid{grid-template-columns:repeat(4,1fr);}}
+@media (max-width:650px){.grid{grid-template-columns:repeat(2,1fr);}}
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(8, 1fr);
-  gap:0.9rem 0.7rem;
-}
-
-@media (max-width: 1400px){
-  .grid{ grid-template-columns:repeat(6, 1fr); }
-}
-
-@media (max-width: 1000px){
-  .grid{ grid-template-columns:repeat(4, 1fr); }
-}
-
-@media (max-width: 650px){
-  .grid{ grid-template-columns:repeat(2, 1fr); }
-}
-
-/* ================= CARD ================= */
-
-.card{
-  text-align:center;
-}
-
-.card img{
+.card{text-align:center;position:relative;}
+.card img{width:100%;border-radius:8px;box-shadow:0 6px 14px rgba(0,0,0,.45);}
+.noimg{
   width:100%;
+  aspect-ratio:0.714; /* approx mtg card */
   border-radius:8px;
-  box-shadow:0 6px 14px rgba(0,0,0,.45);
-  transition:transform .15s ease;
-}
-
-.card img:hover{
-  transform:translateY(-4px);
-}
-
-.price{
-  margin-top:.35rem;
-  font-weight:600;
-  font-size:.8rem;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.04);
   display:flex;
-  flex-direction:column;
-  gap:.2rem;
+  align-items:center;
+  justify-content:center;
+  padding:.75rem;
+  font-size:.85rem;
+  opacity:.8;
 }
-
-.meta{
-  opacity:.72;
-  font-size:.78rem;
-  line-height:1.2;
+.badge{
+  position:absolute;top:8px;left:8px;
+  background:rgba(0,0,0,.75);
+  padding:.25rem .5rem;
+  border-radius:10px;font-size:.72rem;font-weight:700;
 }
+.price{margin-top:.35rem;font-size:.8rem;display:flex;flex-direction:column;gap:.18rem;}
+.line{display:flex;justify-content:center;gap:.35rem;flex-wrap:wrap;}
+.k{opacity:.72}
+.v{font-weight:700}
+.meta{opacity:.78;font-size:.78rem;line-height:1.25}
+.dim{opacity:.5;filter:saturate(.6);}
 
 .admin-edit{
-  margin-top:.45rem;
-  display:none;
-  gap:.35rem;
-  justify-content:center;
-  align-items:center;
-  flex-wrap:wrap;
+  margin-top:.45rem;display:none;gap:.35rem;flex-wrap:wrap;justify-content:center;
 }
-
 .admin-edit input{
-  width:120px;
-  padding:.35rem .5rem;
-  border-radius:8px;
+  width:150px;padding:.35rem .5rem;border-radius:8px;
   border:1px solid var(--border);
-  background:rgba(0,0,0,.25);
-  color:var(--fg);
+  background:rgba(0,0,0,.25);color:var(--fg);
 }
-
-.admin-edit button{
-  padding:.35rem .6rem;
-}
-
-.lock-row{
-  display:none;
-  margin-top:.35rem;
-  gap:.35rem;
-  justify-content:center;
-  align-items:center;
-  flex-wrap:wrap;
-  font-size:.78rem;
-  opacity:.9;
-}
-
-.lock-row input[type="checkbox"]{
-  transform: translateY(1px);
-}
+.admin-edit .wide{width:260px;}
+.admin-edit button{padding:.35rem .65rem;}
 </style>
 </head>
 
 <body>
-
 <div id="global-menu-root"></div>
 
 <div class="buylist-wrap">
 
 <header>
-<img src="/assets/BCPMM.svg" class="logo" />
-<div>
-<h1>BCPMM Buylist</h1>
-<p>Market = USD (TCGplayer Market). F2F = CAD (Sell-to-us). Toggle currency to view converted.</p>
-</div>
+  <img src="/assets/BCPMM.svg" class="logo" />
+  <div>
+    <h1>BCPMM Buylist</h1>
+    <p>Market = USD (TCGplayer Market). F2F = CAD.</p>
+    <div class="kpi-row" id="globalKpi"></div>
+    <div class="status-row" id="statusRow"></div>
+  </div>
 </header>
 
 <div class="controls">
-<label>
-Currency:
-<select id="currencySelect">
-<option value="USD">USD</option>
-<option value="CAD">CAD</option>
-</select>
-</label>
+  <label>Currency:
+    <select id="currencySelect">
+      <option value="USD">USD</option>
+      <option value="CAD">CAD</option>
+    </select>
+  </label>
 
-<label id="adminToggleWrap" style="display:none">
-<input type="checkbox" id="adminToggle">
-Admin Mode
-</label>
+  <label id="adminToggleWrap" style="display:none">
+    <input type="checkbox" id="adminToggle"> Admin Mode
+  </label>
 
-<span id="fxLabel"></span>
+  <span id="fxLabel"></span>
 </div>
-
-<!-- ================= ADMIN TOOLS ================= -->
-
-<div class="admin-tools" id="adminTools">
-<strong>Admin Tools</strong>
-<div class="row">
-  <button id="refreshF2FBtn">Refresh F2F Prices (All)</button>
-  <button id="refreshF2FBlankBtn">Refresh F2F Prices (Only Blanks)</button>
-</div>
-<div class="small-note">
-Runs in batches. Keep this tab open while it works. If it errors, re-run “Only Blanks” to pick up stragglers.
-</div>
-<div class="kpi" id="f2fKpis"></div>
-<div class="progress" id="f2fProgress"></div>
-</div>
-
-<!-- ================= ADMIN UPLOAD ================= -->
 
 <div class="admin-upload" id="adminUpload">
-<strong>Upload New Buylist CSV</strong><br>
-<input type="file" id="csvFile" accept=".csv">
-<br>
-<button id="uploadCsvBtn">Upload & Replace Buylist</button>
-<div id="uploadStatus" style="margin-top:.5rem;font-size:.85rem;"></div>
+  <strong>Upload Buylist CSV</strong><br>
+  <input type="file" id="csvFile" accept=".csv"><br>
+  <button id="uploadCsvBtn">Upload & Replace Buylist</button>
+  <div id="uploadStatus" class="progress"></div>
+  <div class="small-note">
+    This replaces the full buylist. Status stays here; no more “did it run?” guessing.
+  </div>
+</div>
+
+<div class="admin-tools" id="adminTools">
+  <strong>Admin Tools</strong>
+  <div class="row">
+    <button id="refreshF2FBtn">Refresh F2F (All)</button>
+    <button id="refreshF2FBlankBtn">Refresh F2F (Only Blanks)</button>
+    <span class="small-note" style="margin:0">Runs in batches. Keep tab open.</span>
+  </div>
+  <div class="progress" id="f2fProgress"></div>
 </div>
 
 <div id="content">Loading…</div>
-
 </div>
 
 <script>
-/* ================= STATE ================= */
-
 let CARDS = [];
 let CATEGORIES = [];
-let FX = 1.35; // 1 USD -> CAD
+let FX = 1.35;
 let IS_ADMIN = false;
 let ADMIN_MODE = false;
 
-/* IMPORTANT: your Edge function name */
 const F2F_FN_NAME = "refresh-f2f-prices";
 
-/* ================= AUTH READY ================= */
+function setStatus(msg){
+  const el = document.getElementById("statusRow");
+  if(el) el.textContent = msg || "";
+}
 
 async function waitForClient(){
-  for(let i=0;i<80;i++){
+  for(let i=0;i<120;i++){
     if(window.auth && window.auth._client) return window.auth._client;
-    await new Promise(r=>setTimeout(r, 75));
+    await new Promise(r=>setTimeout(r,75));
   }
   return null;
 }
 
-/* ================= HELPERS ================= */
-
 function currency(){ return document.getElementById("currencySelect").value; }
 
-function moneyUSDbase(nUSD){
-  if(!Number.isFinite(nUSD) || nUSD<=0) return "—";
-  if(currency()==="USD") return "US$" + nUSD.toFixed(2);
-  return "CA$" + (nUSD * FX).toFixed(2);
+function moneyUSD(n){
+  if(!Number.isFinite(n) || n<=0) return "—";
+  if(currency()==="USD") return "US$"+Number(n).toFixed(2);
+  return "CA$"+(Number(n)*FX).toFixed(2);
 }
 
-function moneyCADbase(nCAD){
-  if(!Number.isFinite(nCAD) || nCAD<=0) return "—";
-  if(currency()==="CAD") return "CA$" + nCAD.toFixed(2);
-  return "US$" + (nCAD / FX).toFixed(2);
+function moneyCAD(n){
+  if(!Number.isFinite(n) || n<=0) return "—";
+  if(currency()==="CAD") return "CA$"+Number(n).toFixed(2);
+  return "US$"+(Number(n)/FX).toFixed(2);
 }
-
-function fmtMD(v){
-  if(!v) return "—";
-  if(/^\d{2}\/\d{2}$/.test(v)) return v;
-  const d = new Date(v);
-  if(Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(undefined, { month:"short", day:"numeric" });
-}
-
-function sleep(ms){ return new Promise(res => setTimeout(res, ms)); }
-
-function mmddNow(){
-  return String(new Date().getMonth()+1).padStart(2,"0") + "/" + String(new Date().getDate()).padStart(2,"0");
-}
-
-/* ================= FX ================= */
 
 async function fetchFX(){
   try{
@@ -337,83 +187,49 @@ async function fetchFX(){
   document.getElementById("fxLabel").textContent = `1 USD = ${FX.toFixed(3)} CAD`;
 }
 
-/* ================= SCRYFALL ================= */
-
-async function fetchMarket(card){
-  if(card.market) return;
-
-  const sb = window.auth._client;
-
-  const r = await fetch(
-    `${sb.supabaseUrl}/functions/v1/scryfall-proxy`,
-    {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({
-        id:card.scryfall_id,
-        name:card.name,
-        set:card.set_code
-      })
-    }
-  );
-
-  if(!r.ok) return;
-
-  const d = await r.json();
-
-  card.market = parseFloat(d.prices?.usd) || 0;
-  card.image =
-    d.image_uris?.normal ||
-    d.card_faces?.[0]?.image_uris?.normal;
+function effectiveBuyNM(c){
+  return Number.isFinite(c.f2f_buy_nm_override_cad) ? c.f2f_buy_nm_override_cad : c.f2f_buy_nm_cad;
+}
+function effectiveBuyLP(c){
+  return Number.isFinite(c.f2f_buy_lp_override_cad) ? c.f2f_buy_lp_override_cad : c.f2f_buy_lp_cad;
 }
 
-/* ================= ADMIN KPI ================= */
-
-function renderAdminKpis(){
-  const el = document.getElementById("f2fKpis");
-  if(!el) return;
-
-  const total = CARDS.length;
-  const have = CARDS.filter(c => Number.isFinite(c.f2f_buy_price) && c.f2f_buy_price > 0).length;
-  const blank = total - have;
-
-  const newest = CARDS
-    .map(c => c.f2f_last_updated)
-    .filter(Boolean)
-    .sort()
-    .slice(-1)[0];
-
-  el.innerHTML = `
-    <span><strong>F2F filled:</strong> ${have}/${total}</span>
-    <span><strong>Blanks:</strong> ${blank}</span>
-    <span><strong>Latest update:</strong> ${fmtMD(newest)}</span>
-  `;
+function computeLastUpdated(){
+  const vals = CARDS.map(c => c.f2f_last_updated).filter(Boolean).sort();
+  return vals.length ? vals[vals.length-1] : "—";
 }
 
-/* ================= RENDER ================= */
+function renderGlobalKpi(){
+  const notBuying = CARDS.filter(c => !!c.not_buying).length;
+  const blanks = CARDS.filter(c => !(Number.isFinite(c.f2f_buy_nm_cad) && c.f2f_buy_nm_cad>0)).length;
+  document.getElementById("globalKpi").textContent =
+    `Last F2F update: ${computeLastUpdated()} · Not buying: ${notBuying} · F2F blanks: ${blanks}/${CARDS.length}`;
+}
+
+function sortCategories(cats){
+  const valid = (cats||[]).filter(c => String(c.name||"").toLowerCase() !== "maybeboard");
+  valid.sort((a,b)=>{
+    if(a.name === "Reserved List Picks") return -1;
+    if(b.name === "Reserved List Picks") return 1;
+    return String(a.name).localeCompare(String(b.name));
+  });
+  return valid;
+}
 
 function render(){
-
   const container = document.getElementById("content");
   container.innerHTML = "";
 
-  const validCategories = CATEGORIES.filter(c =>
-    c.name.toLowerCase() !== "maybeboard"
-  );
+  renderGlobalKpi();
 
-  validCategories.sort((a,b)=>{
-    if(a.name==="Reserved List Picks") return -1;
-    if(b.name==="Reserved List Picks") return 1;
-    return a.name.localeCompare(b.name);
-  });
+  const cats = sortCategories(CATEGORIES);
 
-  validCategories.forEach(cat => {
-
+  for(const cat of cats){
     const cards = CARDS
       .filter(c => c.category_id === cat.id)
-      .sort((a,b)=>(b.market||0)-(a.market||0));
+      .sort((a,b)=>(b.market_usd||0)-(a.market_usd||0));
 
-    if(!cards.length) return;
+    if(!cards.length) continue;
 
     const section = document.createElement("div");
     section.className = "section";
@@ -425,97 +241,119 @@ function render(){
     const grid = document.createElement("div");
     grid.className = "grid";
 
-    cards.forEach(c => {
-
-      const marketLine = moneyUSDbase(c.market);
-
-      const f2fBuyLine = moneyCADbase(c.f2f_buy_price);
-      const updated = c.f2f_last_updated ? `F2F: ${fmtMD(c.f2f_last_updated)}` : "";
-
-      // retail hidden unless admin mode
-      const retailLine = (ADMIN_MODE && IS_ADMIN)
-        ? `<div class="meta">F2F retail: ${moneyCADbase(c.f2f_retail_price)}</div>`
-        : "";
-
-      const lockLine = (ADMIN_MODE && IS_ADMIN)
-        ? `
-          <div class="lock-row" data-id="${c.id}">
-            <label>
-              <input type="checkbox" data-field="lock_price" ${c.lock_price ? "checked" : ""}>
-              Lock F2F scrape
-            </label>
-            <button data-action="save-lock">Save Lock</button>
-          </div>
-        `
-        : "";
-
+    for(const c of cards){
       const el = document.createElement("div");
-      el.className = "card";
+      el.className = "card" + (c.not_buying ? " dim" : "");
+
+      const imgHTML = c.image_url
+        ? `<img src="${c.image_url}" loading="lazy" alt="${c.name}">`
+        : `<div class="noimg">${c.name}</div>`;
+
       el.innerHTML = `
-        <img src="${c.image||""}" loading="lazy">
+        ${c.not_buying ? `<div class="badge">NOT BUYING</div>` : ``}
+        ${imgHTML}
         <div class="price">
-          <div><strong>Market:</strong> ${marketLine}</div>
-          <div><strong>F2F buy:</strong> ${f2fBuyLine}</div>
-          <div class="meta">${updated}</div>
-          ${retailLine}
+          <div class="line"><span class="k">Market</span><span class="v">${moneyUSD(c.market_usd)}</span></div>
+          <div class="line"><span class="k">Our Buy</span><span class="v">${moneyUSD(c.our_buy_usd)}</span></div>
 
-          <!-- FULL ADMIN FUNCTIONALITY: OUR BUY + MANUAL F2F + (optional) MANUAL RETAIL -->
+          <div class="meta">
+            <div class="line">
+              <span class="k">F2F Buy</span>
+              <span class="v">NM ${moneyCAD(effectiveBuyNM(c))}</span>
+              <span class="k">/</span>
+              <span class="v">LP ${moneyCAD(effectiveBuyLP(c))}</span>
+            </div>
+            <div class="line">
+              <span class="k">F2F Retail</span>
+              <span class="v">NM ${moneyCAD(c.f2f_retail_nm_cad)}</span>
+              <span class="k">/</span>
+              <span class="v">LP ${moneyCAD(c.f2f_retail_lp_cad)}</span>
+            </div>
+          </div>
+
           <div class="admin-edit" data-id="${c.id}">
-            <input type="number" step="0.01" min="0" placeholder="OUR BUY (USD)"
-              data-field="our_buy" value="${Number.isFinite(c.our_buy)?c.our_buy:""}">
+            <input type="number" step="0.01" placeholder="OUR BUY USD"
+              data-field="our_buy_usd" value="${Number.isFinite(c.our_buy_usd)?c.our_buy_usd:""}">
+            <input type="number" step="0.01" placeholder="F2F NM Override CAD"
+              data-field="f2f_buy_nm_override_cad" value="${Number.isFinite(c.f2f_buy_nm_override_cad)?c.f2f_buy_nm_override_cad:""}">
+            <input type="number" step="0.01" placeholder="F2F LP Override CAD"
+              data-field="f2f_buy_lp_override_cad" value="${Number.isFinite(c.f2f_buy_lp_override_cad)?c.f2f_buy_lp_override_cad:""}">
 
-            <input type="number" step="0.01" min="0" placeholder="F2F BUY (CAD)"
-              data-field="f2f_buy_price" value="${Number.isFinite(c.f2f_buy_price)?c.f2f_buy_price:""}">
+            <label style="font-size:.8rem;opacity:.9;display:flex;align-items:center;gap:.35rem">
+              <input type="checkbox" data-field="not_buying" ${c.not_buying ? "checked" : ""}>
+              Not Buying
+            </label>
 
-            <input type="number" step="0.01" min="0" placeholder="F2F RETAIL (CAD)"
-              data-field="f2f_retail_price" value="${Number.isFinite(c.f2f_retail_price)?c.f2f_retail_price:""}">
+            <input class="wide" type="text" placeholder="F2F URL or handle override"
+              data-field="f2f_url_override" value="${c.f2f_url_override || ""}">
 
             <button data-action="save">Save</button>
           </div>
-
-          ${lockLine}
         </div>
       `;
+
       grid.appendChild(el);
-    });
+    }
 
     section.appendChild(pill);
     section.appendChild(grid);
     container.appendChild(section);
-
-  });
+  }
 
   document.querySelectorAll(".admin-edit").forEach(row=>{
     row.style.display = (ADMIN_MODE && IS_ADMIN) ? "flex" : "none";
   });
 
-  document.querySelectorAll(".lock-row").forEach(row=>{
-    row.style.display = (ADMIN_MODE && IS_ADMIN) ? "flex" : "none";
-  });
-
-  renderAdminKpis();
+  document.getElementById("adminUpload").style.display = (ADMIN_MODE && IS_ADMIN) ? "block" : "none";
+  document.getElementById("adminTools").style.display  = (ADMIN_MODE && IS_ADMIN) ? "block" : "none";
 }
 
-/* ================= LOAD ================= */
-
 async function loadData(){
-
   const sb = await waitForClient();
   if(!sb){
     document.getElementById("content").textContent = "Auth client not ready.";
     return;
   }
 
-  const { data: cats, error: catErr } = await sb.from("buylist_categories").select("*");
-  if(catErr){ document.getElementById("content").textContent = "Failed to load categories."; return; }
+  setStatus("Loading categories…");
+  const { data: cats, error: catErr } = await sb
+    .from("buylist_categories")
+    .select("id,name");
+
+  if(catErr){
+    document.getElementById("content").textContent = "Failed to load categories.";
+    return;
+  }
   CATEGORIES = cats || [];
 
-  const { data: cards, error: cardErr } = await sb.from("buylist_cards").select("*");
-  if(cardErr){ document.getElementById("content").textContent = "Failed to load cards."; return; }
+  setStatus("Loading cards…");
+  const { data: cards, error: cardErr } = await sb
+    .from("buylist_cards")
+    .select([
+      "id",
+      "name",
+      "category_id",
+      "market_usd",
+      "image_url",
+      "our_buy_usd",
+      "not_buying",
+      "f2f_last_updated",
+      "f2f_buy_nm_cad",
+      "f2f_buy_lp_cad",
+      "f2f_retail_nm_cad",
+      "f2f_retail_lp_cad",
+      "f2f_buy_nm_override_cad",
+      "f2f_buy_lp_override_cad",
+      "f2f_url_override"
+    ].join(","));
+
+  if(cardErr){
+    document.getElementById("content").textContent = "Failed to load cards.";
+    return;
+  }
   CARDS = cards || [];
 
-  await Promise.allSettled(CARDS.map(fetchMarket));
-
+  setStatus("Checking admin role…");
   const { data:{ session } } = await sb.auth.getSession();
   if(session){
     const { data: role } = await sb
@@ -530,164 +368,97 @@ async function loadData(){
     }
   }
 
+  setStatus(`Loaded ${CARDS.length} cards.`);
   render();
 }
 
-/* ================= CSV UPLOAD (KEEP CRITICAL) ================= */
-
-document.getElementById("uploadCsvBtn")
-.addEventListener("click", async () => {
-
-  const fileInput = document.getElementById("csvFile");
-  const status = document.getElementById("uploadStatus");
-
-  if(!fileInput.files.length){
-    status.textContent="Select a CSV file first.";
-    return;
-  }
-
-  const file = fileInput.files[0];
-  const text = await file.text();
-
-  status.textContent="Uploading...";
-
-  try{
-    const sb = await waitForClient();
-    if(!sb){ status.textContent="Auth not ready."; return; }
-
-    const { data:{ session } } = await sb.auth.getSession();
-    if(!session){ status.textContent="You must be signed in."; return; }
-
-    const res = await fetch(
-      `${sb.supabaseUrl}/functions/v1/import-buylist`,
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "Authorization":`Bearer ${session.access_token}`
-        },
-        body:JSON.stringify({ csv:text })
-      }
-    );
-
-    const json = await res.json().catch(()=> ({}));
-
-    if(res.ok){
-      status.textContent=`Imported ${json.imported} cards. Reloading…`;
-      await loadData();
-      status.textContent=`Imported ${json.imported} cards.`;
-    }else{
-      status.textContent="Error: " + JSON.stringify(json);
-    }
-
-  }catch(err){
-    status.textContent="Upload failed.";
-  }
-
-});
-
-/* ================= ADMIN: SAVE INLINE EDIT (RESTORED) ================= */
+/* ================= ADMIN: SAVE ================= */
 
 document.addEventListener("click", async (e) => {
   const t = e.target;
   if(!(t instanceof HTMLElement)) return;
+  if(t.dataset.action !== "save") return;
 
-  /* Save prices */
-  if(t.dataset.action === "save"){
-    const wrap = t.closest(".admin-edit");
-    if(!wrap) return;
+  const wrap = t.closest(".admin-edit");
+  if(!wrap) return;
 
-    const id = wrap.getAttribute("data-id");
-    if(!id) return;
+  const id = wrap.getAttribute("data-id");
+  if(!id) return;
 
-    const ourBuyEl = wrap.querySelector('input[data-field="our_buy"]');
-    const f2fBuyEl = wrap.querySelector('input[data-field="f2f_buy_price"]');
-    const f2fRetailEl = wrap.querySelector('input[data-field="f2f_retail_price"]');
+  const sb = await waitForClient();
+  if(!sb) return;
 
-    const our_buy = ourBuyEl && ourBuyEl.value !== "" ? parseFloat(ourBuyEl.value) : null;
-    const f2f_buy_price = f2fBuyEl && f2fBuyEl.value !== "" ? parseFloat(f2fBuyEl.value) : null;
-    const f2f_retail_price = f2fRetailEl && f2fRetailEl.value !== "" ? parseFloat(f2fRetailEl.value) : null;
+  const getNum = (sel) => {
+    const el = wrap.querySelector(sel);
+    if(!el) return null;
+    const v = el.value;
+    if(v === "" || v == null) return null;
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : null;
+  };
 
-    try{
-      const sb = await waitForClient();
-      if(!sb){ alert("Auth not ready."); return; }
+  const payload = {
+    our_buy_usd: getNum('[data-field="our_buy_usd"]'),
+    f2f_buy_nm_override_cad: getNum('[data-field="f2f_buy_nm_override_cad"]'),
+    f2f_buy_lp_override_cad: getNum('[data-field="f2f_buy_lp_override_cad"]'),
+    f2f_url_override: (wrap.querySelector('[data-field="f2f_url_override"]')?.value || "").trim() || null,
+    not_buying: !!wrap.querySelector('[data-field="not_buying"]')?.checked
+  };
 
-      const payload = {
-        our_buy,
-        f2f_buy_price,
-        f2f_retail_price,
-        f2f_last_updated: (f2f_buy_price || f2f_retail_price) ? mmddNow() : null
-      };
+  const { error } = await sb.from("buylist_cards").update(payload).eq("id", id);
+  if(error){ alert("Save failed: " + error.message); return; }
 
-      const { error } = await sb
-        .from("buylist_cards")
-        .update(payload)
-        .eq("id", id);
+  const c = CARDS.find(x => String(x.id) === String(id));
+  if(c) Object.assign(c, payload);
 
-      if(error){
-        alert("Save failed: " + error.message);
-        return;
-      }
-
-      const c = CARDS.find(x => String(x.id) === String(id));
-      if(c){
-        c.our_buy = our_buy;
-        c.f2f_buy_price = f2f_buy_price;
-        c.f2f_retail_price = f2f_retail_price;
-        c.f2f_last_updated = (f2f_buy_price || f2f_retail_price) ? mmddNow() : c.f2f_last_updated;
-      }
-
-      render();
-
-    }catch(err){
-      alert("Save failed.");
-    }
-
-    return;
-  }
-
-  /* Save lock */
-  if(t.dataset.action === "save-lock"){
-    const wrap = t.closest(".lock-row");
-    if(!wrap) return;
-
-    const id = wrap.getAttribute("data-id");
-    if(!id) return;
-
-    const chk = wrap.querySelector('input[data-field="lock_price"]');
-    const lock_price = !!(chk && chk.checked);
-
-    try{
-      const sb = await waitForClient();
-      if(!sb){ alert("Auth not ready."); return; }
-
-      const { error } = await sb
-        .from("buylist_cards")
-        .update({ lock_price })
-        .eq("id", id);
-
-      if(error){
-        alert("Lock save failed: " + error.message);
-        return;
-      }
-
-      const c = CARDS.find(x => String(x.id) === String(id));
-      if(c) c.lock_price = lock_price;
-
-      render();
-
-    }catch(err){
-      alert("Lock save failed.");
-    }
-
-    return;
-  }
+  render();
 });
 
-/* ================= ADMIN: REFRESH F2F (BATCH LOOP, STABLE) ================= */
+/* ================= CSV UPLOAD ================= */
+
+document.getElementById("uploadCsvBtn").addEventListener("click", async () => {
+  const file = document.getElementById("csvFile")?.files?.[0];
+  const status = document.getElementById("uploadStatus");
+  status.textContent = "";
+
+  if(!file){ status.textContent = "Select a CSV file first."; return; }
+
+  const sb = await waitForClient();
+  if(!sb){ status.textContent = "Auth not ready."; return; }
+
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ status.textContent = "You must be signed in."; return; }
+
+  status.textContent = "Reading file…";
+  const text = await file.text();
+
+  status.textContent = "Uploading & importing…";
+  const res = await fetch(`${sb.supabaseUrl}/functions/v1/import-buylist`,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":`Bearer ${session.access_token}`
+    },
+    body: JSON.stringify({ csv: text })
+  });
+
+  const json = await res.json().catch(()=>({}));
+
+  if(!res.ok){
+    status.textContent = "Import failed: " + (json?.error || json?.message || JSON.stringify(json));
+    return;
+  }
+
+  status.textContent = `Imported ${json.imported || 0} (skipped ${json.skipped || 0}). Reloading…`;
+  await loadData();
+  status.textContent = `Imported ${json.imported || 0} (skipped ${json.skipped || 0}).`;
+});
+
+/* ================= REFRESH F2F ================= */
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 async function refreshF2FPrices({ onlyBlank=false } = {}){
-
   const sb = await waitForClient();
   if(!sb) return;
 
@@ -702,103 +473,87 @@ async function refreshF2FPrices({ onlyBlank=false } = {}){
   const btnBlank = document.getElementById("refreshF2FBlankBtn");
 
   let offset = 0;
+  let loops = 0;
   let updatedTotal = 0;
   let processedTotal = 0;
-  let loops = 0;
+  let handlesTotal = 0;
+  let pricesTotal = 0;
+  let failuresTotal = 0;
 
-  // IMPORTANT: match your Edge function default batch (we tuned it smaller)
-  const batch_size = 15;
+  const batch_size = 25;
 
-  if(prog) prog.textContent = "Starting…";
-  if(btnAll) btnAll.disabled = true;
-  if(btnBlank) btnBlank.disabled = true;
+  btnAll.disabled = true;
+  btnBlank.disabled = true;
+  prog.textContent = "Starting…";
 
   try{
     while(true){
       loops++;
 
-      const res = await fetch(
-        `${sb.supabaseUrl}/functions/v1/${F2F_FN_NAME}`,
-        {
-          method:"POST",
-          headers:{
-            "Content-Type":"application/json",
-            "Authorization":`Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({ offset, only_blank: onlyBlank, batch_size })
-        }
-      );
+      const res = await fetch(`${sb.supabaseUrl}/functions/v1/${F2F_FN_NAME}`,{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":`Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ offset, only_blank: onlyBlank, batch_size })
+      });
 
-      const json = await res.json().catch(()=> ({}));
+      const json = await res.json().catch(()=>({}));
 
       if(!res.ok){
-        throw new Error(json?.error || "F2F refresh failed");
+        throw new Error(json?.error || "Refresh failed");
       }
 
-      updatedTotal += (json.updated || 0);
-      processedTotal += (json.processed || 0);
+      const processed = json.processed || 0;
+      const updated = json.updated || 0;
 
-      if(prog){
-        prog.textContent =
-          `Refreshing F2F… batch ${loops} · processed ${processedTotal} · updated ${updatedTotal}` +
-          (onlyBlank ? " · only blanks" : "");
-      }
+      processedTotal += processed;
+      updatedTotal += updated;
+      handlesTotal += (json.found_handles || 0);
+      pricesTotal += (json.found_prices || 0);
+      failuresTotal += (json.failures || 0);
 
-      // stop condition
-      if((json.processed || 0) === 0) break;
+      prog.textContent =
+        `Batch ${loops} · processed ${processedTotal} · updated ${updatedTotal}` +
+        ` · handles ${handlesTotal} · prices ${pricesTotal} · failures ${failuresTotal}` +
+        (onlyBlank ? " · only blanks" : "");
 
-      // IMPORTANT: if onlyBlank, offset paging is still OK because query uses range();
-      // blanks shrink over time, but that's fine; rerun Only Blanks if needed.
+      if(processed === 0) break;
+
       offset = json.next_offset ?? (offset + batch_size);
 
-      // small yield to keep UI responsive + be polite
-      await sleep(250);
-
-      // safety
+      await sleep(150);
       if(loops > 5000) break;
     }
 
-    if(prog) prog.textContent = `Done. Updated ${updatedTotal}. Reloading…`;
+    prog.textContent = `Done. Processed ${processedTotal}. Updated ${updatedTotal}. Reloading…`;
     await loadData();
-    if(prog) prog.textContent = `Done. Updated ${updatedTotal}.`;
+    prog.textContent = `Done. Processed ${processedTotal}. Updated ${updatedTotal}.`;
 
   }catch(err){
-    if(prog) prog.textContent = `Error: ${err.message || "failed"}`;
+    prog.textContent = `Error: ${err.message || "failed"}`;
   }finally{
-    if(btnAll) btnAll.disabled = false;
-    if(btnBlank) btnBlank.disabled = false;
+    btnAll.disabled = false;
+    btnBlank.disabled = false;
   }
 }
 
-/* ✅ BUTTON WIRING */
-document.getElementById("refreshF2FBtn")
-  ?.addEventListener("click", () => refreshF2FPrices({ onlyBlank:false }));
+document.getElementById("refreshF2FBtn").addEventListener("click", () => refreshF2FPrices({ onlyBlank:false }));
+document.getElementById("refreshF2FBlankBtn").addEventListener("click", () => refreshF2FPrices({ onlyBlank:true }));
 
-document.getElementById("refreshF2FBlankBtn")
-  ?.addEventListener("click", () => refreshF2FPrices({ onlyBlank:true }));
+document.getElementById("adminToggle")?.addEventListener("change", function(){
+  ADMIN_MODE = !!this.checked;
+  render();
+});
 
-/* ================= INIT ================= */
+document.getElementById("currencySelect").addEventListener("change", render);
 
 (async function(){
   await fetchFX();
+  setStatus("Initializing…");
   await loadData();
 })();
-
-document.getElementById("currencySelect")
-  .addEventListener("change", render);
-
-document.getElementById("adminToggle")
-?.addEventListener("change", function(){
-  ADMIN_MODE = !!this.checked;
-
-  document.getElementById("adminUpload").style.display =
-    (ADMIN_MODE && IS_ADMIN) ? "block" : "none";
-
-  document.getElementById("adminTools").style.display =
-    (ADMIN_MODE && IS_ADMIN) ? "block" : "none";
-
-  render();
-});
 </script>
 
 <script src="/js/bcpmm-shell.js"></script>

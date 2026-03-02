@@ -85,8 +85,15 @@
        AUTH
     ===================================================== */
 
+    const HOME_LINK_HTML = `<a href="https://magic1.ca" id="menu-home-link">Home</a><br>`;
+
+    // Not authenticated system at all
     if (!window.auth || !window.auth._client) {
-      slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
+      slot.innerHTML = `
+        <a href="/join.html">Sign in / Join</a><br>
+        ${HOME_LINK_HTML}
+      `;
+      attachHomeHandler(closeMenu);
       return;
     }
 
@@ -101,8 +108,13 @@
       console.warn("getUser failed:", err);
     }
 
+    // Logged out state
     if (!user) {
-      slot.innerHTML = `<a href="/join.html">Sign in / Join</a>`;
+      slot.innerHTML = `
+        <a href="/join.html">Sign in / Join</a><br>
+        ${HOME_LINK_HTML}
+      `;
+      attachHomeHandler(closeMenu);
       return;
     }
 
@@ -159,7 +171,7 @@
     }
 
     /* =====================================================
-       BUILD MENU
+       BUILD MENU (AUTHENTICATED)
     ===================================================== */
 
     let adminBlock = "";
@@ -170,7 +182,6 @@
     let playerBlock = "";
 
     if (approvedSlug) {
-      // 🔥 CORRECTED PATH
       playerBlock = `
         <a href="/leaguetracker/player.html?player=${encodeURIComponent(approvedSlug)}">
           View My Player Page
@@ -193,8 +204,11 @@
       ${playerBlock}
 
       <a href="/profile-edit.html">Edit Profile</a><br>
+      ${HOME_LINK_HTML}
       <a href="#" id="logout-link">Sign out</a>
     `;
+
+    attachHomeHandler(closeMenu);
 
     /* =====================================================
        LOGOUT
@@ -212,6 +226,19 @@
         }
         window.location.reload();
       };
+    }
+
+    /* =====================================================
+       Helper
+    ===================================================== */
+
+    function attachHomeHandler(closeMenuFn) {
+      const homeLink = document.getElementById("menu-home-link");
+      if (homeLink) {
+        homeLink.onclick = () => {
+          closeMenuFn();
+        };
+      }
     }
 
   }

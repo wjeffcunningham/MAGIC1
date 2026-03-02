@@ -2,44 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Edit Profile · Magic1</title>
+<title>Admin · Magic1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="stylesheet" href="/css/bcpmm-shell.css" />
 
 <style>
 body {
-  max-width: 760px;
+  max-width: 1100px;
   margin: 3rem auto;
   padding: 0 1.5rem;
   font-family: system-ui, sans-serif;
 }
-.section { margin-bottom: 2.5rem; }
-input, select, textarea, button {
-  width: 100%;
-  padding: 0.65rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.95rem;
-}
-textarea { min-height: 100px; resize: vertical; }
-button { font-weight: 600; cursor: pointer; }
-.status { margin-top: 0.75rem; font-weight: 600; }
-.verified { color: #2e7d32; }
-.pending  { color: #c0392b; }
-.note {
-  font-size: 0.85rem;
-  opacity: 0.75;
-  margin-bottom: 0.5rem;
-}
-.avatar-preview {
-  width: 140px;
-  height: 140px;
-  border-radius: 14px;
+.logo { width: 120px; margin-bottom: 1.5rem; }
+table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+th, td { padding: 0.7rem; border-bottom: 1px solid #ddd; vertical-align: top; }
+button { padding: 0.5rem 0.9rem; cursor: pointer; font-weight: 600; }
+.section { margin-top: 3rem; }
+.small { font-size: 0.85rem; opacity: 0.75; }
+.avatar-small {
+  width: 60px;
+  height: 60px;
   object-fit: cover;
-  display: block;
-  margin: 0.5rem 0 1rem;
-  border: 2px solid var(--border);
-  background: var(--surface);
+  border-radius: 10px;
+  border: 1px solid #ccc;
 }
 </style>
 </head>
@@ -48,47 +33,21 @@ button { font-weight: 600; cursor: pointer; }
 
 <div id="global-menu-root"></div>
 
-<h1>Edit Profile</h1>
-<p><strong>Email:</strong> <span id="user-email"></span></p>
+<img src="/assets/BCPMMsvg.png" class="logo">
+<h1>Admin Panel</h1>
 
 <div class="section">
-  <h3>Public Profile</h3>
-
-  <label>Avatar</label>
-  <img id="avatar-preview" class="avatar-preview" src="" alt="Avatar preview">
-  <input type="file" id="avatar-input" accept="image/*">
-
-  <label>Alias *</label>
-  <input type="text" id="alias">
-
-  <label>Quote</label>
-  <textarea id="quote"></textarea>
-
-  <label>Local Store</label>
-  <select id="store">
-    <option value="">Select store</option>
-    <option value="Stronghold Games">Stronghold Games</option>
-    <option value="Connections">Connections</option>
-    <option value="Other">Other</option>
-  </select>
-
-  <button id="save-profile">Save Profile</button>
-  <div id="profile-status" class="status"></div>
-</div>
-
-<div class="section">
-  <h3>Profile Verification</h3>
-
-  <div id="verification-status" class="status"></div>
-
-  <select id="claim-slug" style="display:none;"></select>
-  <button id="request-verification" style="display:none;">
-    Request Verification
-  </button>
-
-  <div class="note">
-    Verification links your account to your tournament profile.
-  </div>
+  <h2>Pending Claims</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Slug</th>
+        <th>User Details</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="pending-table"></tbody>
+  </table>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -98,189 +57,111 @@ button { font-weight: 600; cursor: pointer; }
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
 
-  if (!window.auth || !window.auth._client) return;
+  const supabase = window.auth?._client;
+  if (!supabase) return;
 
-  const supabase = window.auth._client;
-
-  // ✅ STABLE SESSION CHECK
-  const session = await window.auth.getSession();
-
-  if (!session) {
+  const { data: sessionWrap } = await supabase.auth.getSession();
+  if (!sessionWrap?.session) {
     window.location.href = "/join.html";
     return;
   }
 
-  const user = session.user;
-  document.getElementById("user-email").textContent = user.email;
+  const user = sessionWrap.session.user;
 
-  /* =====================================================
-     LOAD PROFILE
-  ===================================================== */
-
-  const { data: profile } = await supabase
-    .from("public_users")
-    .select("alias, quote, local_store, avatar_url")
-    .eq("id", user.id)
+  const { data: role } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("role", "admin")
     .maybeSingle();
 
-  if (profile) {
-    document.getElementById("alias").value = profile.alias || "";
-    document.getElementById("quote").value = profile.quote || "";
-    document.getElementById("store").value = profile.local_store || "";
-    if (profile.avatar_url) {
-      document.getElementById("avatar-preview").src = profile.avatar_url;
-    }
+  if (!role) {
+    window.location.href = "/";
+    return;
   }
 
-  /* =====================================================
-     AVATAR UPLOAD
-  ===================================================== */
+  async function loadPending() {
 
-  document.getElementById("avatar-input").addEventListener("change", async (e) => {
-
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const ext = file.name.split(".").pop();
-    const filePath = `${user.id}/avatar.${ext}`;
-
-    const { error } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true });
-
-    if (error) return alert(error.message);
-
-    const { data: publicUrlData } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(filePath);
-
-    const publicUrl = publicUrlData.publicUrl;
-
-    await supabase
-      .from("public_users")
-      .update({ avatar_url: publicUrl })
-      .eq("id", user.id);
-
-    document.getElementById("avatar-preview").src = publicUrl;
-  });
-
-  /* =====================================================
-     SAVE PROFILE
-  ===================================================== */
-
-  document.getElementById("save-profile").onclick = async () => {
-
-    const alias = document.getElementById("alias").value.trim();
-    const quote = document.getElementById("quote").value.trim();
-    const store = document.getElementById("store").value;
-    const box = document.getElementById("profile-status");
-
-    if (!alias) {
-      box.textContent = "Alias is required.";
-      box.className = "status pending";
-      return;
-    }
-
-    const { error } = await supabase
-      .from("public_users")
-      .upsert({
-        id: user.id,
-        alias,
-        quote,
-        local_store: store
-      });
-
-    if (error) {
-      box.textContent = error.message;
-      box.className = "status pending";
-    } else {
-      box.textContent = "Profile saved ✓";
-      box.className = "status verified";
-    }
-  };
-
-  /* =====================================================
-     VERIFICATION LOGIC
-  ===================================================== */
-
-  const statusBox = document.getElementById("verification-status");
-  const requestBtn = document.getElementById("request-verification");
-  const claimSelect = document.getElementById("claim-slug");
-
-  const { data: players } = await supabase
-    .from("tournament_players")
-    .select("slug")
-    .order("slug");
-
-  if (players?.length) {
-    claimSelect.innerHTML = "";
-    players.forEach(p => {
-      if (!p.slug) return;
-      claimSelect.add(new Option(p.slug, p.slug));
-    });
-  }
-
-  const { data: claims } = await supabase
-    .from("player_claims")
-    .select("slug, status")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1);
-
-  const existing = claims?.[0];
-
-  if (existing?.status === "approved") {
-    statusBox.textContent = `Verified ✓ (${existing.slug})`;
-    statusBox.className = "status verified";
-  }
-  else if (existing?.status === "pending") {
-    statusBox.textContent = `Verification pending for: ${existing.slug}`;
-    statusBox.className = "status pending";
-  }
-  else {
-    statusBox.textContent = "Not verified";
-    statusBox.className = "status pending";
-    claimSelect.style.display = "block";
-    requestBtn.style.display = "block";
-  }
-
-  requestBtn.onclick = async () => {
-
-    const selectedSlug = claimSelect.value;
-
-    if (!selectedSlug) {
-      statusBox.textContent = "Select a tournament profile first.";
-      return;
-    }
-
-    const { data: existingPending } = await supabase
+    const { data: claims } = await supabase
       .from("player_claims")
-      .select("id")
-      .eq("user_id", user.id)
+      .select("id, slug, user_id, created_at")
       .eq("status", "pending")
-      .maybeSingle();
+      .order("created_at", { ascending: true });
 
-    if (existingPending) {
-      statusBox.textContent = "Verification already pending.";
+    const table = document.getElementById("pending-table");
+    table.innerHTML = "";
+
+    if (!claims?.length) {
+      table.innerHTML = `<tr><td colspan="3">No pending claims.</td></tr>`;
       return;
     }
 
-    const { error } = await supabase
-      .from("player_claims")
-      .insert({
-        user_id: user.id,
-        slug: selectedSlug,
-        status: "pending"
+    for (const claim of claims) {
+
+      /* Fetch public profile */
+      const { data: profile } = await supabase
+        .from("public_users")
+        .select("alias, quote, local_store, avatar_url, created_at")
+        .eq("id", claim.user_id)
+        .maybeSingle();
+
+      /* Fetch email (admin RPC must allow this) */
+      const { data: userInfo } = await supabase.rpc("admin_get_user_by_id", {
+        uid: claim.user_id
       });
 
-    if (error) {
-      statusBox.textContent = error.message;
-    } else {
-      statusBox.textContent = `Verification requested for: ${selectedSlug}`;
-      requestBtn.style.display = "none";
-      claimSelect.style.display = "none";
+      const email = userInfo?.email || "Unknown";
+
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>
+          <strong>${claim.slug}</strong><br>
+          <span class="small">Requested ${new Date(claim.created_at).toLocaleString()}</span>
+        </td>
+
+        <td>
+          ${profile?.avatar_url ? `<img src="${profile.avatar_url}" class="avatar-small"><br>` : ""}
+          <strong>Email:</strong> ${email}<br>
+          <strong>User ID:</strong> ${claim.user_id}<br>
+          <strong>Alias:</strong> ${profile?.alias || "—"}<br>
+          <strong>Store:</strong> ${profile?.local_store || "—"}<br>
+          <strong>Quote:</strong> ${profile?.quote || "—"}<br>
+          <strong>Account Created:</strong> ${profile?.created_at ? new Date(profile.created_at).toLocaleString() : "—"}
+        </td>
+
+        <td>
+          <button data-id="${claim.id}" data-action="approve">Approve</button>
+          <button data-id="${claim.id}" data-action="deny">Deny</button>
+        </td>
+      `;
+
+      table.appendChild(row);
     }
-  };
+  }
+
+  await loadPending();
+
+  document.addEventListener("click", async (e) => {
+    if (!e.target.dataset.action) return;
+
+    const id = e.target.dataset.id;
+    const action = e.target.dataset.action;
+
+    if (action === "approve") {
+      await supabase.from("player_claims")
+        .update({ status: "approved" })
+        .eq("id", id);
+    }
+
+    if (action === "deny") {
+      await supabase.from("player_claims")
+        .delete()
+        .eq("id", id);
+    }
+
+    await loadPending();
+  });
 
 });
 </script>
