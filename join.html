@@ -31,39 +31,54 @@ body {
 }
 
 /* =====================================================
-   Animated Slogan (Stable + Smooth)
+   ORIGINAL METAL GLINT SWEEP (RECOVERED)
 ===================================================== */
 
 .slogan {
   font-size: 2rem;
   font-weight: 900;
   font-style: italic;
+  letter-spacing: 0.06em;
+  position: relative;
+  display: inline-block;
   margin-bottom: 1.6rem;
-
-  background: linear-gradient(
-    270deg,
-    #d4af37,
-    #ffffff,
-    #d4af37,
-    #c0392b
-  );
-
-  background-size: 600% 600%;
-  animation: sloganShimmer 12s ease-in-out infinite;
-
-  -webkit-background-clip: text;
-  background-clip: text;
-
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  overflow: hidden;
 }
 
-@keyframes sloganShimmer {
-  0%   { background-position: 0% 50%; }
-  25%  { background-position: 50% 50%; }
-  50%  { background-position: 100% 50%; }
-  75%  { background-position: 50% 50%; }
-  100% { background-position: 0% 50%; }
+.slogan::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255,255,255,0.6) 30%,
+    rgba(255,255,255,0.95) 45%,
+    rgba(255,255,255,1) 50%,
+    rgba(255,255,255,0.95) 55%,
+    rgba(255,255,255,0.6) 70%,
+    rgba(120,180,255,0.4) 90%,
+    transparent 100%
+  );
+
+  transform: skewX(-18deg);
+  animation: sunGlint 4.5s cubic-bezier(.55,0,.15,1) infinite;
+  opacity: 0;
+}
+
+@keyframes sunGlint {
+  0%   { left: -120%; opacity: 0; }
+  10%  { opacity: 0; }
+  20%  { left: -100%; opacity: 0.85; }
+  40%  { left: -20%; opacity: 1; }
+  55%  { left: 120%; opacity: 1; }
+  70%  { opacity: 0.6; }
+  85%  { opacity: 0; }
+  100% { left: 120%; opacity: 0; }
 }
 
 /* =====================================================
