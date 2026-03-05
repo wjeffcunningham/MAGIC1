@@ -124,6 +124,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("alias").value = profile.alias || "";
     document.getElementById("quote").value = profile.quote || "";
     document.getElementById("store").value = profile.local_store || "";
+
     if (profile.avatar_url) {
       document.getElementById("avatar-preview").src = profile.avatar_url;
     }
@@ -133,15 +134,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("avatar-input").addEventListener("change", async (e) => {
 
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    const ext = file.name.split(".").pop();
+    const mime = (file.type || "").toLowerCase();
+
+    let ext = "png";
+    if (mime === "image/jpeg" || mime === "image/jpg") ext = "jpg";
+    else if (mime === "image/png") ext = "png";
+    else if (mime === "image/webp") ext = "webp";
+    else {
+      alert("Please upload JPG, PNG, or WebP.");
+      return;
+    }
+
     const filePath = `${user.id}/avatar.${ext}`;
 
     const { error } = await supabase.storage
       .from("avatars")
-      .upload(filePath, file, { upsert: true });
+      .upload(filePath, file, { upsert: true, contentType: mime });
 
     if (error) return alert(error.message);
 
@@ -156,7 +167,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       .update({ avatar_url: publicUrl })
       .eq("id", user.id);
 
-    document.getElementById("avatar-preview").src = publicUrl;
+    document.getElementById("avatar-preview").src =
+      publicUrl + "?t=" + Date.now();
   });
 
   /* ================= SAVE PROFILE ================= */
@@ -203,7 +215,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     "ghost-empire"
   ];
 
-  // Fetch approved claims (requires SQL policy you will add)
   const { data: approvedClaims } = await supabase
     .from("player_claims")
     .select("slug")
@@ -213,13 +224,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     (approvedClaims || []).map(c => c.slug)
   );
 
-  // Fetch all tournament players
   const { data: players } = await supabase
     .from("tournament_players")
     .select("slug")
     .order("slug");
 
   if (players?.length) {
+
     claimSelect.innerHTML = "";
 
     players
@@ -250,10 +261,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     statusBox.className = "status pending";
   }
   else {
+
     statusBox.textContent = "Not verified";
     statusBox.className = "status pending";
-    claimSelect.style.display = "block";
-    requestBtn.style.display = "block";
+
+    if (claimSelect.options.length > 0) {
+      claimSelect.style.display = "block";
+      requestBtn.style.display = "block";
+    }
   }
 
   requestBtn.onclick = async () => {
