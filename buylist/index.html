@@ -18,56 +18,31 @@ header h1{margin:0;font-size:2rem;}
 header p{margin:.25rem 0 0;opacity:.7;font-size:.9rem;}
 .kpi-row{opacity:.85;font-size:.9rem;margin-top:.35rem;line-height:1.35}
 .status-row{margin-top:.4rem;font-size:.85rem;opacity:.85}
-
 .controls{margin:1.5rem 0 2rem;display:flex;gap:2rem;flex-wrap:wrap;align-items:center;}
-
-.admin-tools,
-.admin-upload{
-  margin:0 0 2rem;
-  padding:1rem;
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:rgba(255,255,255,0.04);
-  display:none;
-}
-.admin-tools .row{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.6rem;align-items:center;}
-.admin-tools button,
-.admin-upload button{padding:.55rem .9rem;}
-.progress{margin-top:.6rem;font-size:.85rem;opacity:.9;line-height:1.35}
-.small-note{font-size:.85rem;opacity:.75;margin-top:.4rem;line-height:1.35}
-
 .section{margin-bottom:4.5rem;}
 .category-pill{
   display:inline-block;padding:.55rem 1.25rem;border-radius:999px;
   border:1px solid var(--border);
   font-weight:800;font-size:.95rem;margin-bottom:1.3rem;
 }
-
 .grid{display:grid;grid-template-columns:repeat(8,1fr);gap:0.9rem 0.7rem;}
 @media (max-width:1400px){.grid{grid-template-columns:repeat(6,1fr);}}
 @media (max-width:1000px){.grid{grid-template-columns:repeat(4,1fr);}}
 @media (max-width:650px){.grid{grid-template-columns:repeat(2,1fr);}}
-
 .card{text-align:center;position:relative;}
 .card img{width:100%;border-radius:8px;box-shadow:0 6px 14px rgba(0,0,0,.45);}
 .noimg{
-  width:100%;
-  aspect-ratio:0.714; /* approx mtg card */
-  border-radius:8px;
+  width:100%;aspect-ratio:0.714;border-radius:8px;
   border:1px solid var(--border);
   background:rgba(255,255,255,0.04);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:.75rem;
-  font-size:.85rem;
-  opacity:.8;
+  display:flex;align-items:center;justify-content:center;
+  padding:.75rem;font-size:.85rem;opacity:.8;
 }
 .badge{
   position:absolute;top:8px;left:8px;
   background:rgba(0,0,0,.75);
-  padding:.25rem .5rem;
-  border-radius:10px;font-size:.72rem;font-weight:700;
+  padding:.25rem .5rem;border-radius:10px;
+  font-size:.72rem;font-weight:700;
 }
 .price{margin-top:.35rem;font-size:.8rem;display:flex;flex-direction:column;gap:.18rem;}
 .line{display:flex;justify-content:center;gap:.35rem;flex-wrap:wrap;}
@@ -75,9 +50,9 @@ header p{margin:.25rem 0 0;opacity:.7;font-size:.9rem;}
 .v{font-weight:700}
 .meta{opacity:.78;font-size:.78rem;line-height:1.25}
 .dim{opacity:.5;filter:saturate(.6);}
-
 .admin-edit{
-  margin-top:.45rem;display:none;gap:.35rem;flex-wrap:wrap;justify-content:center;
+  margin-top:.45rem;display:none;gap:.35rem;
+  flex-wrap:wrap;justify-content:center;
 }
 .admin-edit input{
   width:150px;padding:.35rem .5rem;border-radius:8px;
@@ -91,7 +66,6 @@ header p{margin:.25rem 0 0;opacity:.7;font-size:.9rem;}
 
 <body>
 <div id="global-menu-root"></div>
-
 <div class="buylist-wrap">
 
 <header>
@@ -119,26 +93,6 @@ header p{margin:.25rem 0 0;opacity:.7;font-size:.9rem;}
   <span id="fxLabel"></span>
 </div>
 
-<div class="admin-upload" id="adminUpload">
-  <strong>Upload Buylist CSV</strong><br>
-  <input type="file" id="csvFile" accept=".csv"><br>
-  <button id="uploadCsvBtn">Upload & Replace Buylist</button>
-  <div id="uploadStatus" class="progress"></div>
-  <div class="small-note">
-    This replaces the full buylist. Status stays here; no more “did it run?” guessing.
-  </div>
-</div>
-
-<div class="admin-tools" id="adminTools">
-  <strong>Admin Tools</strong>
-  <div class="row">
-    <button id="refreshF2FBtn">Refresh F2F (All)</button>
-    <button id="refreshF2FBlankBtn">Refresh F2F (Only Blanks)</button>
-    <span class="small-note" style="margin:0">Runs in batches. Keep tab open.</span>
-  </div>
-  <div class="progress" id="f2fProgress"></div>
-</div>
-
 <div id="content">Loading…</div>
 </div>
 
@@ -149,113 +103,84 @@ let FX = 1.35;
 let IS_ADMIN = false;
 let ADMIN_MODE = false;
 
-const F2F_FN_NAME = "refresh-f2f-prices";
-
-function setStatus(msg){
-  const el = document.getElementById("statusRow");
-  if(el) el.textContent = msg || "";
+function currency(){
+  return document.getElementById("currencySelect").value;
 }
-
-async function waitForClient(){
-  for(let i=0;i<120;i++){
-    if(window.auth && window.auth._client) return window.auth._client;
-    await new Promise(r=>setTimeout(r,75));
-  }
-  return null;
-}
-
-function currency(){ return document.getElementById("currencySelect").value; }
 
 function moneyUSD(n){
-  if(!Number.isFinite(n) || n<=0) return "—";
-  if(currency()==="USD") return "US$"+Number(n).toFixed(2);
-  return "CA$"+(Number(n)*FX).toFixed(2);
+  if(!Number.isFinite(n)||n<=0) return "—";
+  return currency()==="USD"
+    ? "US$"+n.toFixed(2)
+    : "CA$"+(n*FX).toFixed(2);
 }
 
 function moneyCAD(n){
-  if(!Number.isFinite(n) || n<=0) return "—";
-  if(currency()==="CAD") return "CA$"+Number(n).toFixed(2);
-  return "US$"+(Number(n)/FX).toFixed(2);
+  if(!Number.isFinite(n)||n<=0) return "—";
+  return currency()==="CAD"
+    ? "CA$"+n.toFixed(2)
+    : "US$"+(n/FX).toFixed(2);
 }
 
 async function fetchFX(){
   try{
-    const r = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=CAD");
-    const d = await r.json();
-    if(d?.rates?.CAD) FX = d.rates.CAD;
+    const r=await fetch("https://api.exchangerate.host/latest?base=USD&symbols=CAD");
+    const d=await r.json();
+    if(d?.rates?.CAD) FX=d.rates.CAD;
   }catch(e){}
-  document.getElementById("fxLabel").textContent = `1 USD = ${FX.toFixed(3)} CAD`;
+  document.getElementById("fxLabel").textContent=
+    `1 USD = ${FX.toFixed(3)} CAD`;
 }
 
 function effectiveBuyNM(c){
-  return Number.isFinite(c.f2f_buy_nm_override_cad) ? c.f2f_buy_nm_override_cad : c.f2f_buy_nm_cad;
+  return Number.isFinite(c.f2f_buy_nm_override_cad)
+    ? c.f2f_buy_nm_override_cad
+    : c.f2f_buy_nm_cad;
 }
+
 function effectiveBuyLP(c){
-  return Number.isFinite(c.f2f_buy_lp_override_cad) ? c.f2f_buy_lp_override_cad : c.f2f_buy_lp_cad;
-}
-
-function computeLastUpdated(){
-  const vals = CARDS.map(c => c.f2f_last_updated).filter(Boolean).sort();
-  return vals.length ? vals[vals.length-1] : "—";
-}
-
-function renderGlobalKpi(){
-  const notBuying = CARDS.filter(c => !!c.not_buying).length;
-  const blanks = CARDS.filter(c => !(Number.isFinite(c.f2f_buy_nm_cad) && c.f2f_buy_nm_cad>0)).length;
-  document.getElementById("globalKpi").textContent =
-    `Last F2F update: ${computeLastUpdated()} · Not buying: ${notBuying} · F2F blanks: ${blanks}/${CARDS.length}`;
-}
-
-function sortCategories(cats){
-  const valid = (cats||[]).filter(c => String(c.name||"").toLowerCase() !== "maybeboard");
-  valid.sort((a,b)=>{
-    if(a.name === "Reserved List Picks") return -1;
-    if(b.name === "Reserved List Picks") return 1;
-    return String(a.name).localeCompare(String(b.name));
-  });
-  return valid;
+  return Number.isFinite(c.f2f_buy_lp_override_cad)
+    ? c.f2f_buy_lp_override_cad
+    : c.f2f_buy_lp_cad;
 }
 
 function render(){
-  const container = document.getElementById("content");
-  container.innerHTML = "";
+  const container=document.getElementById("content");
+  container.innerHTML="";
 
-  renderGlobalKpi();
-
-  const cats = sortCategories(CATEGORIES);
+  const cats=CATEGORIES.sort((a,b)=>a.name.localeCompare(b.name));
 
   for(const cat of cats){
-    const cards = CARDS
-      .filter(c => c.category_id === cat.id)
+    const cards=CARDS.filter(c=>c.category_id===cat.id)
       .sort((a,b)=>(b.market_usd||0)-(a.market_usd||0));
-
     if(!cards.length) continue;
 
-    const section = document.createElement("div");
-    section.className = "section";
+    const section=document.createElement("div");
+    section.className="section";
 
-    const pill = document.createElement("div");
-    pill.className = "category-pill";
-    pill.textContent = cat.name;
+    section.innerHTML=`<div class="category-pill">${cat.name}</div>`;
 
-    const grid = document.createElement("div");
-    grid.className = "grid";
+    const grid=document.createElement("div");
+    grid.className="grid";
 
     for(const c of cards){
-      const el = document.createElement("div");
-      el.className = "card" + (c.not_buying ? " dim" : "");
+      const displayBuy =
+        Number.isFinite(c.our_buy_usd)
+          ? (currency()==="USD"
+              ? c.our_buy_usd
+              : c.our_buy_usd*FX)
+          : "";
 
-      const imgHTML = c.image_url
-        ? `<img src="${c.image_url}" loading="lazy" alt="${c.name}">`
-        : `<div class="noimg">${c.name}</div>`;
+      const el=document.createElement("div");
+      el.className="card"+(c.not_buying?" dim":"");
 
-      el.innerHTML = `
-        ${c.not_buying ? `<div class="badge">NOT BUYING</div>` : ``}
-        ${imgHTML}
+      el.innerHTML=`
+        ${c.not_buying?`<div class="badge">NOT BUYING</div>`:""}
+        ${c.image_url
+          ? `<img src="${c.image_url}" loading="lazy">`
+          : `<div class="noimg">${c.name}</div>`}
         <div class="price">
           <div class="line"><span class="k">Market</span><span class="v">${moneyUSD(c.market_usd)}</span></div>
           <div class="line"><span class="k">Our Buy</span><span class="v">${moneyUSD(c.our_buy_usd)}</span></div>
-
           <div class="meta">
             <div class="line">
               <span class="k">F2F Buy</span>
@@ -263,29 +188,35 @@ function render(){
               <span class="k">/</span>
               <span class="v">LP ${moneyCAD(effectiveBuyLP(c))}</span>
             </div>
-            <div class="line">
-              <span class="k">F2F Retail</span>
-              <span class="v">NM ${moneyCAD(c.f2f_retail_nm_cad)}</span>
-              <span class="k">/</span>
-              <span class="v">LP ${moneyCAD(c.f2f_retail_lp_cad)}</span>
-            </div>
           </div>
 
           <div class="admin-edit" data-id="${c.id}">
-            <input type="number" step="0.01" placeholder="OUR BUY USD"
-              data-field="our_buy_usd" value="${Number.isFinite(c.our_buy_usd)?c.our_buy_usd:""}">
-            <input type="number" step="0.01" placeholder="F2F NM Override CAD"
-              data-field="f2f_buy_nm_override_cad" value="${Number.isFinite(c.f2f_buy_nm_override_cad)?c.f2f_buy_nm_override_cad:""}">
-            <input type="number" step="0.01" placeholder="F2F LP Override CAD"
-              data-field="f2f_buy_lp_override_cad" value="${Number.isFinite(c.f2f_buy_lp_override_cad)?c.f2f_buy_lp_override_cad:""}">
+            <input type="number" step="0.01"
+              placeholder="OUR BUY (${currency()})"
+              data-field="our_buy_display"
+              value="${displayBuy}">
 
-            <label style="font-size:.8rem;opacity:.9;display:flex;align-items:center;gap:.35rem">
-              <input type="checkbox" data-field="not_buying" ${c.not_buying ? "checked" : ""}>
+            <input type="number" step="0.01"
+              placeholder="F2F NM Override CAD"
+              data-field="f2f_buy_nm_override_cad"
+              value="${c.f2f_buy_nm_override_cad||""}">
+
+            <input type="number" step="0.01"
+              placeholder="F2F LP Override CAD"
+              data-field="f2f_buy_lp_override_cad"
+              value="${c.f2f_buy_lp_override_cad||""}">
+
+            <label>
+              <input type="checkbox"
+                data-field="not_buying"
+                ${c.not_buying?"checked":""}>
               Not Buying
             </label>
 
-            <input class="wide" type="text" placeholder="F2F URL or handle override"
-              data-field="f2f_url_override" value="${c.f2f_url_override || ""}">
+            <input class="wide" type="text"
+              placeholder="F2F handle or URL override"
+              data-field="f2f_url_override"
+              value="${c.f2f_url_override||""}">
 
             <button data-action="save">Save</button>
           </div>
@@ -295,263 +226,99 @@ function render(){
       grid.appendChild(el);
     }
 
-    section.appendChild(pill);
     section.appendChild(grid);
     container.appendChild(section);
   }
 
-  document.querySelectorAll(".admin-edit").forEach(row=>{
-    row.style.display = (ADMIN_MODE && IS_ADMIN) ? "flex" : "none";
-  });
-
-  document.getElementById("adminUpload").style.display = (ADMIN_MODE && IS_ADMIN) ? "block" : "none";
-  document.getElementById("adminTools").style.display  = (ADMIN_MODE && IS_ADMIN) ? "block" : "none";
+  document.querySelectorAll(".admin-edit")
+    .forEach(el=>el.style.display=
+      (ADMIN_MODE&&IS_ADMIN)?"flex":"none");
 }
 
 async function loadData(){
-  const sb = await waitForClient();
-  if(!sb){
-    document.getElementById("content").textContent = "Auth client not ready.";
-    return;
-  }
+  const sb=window.auth._client;
 
-  setStatus("Loading categories…");
-  const { data: cats, error: catErr } = await sb
+  const {data:cats}=await sb
     .from("buylist_categories")
     .select("id,name");
 
-  if(catErr){
-    document.getElementById("content").textContent = "Failed to load categories.";
-    return;
-  }
-  CATEGORIES = cats || [];
-
-  setStatus("Loading cards…");
-  const { data: cards, error: cardErr } = await sb
+  const {data:cards}=await sb
     .from("buylist_cards")
-    .select([
-      "id",
-      "name",
-      "category_id",
-      "market_usd",
-      "image_url",
-      "our_buy_usd",
-      "not_buying",
-      "f2f_last_updated",
-      "f2f_buy_nm_cad",
-      "f2f_buy_lp_cad",
-      "f2f_retail_nm_cad",
-      "f2f_retail_lp_cad",
-      "f2f_buy_nm_override_cad",
-      "f2f_buy_lp_override_cad",
-      "f2f_url_override"
-    ].join(","));
+    .select("*");
 
-  if(cardErr){
-    document.getElementById("content").textContent = "Failed to load cards.";
-    return;
-  }
-  CARDS = cards || [];
+  CATEGORIES=cats||[];
+  CARDS=cards||[];
 
-  setStatus("Checking admin role…");
-  const { data:{ session } } = await sb.auth.getSession();
+  const {data:{session}}=await sb.auth.getSession();
   if(session){
-    const { data: role } = await sb
+    const {data:role}=await sb
       .from("user_roles")
       .select("role")
-      .eq("user_id", session.user.id)
+      .eq("user_id",session.user.id)
       .single();
-
-    if(role?.role === "admin"){
-      IS_ADMIN = true;
-      document.getElementById("adminToggleWrap").style.display = "inline-block";
+    if(role?.role==="admin"){
+      IS_ADMIN=true;
+      document.getElementById("adminToggleWrap")
+        .style.display="inline-block";
     }
   }
 
-  setStatus(`Loaded ${CARDS.length} cards.`);
   render();
 }
 
-/* ================= ADMIN: SAVE ================= */
-
-document.addEventListener("click", async (e) => {
-  const t = e.target;
+document.addEventListener("click",async(e)=>{
+  const t=e.target;
   if(!(t instanceof HTMLElement)) return;
-  if(t.dataset.action !== "save") return;
+  if(t.dataset.action!=="save") return;
 
-  const wrap = t.closest(".admin-edit");
-  if(!wrap) return;
+  const wrap=t.closest(".admin-edit");
+  const id=wrap.getAttribute("data-id");
+  const sb=window.auth._client;
 
-  const id = wrap.getAttribute("data-id");
-  if(!id) return;
-
-  const sb = await waitForClient();
-  if(!sb) return;
-
-  const getNum = (sel) => {
-    const el = wrap.querySelector(sel);
-    if(!el) return null;
-    const v = el.value;
-    if(v === "" || v == null) return null;
-    const n = parseFloat(v);
-    return Number.isFinite(n) ? n : null;
+  const getNum=sel=>{
+    const el=wrap.querySelector(sel);
+    if(!el||el.value==="") return null;
+    const n=parseFloat(el.value);
+    return Number.isFinite(n)?n:null;
   };
 
-  const payload = {
-    our_buy_usd: getNum('[data-field="our_buy_usd"]'),
-    f2f_buy_nm_override_cad: getNum('[data-field="f2f_buy_nm_override_cad"]'),
-    f2f_buy_lp_override_cad: getNum('[data-field="f2f_buy_lp_override_cad"]'),
-    f2f_url_override: (wrap.querySelector('[data-field="f2f_url_override"]')?.value || "").trim() || null,
-    not_buying: !!wrap.querySelector('[data-field="not_buying"]')?.checked
+  const displayBuy=getNum('[data-field="our_buy_display"]');
+  const ourBuyUSD=
+    Number.isFinite(displayBuy)
+      ? (currency()==="USD"
+          ? displayBuy
+          : displayBuy/FX)
+      : null;
+
+  const payload={
+    our_buy_usd:ourBuyUSD,
+    f2f_buy_nm_override_cad:getNum('[data-field="f2f_buy_nm_override_cad"]'),
+    f2f_buy_lp_override_cad:getNum('[data-field="f2f_buy_lp_override_cad"]'),
+    f2f_url_override:
+      wrap.querySelector('[data-field="f2f_url_override"]')?.value.trim()||null,
+    not_buying:
+      !!wrap.querySelector('[data-field="not_buying"]')?.checked
   };
 
-  const { error } = await sb.from("buylist_cards").update(payload).eq("id", id);
-  if(error){ alert("Save failed: " + error.message); return; }
+  await sb.from("buylist_cards")
+    .update(payload)
+    .eq("id",id);
 
-  const c = CARDS.find(x => String(x.id) === String(id));
-  if(c) Object.assign(c, payload);
-
+  Object.assign(CARDS.find(c=>c.id==id),payload);
   render();
 });
 
-/* ================= CSV UPLOAD ================= */
-
-document.getElementById("uploadCsvBtn").addEventListener("click", async () => {
-  const file = document.getElementById("csvFile")?.files?.[0];
-  const status = document.getElementById("uploadStatus");
-  status.textContent = "";
-
-  if(!file){ status.textContent = "Select a CSV file first."; return; }
-
-  const sb = await waitForClient();
-  if(!sb){ status.textContent = "Auth not ready."; return; }
-
-  const { data:{ session } } = await sb.auth.getSession();
-  if(!session){ status.textContent = "You must be signed in."; return; }
-
-  status.textContent = "Reading file…";
-  const text = await file.text();
-
-  status.textContent = "Uploading & importing…";
-  const res = await fetch(`${sb.supabaseUrl}/functions/v1/import-buylist`,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "Authorization":`Bearer ${session.access_token}`
-    },
-    body: JSON.stringify({ csv: text })
-  });
-
-  const json = await res.json().catch(()=>({}));
-
-  if(!res.ok){
-    status.textContent = "Import failed: " + (json?.error || json?.message || JSON.stringify(json));
-    return;
-  }
-
-  status.textContent = `Imported ${json.imported || 0} (skipped ${json.skipped || 0}). Reloading…`;
-  await loadData();
-  status.textContent = `Imported ${json.imported || 0} (skipped ${json.skipped || 0}).`;
+document.getElementById("adminToggle")
+  ?.addEventListener("change",function(){
+    ADMIN_MODE=this.checked;
+    render();
 });
 
-/* ================= REFRESH F2F ================= */
-
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
-async function refreshF2FPrices({ onlyBlank=false } = {}){
-  const sb = await waitForClient();
-  if(!sb) return;
-
-  const { data:{ session } } = await sb.auth.getSession();
-  if(!session){
-    document.getElementById("f2fProgress").textContent = "You must be signed in.";
-    return;
-  }
-
-  const prog = document.getElementById("f2fProgress");
-  const btnAll = document.getElementById("refreshF2FBtn");
-  const btnBlank = document.getElementById("refreshF2FBlankBtn");
-
-  let offset = 0;
-  let loops = 0;
-  let updatedTotal = 0;
-  let processedTotal = 0;
-  let handlesTotal = 0;
-  let pricesTotal = 0;
-  let failuresTotal = 0;
-
-  const batch_size = 25;
-
-  btnAll.disabled = true;
-  btnBlank.disabled = true;
-  prog.textContent = "Starting…";
-
-  try{
-    while(true){
-      loops++;
-
-      const res = await fetch(`${sb.supabaseUrl}/functions/v1/${F2F_FN_NAME}`,{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "Authorization":`Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ offset, only_blank: onlyBlank, batch_size })
-      });
-
-      const json = await res.json().catch(()=>({}));
-
-      if(!res.ok){
-        throw new Error(json?.error || "Refresh failed");
-      }
-
-      const processed = json.processed || 0;
-      const updated = json.updated || 0;
-
-      processedTotal += processed;
-      updatedTotal += updated;
-      handlesTotal += (json.found_handles || 0);
-      pricesTotal += (json.found_prices || 0);
-      failuresTotal += (json.failures || 0);
-
-      prog.textContent =
-        `Batch ${loops} · processed ${processedTotal} · updated ${updatedTotal}` +
-        ` · handles ${handlesTotal} · prices ${pricesTotal} · failures ${failuresTotal}` +
-        (onlyBlank ? " · only blanks" : "");
-
-      if(processed === 0) break;
-
-      offset = json.next_offset ?? (offset + batch_size);
-
-      await sleep(150);
-      if(loops > 5000) break;
-    }
-
-    prog.textContent = `Done. Processed ${processedTotal}. Updated ${updatedTotal}. Reloading…`;
-    await loadData();
-    prog.textContent = `Done. Processed ${processedTotal}. Updated ${updatedTotal}.`;
-
-  }catch(err){
-    prog.textContent = `Error: ${err.message || "failed"}`;
-  }finally{
-    btnAll.disabled = false;
-    btnBlank.disabled = false;
-  }
-}
-
-document.getElementById("refreshF2FBtn").addEventListener("click", () => refreshF2FPrices({ onlyBlank:false }));
-document.getElementById("refreshF2FBlankBtn").addEventListener("click", () => refreshF2FPrices({ onlyBlank:true }));
-
-document.getElementById("adminToggle")?.addEventListener("change", function(){
-  ADMIN_MODE = !!this.checked;
-  render();
-});
-
-document.getElementById("currencySelect").addEventListener("change", render);
+document.getElementById("currencySelect")
+  .addEventListener("change",render);
 
 (async function(){
   await fetchFX();
-  setStatus("Initializing…");
   await loadData();
 })();
 </script>

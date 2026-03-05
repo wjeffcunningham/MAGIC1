@@ -1,15 +1,5 @@
 /* =========================================================
-   League Tracker – PRODUCTION STABLE BUILD (FULLPASTE)
-   Fixes:
-   - Pagination restored (robust + clamped)
-   - BCPMM checkbox toggles "championship-only" points (bcpmm_only_points)
-   - Gold (no pulse): uses body.bcpmm-only + CSS
-   - BCPMM totals rely on leaderboard_points (already includes Top 8 bonuses)
-   - League tab uses month_standings (January) instead of full player list
-     (fallbacks to leaderboard_league if month_standings missing)
-   - Elo tab restored (leaderboard_elo)
-   - No duplicate pager injection
-   - Flames computed from matches (NOT Elo deltas)
+   League Tracker – PRODUCTION STABLE BUILD
 ========================================================= */
 
 function getClient() {
@@ -25,15 +15,18 @@ let tabs;
 
 let currentMode = "bcpmm";
 const PAGE_SIZE = 16;
+
 let pageIndexByMode = { bcpmm: 0, league: 0, elo: 0 };
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function () {
+
   ladderBody = document.getElementById("ladder-body");
   tabs = document.querySelectorAll(".tabs button");
 
   ensureBcpmmCheckbox();
   bindTabs();
   loadLeaderboard();
+
 });
 
 /* =========================================================
@@ -44,7 +37,9 @@ function slugToName(slug) {
   return (slug || "")
     .split("-")
     .filter(Boolean)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .map(function (w) {
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    })
     .join(" ");
 }
 
@@ -53,6 +48,52 @@ function fireIcons(n) {
   if (n === 2) return " 🔥";
   return "";
 }
+
+/* =========================================================
+   BCPMM Toggle
+========================================================= */
+
+function ensureBcpmmCheckbox() {
+
+  const box = document.getElementById("bcpmm-filter");
+  const cb = document.getElementById("bcpmm-only");
+
+  if (!box || !cb) return;
+
+  if (!cb.dataset.bound) {
+
+    cb.addEventListener("change", function () {
+
+      pageIndexByMode.bcpmm = 0;
+
+      if (currentMode === "bcpmm") loadLeaderboard();
+
+    });
+
+    cb.dataset.bound = "true";
+
+  }
+
+}
+
+function isBcpmmOnly() {
+  const cb = document.getElementById("bcpmm-only");
+  return !!(cb && cb.checked);
+}
+
+function showBcpmmCheckbox(show) {
+
+  const box = document.getElementById("bcpmm-filter");
+
+  if (!box) return;
+
+  box.style.display = show ? "block" : "none";
+
+}
+
+/* =========================================================
+   STREAK MAP
+========================================================= */
 
 function safeTime(x) {
   if (!x) return 0;
@@ -65,123 +106,96 @@ function numOrNegInf(x) {
   return Number.isFinite(n) ? n : -Infinity;
 }
 
-/* =========================================================
-   BCPMM Toggle
-========================================================= */
+function seriesPriority(series) {
 
-function ensureBcpmmCheckbox() {
-  const box = document.getElementById("bcpmm-filter");
-  const cb = document.getElementById("bcpmm-only");
-  if (!box || !cb) return;
+  const s = (series || "").toLowerCase();
 
-  if (!cb.dataset.bound) {
-    cb.addEventListener("change", () => {
-      pageIndexByMode[currentMode] = 0;
-      loadLeaderboard();
-    });
-    cb.dataset.bound = "true";
-  }
+  if (s === "bcwl") return 0;
+  if (s === "bcpmm") return 1;
+  if (s === "shg") return 2;
+  if (s === "connections") return 3;
+
+  return 9;
+
 }
 
-function isBcpmmOnly() {
-  const cb = document.getElementById("bcpmm-only");
-  return !!(cb && cb.checked);
-}
-
-function showBcpmmCheckbox(show) {
-  const box = document.getElementById("bcpmm-filter");
-  if (!box) return;
-  box.style.display = show ? "block" : "none";
-}
-
-/* =========================================================
-   Data Helpers
-========================================================= */
-
-async function getSlugToIdMap() {
-  const supabase = getClient();
-  if (!supabase) return {};
-
-  const { data, error } = await supabase
-    .from("tournament_players")
-    .select("id, slug");
-
-  if (error || !data) return {};
-
-  const map = {};
-  data.forEach(r => (map[r.slug] = r.id));
-  return map;
-}
-
-/* Trophy = BCPMM champion bonus >= 200 (from event_points_breakdown) */
-async function getTrophyMap() {
-  const supabase = getClient();
-  if (!supabase) return {};
-
-  const { data, error } = await supabase
-    .from("event_points_breakdown")
-    .select("player, bonus_points, series");
-
-  if (error || !data) return {};
-
-  const map = {};
-  data.forEach(row => {
-    if ((row.series || "").toUpperCase() === "BCPMM" && Number(row.bonus_points) >= 200) {
-      map[row.player] = true;
-    }
-  });
-  return map;
-}
-
-/* Flames from consecutive WINS (Swiss + Elim + Byes) */
 async function getStreakMap() {
+
   const supabase = getClient();
   if (!supabase) return {};
 
-  const { data: matches, error } = await supabase
+  const { data: rows } = await supabase
     .from("matches")
-    .select("player_a, player_b, winner, match_date, round_number, match_index, created_at");
-
-  if (error || !matches) return {};
+    .select(`
+      player_a,
+      player_b,
+      winner,
+      match_date,
+      round_number,
+      match_index,
+      created_at,
+      is_elimination,
+      events:event_id (
+        event_date,
+        series
+      )
+    `);
 
   const grouped = {};
 
-  matches.forEach(m => {
+  (rows || []).forEach(function (m) {
 
-    // Register A
     if (m.player_a) {
+
       if (!grouped[m.player_a]) grouped[m.player_a] = [];
       grouped[m.player_a].push(m);
+
     }
 
-    // Register B
     if (m.player_b) {
+
       if (!grouped[m.player_b]) grouped[m.player_b] = [];
       grouped[m.player_b].push(m);
+
     }
+
   });
 
   const streakMap = {};
 
-  for (const [slug, rows] of Object.entries(grouped)) {
+  for (const slug in grouped) {
 
-    const sorted = [...rows].sort((a, b) => {
+    const list = grouped[slug];
 
-      const ad = safeTime(a.match_date);
-      const bd = safeTime(b.match_date);
+    const sorted = list.slice().sort(function (a, b) {
+
+      const ad = safeTime(a.match_date) || safeTime(a.events?.event_date);
+      const bd = safeTime(b.match_date) || safeTime(b.events?.event_date);
+
       if (bd !== ad) return bd - ad;
 
-      const ac = safeTime(a.created_at);
-      const bc = safeTime(b.created_at);
-      if (bc !== ac) return bc - ac;
+      const as = seriesPriority(a.events?.series);
+      const bs = seriesPriority(b.events?.series);
+
+      if (bs !== as) return bs - as;
+
+      const ae = a.is_elimination ? 1 : 0;
+      const be = b.is_elimination ? 1 : 0;
+
+      if (be !== ae) return be - ae;
 
       const ar = numOrNegInf(a.round_number);
       const br = numOrNegInf(b.round_number);
+
       if (br !== ar) return br - ar;
 
       const am = numOrNegInf(a.match_index);
       const bm = numOrNegInf(b.match_index);
-      return bm - am;
+
+      if (bm !== am) return bm - am;
+
+      return safeTime(b.created_at) - safeTime(a.created_at);
+
     });
 
     let streak = 0;
@@ -190,44 +204,49 @@ async function getStreakMap() {
 
       if (!m.winner) break;
 
-      // Bye case (player_b null and winner = player_a)
       if (!m.player_b && m.winner === slug) {
         streak++;
         continue;
       }
 
-      if (m.winner === slug) {
-        streak++;
-      } else {
-        break;
-      }
+      if (m.winner === slug) streak++;
+      else break;
+
     }
 
     streakMap[slug] = streak;
+
   }
 
   return streakMap;
+
 }
+
 /* =========================================================
-   Pagination (stable + clamped)
+   Pagination
 ========================================================= */
 
 function renderPager(totalRows) {
+
   let pager = document.getElementById("ladder-pager");
 
   if (!pager) {
+
     pager = document.createElement("div");
     pager.id = "ladder-pager";
-    const table = ladderBody?.closest("table");
-    if (table) table.insertAdjacentElement("afterend", pager);
-  }
 
-  if (!pager) return;
+    const table = ladderBody?.closest("table");
+
+    if (table) table.insertAdjacentElement("afterend", pager);
+
+  }
 
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
 
   let pageIndex = pageIndexByMode[currentMode] || 0;
+
   pageIndex = Math.max(0, Math.min(pageIndex, totalPages - 1));
+
   pageIndexByMode[currentMode] = pageIndex;
 
   pager.innerHTML = `
@@ -236,60 +255,65 @@ function renderPager(totalRows) {
     <button id="next-page" ${pageIndex >= totalPages - 1 ? "disabled" : ""}>»</button>
   `;
 
-  document.getElementById("prev-page")?.addEventListener("click", () => {
-    pageIndexByMode[currentMode] = Math.max(0, (pageIndexByMode[currentMode] || 0) - 1);
-    loadLeaderboard();
-  });
+  const prevBtn = document.getElementById("prev-page");
 
-  document.getElementById("next-page")?.addEventListener("click", () => {
-    pageIndexByMode[currentMode] = (pageIndexByMode[currentMode] || 0) + 1;
-    loadLeaderboard();
-  });
+  if (prevBtn) {
+
+    prevBtn.onclick = function () {
+
+      pageIndexByMode[currentMode]--;
+      loadLeaderboard();
+
+    };
+
+  }
+
+  const nextBtn = document.getElementById("next-page");
+
+  if (nextBtn) {
+
+    nextBtn.onclick = function () {
+
+      pageIndexByMode[currentMode]++;
+      loadLeaderboard();
+
+    };
+
+  }
+
 }
 
-async function loadLatestMonthStandings(supabase) {
-  // Step 1: find the most recent month_index
-  const { data: months, error: monthErr } = await supabase
-    .from("month_standings")
+/* =========================================================
+   League tab
+========================================================= */
+
+async function loadLatestLeagueStandings(supabase) {
+
+  const { data: latest } = await supabase
+    .from("leaderboard_league")
     .select("month_index")
     .order("month_index", { ascending: false })
     .limit(1);
 
-  if (!monthErr && months && months.length) {
-    const latestIndex = months[0].month_index;
+  if (!latest || !latest.length) return [];
 
-    const { data, error } = await supabase
-      .from("month_standings")
-      .select("player,points,wins,losses")
-      .eq("month_index", latestIndex)
-      .order("points", { ascending: false });
+  const monthIndex = latest[0].month_index;
 
-    if (!error && data && data.length) {
-      return data.map(r => {
-        const w = Number(r.wins ?? NaN);
-        const l = Number(r.losses ?? NaN);
-        const isTwoOh = Number.isFinite(w) && Number.isFinite(l) && w === 2 && l === 0;
-
-        return {
-          player: r.player,
-          points: Number(r.points || 0),
-          miniTrophy: isTwoOh ? " 🏆" : ""
-        };
-      });
-    }
-  }
-
-  // Fallback → leaderboard_league
-  const { data: fallback } = await supabase
+  const { data: rows } = await supabase
     .from("leaderboard_league")
     .select("player,points")
+    .eq("month_index", monthIndex)
     .order("points", { ascending: false });
 
-  return (fallback || []).map(r => ({
-    player: r.player,
-    points: Number(r.points || 0),
-    miniTrophy: ""
-  }));
+  return (rows || []).map(function (r) {
+
+    return {
+      player: r.player,
+      value: Number(r.points || 0)
+    };
+
+  });
+
 }
 
 /* =========================================================
@@ -297,118 +321,117 @@ async function loadLatestMonthStandings(supabase) {
 ========================================================= */
 
 async function loadLeaderboard() {
+
   const supabase = getClient();
+
   if (!supabase || !ladderBody) return;
 
-  const [slugToId, streakMap, trophyMap] = await Promise.all([
-    getSlugToIdMap(),
-    getStreakMap(),
-    getTrophyMap()
-  ]);
+  showBcpmmCheckbox(currentMode === "bcpmm");
+
+  const streakMap = await getStreakMap();
 
   let rows = [];
-  let championshipOnly = false;
 
   if (currentMode === "elo") {
-    showBcpmmCheckbox(false);
-    document.body.classList.remove("bcpmm-only");
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("leaderboard_elo")
       .select("player,rating")
       .order("rating", { ascending: false });
 
-    if (error) {
-      console.error("Elo load error:", error);
-      rows = [];
-    } else {
-      rows = (data || []).map(r => ({
+    rows = (data || []).map(function (r) {
+
+      return {
         player: r.player,
-        value: Number(r.rating || 0),
-        extra: ""
-      }));
-    }
+        value: Number(r.rating || 0)
+      };
+
+    });
+
   }
 
-else if (currentMode === "league") {
-  showBcpmmCheckbox(false);
-  document.body.classList.remove("bcpmm-only");
+  else if (currentMode === "league") {
 
-  const { data, error } = await supabase
-    .from("leaderboard_league")
-    .select("player,points")
-    .order("points", { ascending: false });
+    rows = await loadLatestLeagueStandings(supabase);
 
-  if (error) {
-    console.error("League load error:", error);
-    rows = [];
-  } else {
-    rows = (data || []).map(r => ({
-      player: r.player,
-      value: Number(r.points || 0),
-      extra: ""
-    }));
   }
-}
 
   else {
-    championshipOnly = isBcpmmOnly();
-    showBcpmmCheckbox(true);
-    document.body.classList.toggle("bcpmm-only", championshipOnly);
 
-    const { data, error } = await supabase
+    const only = isBcpmmOnly();
+
+    const { data } = await supabase
       .from("leaderboard_points")
-      .select("player,total_points,bcpmm_only_points")
-      .order(championshipOnly ? "bcpmm_only_points" : "total_points", { ascending: false });
+      .select("player,total_points,bcpmm_only_points,is_bcpmm_champion")
+      .order(only ? "bcpmm_only_points" : "total_points", { ascending: false });
 
-    if (error) {
-      console.error("Points load error:", error);
-      rows = [];
-    } else {
-      rows = (data || []).map(r => ({
+    rows = (data || []).map(function (r) {
+
+      return {
         player: r.player,
-        value: Number(championshipOnly ? (r.bcpmm_only_points || 0) : (r.total_points || 0)),
-        extra: ""
-      }));
-    }
+        total: Number(r.total_points || 0),
+        bcpmm: Number(r.bcpmm_only_points || 0),
+        champion: r.is_bcpmm_champion === true
+      };
+
+    });
+
+    if (only) rows = rows.filter(function (r) { return r.bcpmm > 0; });
+
+    rows = rows.map(function (r) {
+
+      return {
+        player: r.player,
+        value: only ? r.bcpmm : r.total,
+        champion: r.champion
+      };
+
+    });
+
   }
 
-  renderRows(rows, slugToId, streakMap, trophyMap, championshipOnly);
+  renderRows(rows, streakMap);
   renderPager(rows.length);
+
 }
 
 /* =========================================================
    Render Rows
 ========================================================= */
 
-function renderRows(rows, slugToId, streakMap, trophyMap, championshipOnly) {
+function renderRows(rows, streakMap) {
+
   ladderBody.innerHTML = "";
 
   const pageIndex = pageIndexByMode[currentMode] || 0;
   const start = pageIndex * PAGE_SIZE;
-  const slice = rows.slice(start, start + PAGE_SIZE);
 
-  slice.forEach((row, i) => {
+  rows.slice(start, start + PAGE_SIZE).forEach(function (row, i) {
+
     const rank = start + i + 1;
 
     const streak = streakMap[row.player] || 0;
     const fire = fireIcons(streak);
 
-    const championTrophy = trophyMap[row.player] ? " 🏆" : "";
-    const leagueMini = row.extra || "";
+    const cup = row.champion ? " 🏆" : "";
 
-    ladderBody.insertAdjacentHTML("beforeend", `
+    ladderBody.insertAdjacentHTML(
+      "beforeend",
+      `
       <tr>
         <td class="rank">${rank}</td>
         <td class="player">
           <a href="./player.html?player=${encodeURIComponent(row.player)}">
             ${slugToName(row.player)}
-          </a>${championTrophy}${leagueMini}${fire}
+          </a>${cup}${fire}
         </td>
         <td class="num">${row.value}</td>
       </tr>
-    `);
+      `
+    );
+
   });
+
 }
 
 /* =========================================================
@@ -416,15 +439,26 @@ function renderRows(rows, slugToId, streakMap, trophyMap, championshipOnly) {
 ========================================================= */
 
 function bindTabs() {
+
   if (!tabs) return;
 
-  tabs.forEach(btn => {
-    btn.addEventListener("click", () => {
-      tabs.forEach(b => b.classList.remove("active"));
+  tabs.forEach(function (btn) {
+
+    btn.addEventListener("click", function () {
+
+      tabs.forEach(function (b) {
+        b.classList.remove("active");
+      });
+
       btn.classList.add("active");
+
       currentMode = btn.dataset.mode;
       pageIndexByMode[currentMode] = 0;
+
       loadLeaderboard();
+
     });
+
   });
+
 }
