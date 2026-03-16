@@ -28,16 +28,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   const supabase = getClient();
   if (!supabase) return;
 
-  const slug = getPlayerParam();
-  if (!slug) return;
+const rawSlug = getPlayerParam();
+if (!rawSlug) return;
 
-  const nameEl = document.getElementById("player-name");
-  if (nameEl) nameEl.textContent = slugToName(slug);
+/* resolve merge redirects */
+const { data: redirect } = await supabase
+  .from("player_slug_redirects")
+  .select("to_slug")
+  .eq("from_slug", rawSlug)
+  .maybeSingle();
 
-  await injectVerifiedProfile(supabase, slug);
-  await loadPoints(supabase, slug);
-  await loadMatchHistory(supabase, slug);
+const slug = redirect?.to_slug || rawSlug;
 
+const nameEl = document.getElementById("player-name");
+if (nameEl) nameEl.textContent = slugToName(slug);
+
+await injectVerifiedProfile(supabase, slug);
+await loadPoints(supabase, slug);
+await loadMatchHistory(supabase, slug);
 });
 
 /* =========================================================

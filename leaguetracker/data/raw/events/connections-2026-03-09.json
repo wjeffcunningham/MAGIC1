@@ -1,0 +1,69 @@
+{
+  "event": {
+    "name": "Connections Premodern",
+    "series": "Connections",
+    "format": "Premodern",
+    "date": "2026-03-09",
+    "rounds_total": 3
+  },
+
+  "rounds": [
+
+    {
+      "round": 1,
+      "matches": [
+        { "playerA": "arlen-wiesenthal", "playerB": "george-mcnally", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "caitlyn-bethune", "playerB": "jahmaal-k", "gamesA": 1, "gamesB": 1 },
+        { "playerA": "chad-g", "playerB": "lucine-windy", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "elliot-fisher", "playerB": "luna-lawrence", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "james-onions", "playerB": "nat-h", "gamesA": 1, "gamesB": 1 },
+        { "playerA": "jeff-cunningham", "playerB": "rachael-hernandez", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "malcolm-bradbury", "playerB": "dakota-blais", "gamesA": 0, "gamesB": 2 }
+      ]
+    },
+
+    {
+      "round": 2,
+      "matches": [
+        { "playerA": "elliot-fisher", "playerB": "jeff-cunningham", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "dakota-blais", "playerB": "lucine-windy", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "george-mcnally", "playerB": "caitlyn-bethune", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "jahmaal-k", "playerB": "nat-h", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "james-onions", "playerB": "rachael-hernandez", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "luna-lawrence", "playerB": "malcolm-bradbury", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "chad-g", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 0 }
+      ]
+    },
+
+    {
+      "round": 3,
+      "matches": [
+        { "playerA": "elliot-fisher", "playerB": "dakota-blais", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "caitlyn-bethune", "playerB": "james-onions", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "chad-g", "playerB": "jeff-cunningham", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "george-mcnally", "playerB": "luna-lawrence", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "jahmaal-k", "playerB": "lucine-windy", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "nat-h", "playerB": "rachael-hernandez", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "arlen-wiesenthal", "playerB": "malcolm-bradbury", "gamesA": 0, "gamesB": 2 }
+      ]
+    }
+
+  ],
+
+  "standings": [
+    { "rank": 1, "player": "dakota-blais", "match_points": 9 },
+    { "rank": 2, "player": "james-onions", "match_points": 7 },
+    { "rank": 3, "player": "jahmaal-k", "match_points": 7 },
+    { "rank": 4, "player": "elliot-fisher", "match_points": 6 },
+    { "rank": 5, "player": "jeff-cunningham", "match_points": 6 },
+    { "rank": 6, "player": "luna-lawrence", "match_points": 6 },
+    { "rank": 7, "player": "caitlyn-bethune", "match_points": 4 },
+    { "rank": 8, "player": "nat-h", "match_points": 4 },
+    { "rank": 9, "player": "malcolm-bradbury", "match_points": 3 },
+    { "rank": 10, "player": "lucine-windy", "match_points": 3 },
+    { "rank": 11, "player": "george-mcnally", "match_points": 3 },
+    { "rank": 12, "player": "chad-g", "match_points": 3 },
+    { "rank": 13, "player": "rachael-hernandez", "match_points": 0 },
+    { "rank": 14, "player": "arlen-wiesenthal", "match_points": 0 }
+  ]
+}
