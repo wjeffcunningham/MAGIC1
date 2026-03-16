@@ -1,7 +1,7 @@
 {
   "event": {
     "id": "stronghold-2026-03-15",
-    "name": "MSG Premodern Tournament",
+    "name": "Stronghold Monthly (March)",
     "series": "SHG",
     "format": "Premodern",
     "date": "2026-03-15",
@@ -72,12 +72,12 @@
     {
       "round": 5,
       "matches": [
-        { "table": 1, "playerA": "caitlyn-bethune", "playerB": "wilson-mok", "gamesA": 0, "gamesB": 2 },
+        { "table": 1, "playerA": "caitlyn-bethune", "playerB": "wilson-mok", "gamesA": 0, "gamesB": 0, "void": true },
         { "table": 2, "playerA": "kevin-mittertreiner", "playerB": "ryan-perez", "gamesA": 0, "gamesB": 2 },
         { "table": 3, "playerA": "patrick-oneill", "playerB": "jahmaal-k", "gamesA": 0, "gamesB": 2 },
-        { "table": 4, "playerA": "jeff-fung", "playerB": "enrique-angulo", "gamesA": 0, "gamesB": 0 },
+        { "table": 4, "playerA": "jeff-fung", "playerB": "enrique-angulo", "gamesA": 0, "gamesB": 0, "void": true },
         { "table": 5, "playerA": "brenden", "playerB": "jeff-cunningham", "gamesA": 1, "gamesB": 2 },
-        { "table": 6, "playerA": "rachael-hernandez", "playerB": "arlen-wiesenthal", "gamesA": 0, "gamesB": 2 },
+        { "table": 6, "playerA": "rachael-hernandez", "playerB": "arlen-wiesenthal", "gamesA": 0, "gamesB": 0, "void": true },
         { "table": 7, "playerA": "malcolm-bradbury", "playerB": "alex-kim", "gamesA": 1, "gamesB": 2 },
         { "table": 8, "playerA": "elliot-fisher", "playerB": "darren", "gamesA": 0, "gamesB": 2 },
         { "table": 9, "playerA": "clint", "playerB": "romulo", "gamesA": 2, "gamesB": 0 }

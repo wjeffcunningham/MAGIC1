@@ -301,7 +301,11 @@ async function loadLatestLeagueStandings(supabase) {
 
   const { data: rows } = await supabase
     .from("leaderboard_league")
-    .select("player,points")
+    .select(`
+      player,
+      points,
+      leaderboard_points!inner(is_bcpmm_champion)
+    `)
     .eq("month_index", monthIndex)
     .order("points", { ascending: false });
 
@@ -309,7 +313,8 @@ async function loadLatestLeagueStandings(supabase) {
 
     return {
       player: r.player,
-      value: Number(r.points || 0)
+      value: Number(r.points || 0),
+      champion: r.leaderboard_points?.is_bcpmm_champion === true
     };
 
   });
