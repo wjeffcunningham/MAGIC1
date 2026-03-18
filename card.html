@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BCPMM II Card</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.card {
+  width: 1080px;
+  height: 1350px;
+  position: relative;
+  font-family: 'Alegreya', serif;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* ===== BACKGROUND ===== */
+
+.bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.78)),
+    url('./assets/brew1.jpeg') center/cover no-repeat;
+}
+
+.bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url('./assets/brew3.jpeg') center/cover no-repeat;
+  opacity: 0.22;
+  mix-blend-mode: lighten;
+}
+
+/* ===== FILM GRAIN / TEXTURE ===== */
+
+.texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+
+  background-image:
+    radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px);
+
+  background-size: 3px 3px, 4px 4px;
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+}
+
+/* subtle vignette */
+.vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%);
+}
+
+/* ===== SIDE CARDS ===== */
+
+.side-card {
+  position: absolute;
+  width: 220px;
+  border-radius: 10px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.65);
+  z-index: 2;
+  opacity: 0.95;
+}
+
+.card-left {
+  bottom: 120px;
+  left: 40px;
+  transform: rotate(-18deg);
+}
+
+.card-right {
+  bottom: 120px;
+  right: 40px;
+  transform: rotate(18deg);
+}
+
+/* ===== CONTENT ===== */
+
+.content {
+  position: relative;
+  z-index: 4;
+  padding: 70px 80px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* ===== HEADER ===== */
+
+.header {
+  text-align: center;
+}
+
+.logo {
+  width: 90px;
+  margin-bottom: 20px;
+  opacity: 0.95;
+}
+
+.title {
+  font-size: 56px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.subtitle {
+  font-size: 58px;
+  font-weight: 800;
+  color: #e53935;
+  margin-top: 14px;
+  line-height: 1.1;
+}
+
+/* ===== DETAILS ===== */
+
+.details {
+  text-align: center;
+  font-size: 38px;
+  line-height: 1.5;
+}
+
+.location {
+  margin-top: 20px;
+  font-size: 34px;
+  opacity: 0.92;
+}
+
+/* ===== INFO ===== */
+
+.info {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.cap {
+  margin-top: 10px;
+  font-size: 28px;
+  opacity: 0.85;
+}
+
+/* ===== CTA ===== */
+
+.cta {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.cta-box {
+  display: inline-block;
+  padding: 20px 40px;
+  border: 2px solid rgba(255,255,255,0.9);
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: rgba(255,255,255,0.03);
+}
+
+/* ===== FOOTER ===== */
+
+.footer {
+  text-align: center;
+  font-size: 28px;
+  opacity: 0.8;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <div class="bg"></div>
+
+  <!-- side cards -->
+  <img class="side-card card-left"
+    src="https://api.scryfall.com/cards/6e2ffcb9-e94f-4799-ae42-797091df2e09?format=image&version=normal">
+
+  <img class="side-card card-right"
+    src="https://api.scryfall.com/cards/a7a8b6b8-b95f-4014-b17a-a6d44d965995?format=image&version=normal">
+
+  <!-- texture layers -->
+  <div class="vignette"></div>
+  <div class="texture"></div>
+
+  <div class="content">
+
+    <!-- TOP -->
+    <div class="header">
+      <img src="./assets/BCPMM.svg" class="logo">
+      <div class="title">B.C. Premodern Masters II</div>
+      <div class="subtitle">The Vancouver Premodern Brewhouse Brawl</div>
+    </div>
+
+    <!-- MIDDLE -->
+    <div class="details">
+      April 11, 2026 · 11:00 AM
+
+      <div class="location">
+        Strange Fellows Brewing<br>
+        Vancouver, BC
+      </div>
+
+      <div class="info">
+        Premodern Constructed<br>
+        5 Rounds · Top 8 · $40 Entry
+      </div>
+
+      <div class="cap">
+        64 Player Cap · BC Cancer Charity Event
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta">
+      <div class="cta-box">
+        SIGN UP NOW
+      </div>
+    </div>
+
+    <!-- FOOT -->
+    <div class="footer">
+      magic1.ca
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
