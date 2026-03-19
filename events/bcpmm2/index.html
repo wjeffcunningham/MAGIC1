@@ -429,6 +429,42 @@ h1 {
   overflow: visible; /* important */
 }
 
+/* ===== MOBILE FIX FOR PRIZE HEADER CARDS ===== */
+
+@media (max-width: 600px) {
+
+  .prize-header-cards {
+    height: 40px;
+    margin-bottom: 0;
+  }
+
+  .prize-header-cards img {
+    width: 80px;
+    opacity: 0.7;
+  }
+
+  .prize-header-cards .left {
+    left: 6%;
+    top: -10px;
+    transform: rotate(-18deg);
+  }
+
+  .prize-header-cards .right {
+    right: 6%;
+    top: -10px;
+    transform: rotate(18deg);
+  }
+
+}
+
+/* HARD CUT — very small screens */
+
+@media (max-width: 480px) {
+  .prize-header-cards {
+    display: none;
+  }
+}
+
 /* ===== BACK ===== */
 
 .back {
