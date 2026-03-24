@@ -2,26 +2,25 @@
   "event": {
     "id": "bcwl-2026-03-09-r1",
     "name": "BC Winter League – Round 1",
-    "series": "BCWL",
+    "series": "bcwl",
     "format": "Premodern",
     "date": "2026-03-09",
     "round": 1
   },
-
   "rounds": [
     {
       "round": 1,
       "matches": [
-        { "table": 1, "playerA": "james-jost", "playerB": "james-onions", "gamesA": 2, "gamesB": 0 },
-        { "table": 2, "playerA": "alastair-mclellan", "playerB": "marvin-goncalves-de-aquino", "gamesA": 2, "gamesB": 1 },
-        { "table": 3, "playerA": "arlen-wiesenthal", "playerB": "spencer-sj", "gamesA": 1, "gamesB": 1 },
-        { "table": 4, "playerA": "clint-taylor", "playerB": "gaetan-zell", "gamesA": 0, "gamesB": 2 },
-        { "table": 5, "playerA": "kevin-mittertreiner", "playerB": "gerard-cadger", "gamesA": 2, "gamesB": 0 },
-        { "table": 6, "playerA": "cody-foley", "playerB": "luna-lawrence", "gamesA": 2, "gamesB": 0 },
-        { "table": 7, "playerA": "cody-frizzell", "playerB": "mark-egelhoff", "gamesA": 2, "gamesB": 1 },
-        { "table": 8, "playerA": "malcolm-bradbury", "playerB": "bill-valeriote", "gamesA": 2, "gamesB": 1 }
-      ],
-      "byes": ["elliot-fisher"]
+        { "playerA": "james-jost", "playerB": "james-onions", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "alastair-mclellan", "playerB": "marvin-goncalves-de-aquino", "gamesA": 2, "gamesB": 1 },
+        { "playerA": "arlen-wiesenthal", "playerB": "spencer-shaw-jaworek", "gamesA": 1, "gamesB": 1 },
+        { "playerA": "clint-taylor", "playerB": "gaetan-zell", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "kevin-mittertreiner", "playerB": "gerard-cadger", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "cody-foley", "playerB": "luna-lawrence", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "cody-frizzell", "playerB": "mark-egelhoff", "gamesA": 2, "gamesB": 1 },
+        { "playerA": "malcolm-bradbury", "playerB": "bill-valeriote", "gamesA": 2, "gamesB": 1 },
+        { "playerA": "elliot-fisher", "playerB": null, "gamesA": 2, "gamesB": 0 }
+      ]
     }
   ]
 }

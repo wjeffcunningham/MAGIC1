@@ -300,12 +300,8 @@ async function loadLatestLeagueStandings(supabase) {
   const monthIndex = latest[0].month_index;
 
   const { data: rows } = await supabase
-    .from("leaderboard_league")
-    .select(`
-      player,
-      points,
-      leaderboard_points!inner(is_bcpmm_champion)
-    `)
+.from("leaderboard_league")
+.select("player, points")
     .eq("month_index", monthIndex)
     .order("points", { ascending: false });
 

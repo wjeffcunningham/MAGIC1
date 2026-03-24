@@ -49,7 +49,6 @@ async function loadPlayer() {
     return;
   }
 
-  /* 1️⃣ Load player profile registry */
   const { data: profile, error: profileError } = await supabase
     .from("player_profiles")
     .select("id, slug, verified_user_id")
@@ -64,9 +63,7 @@ async function loadPlayer() {
   let displayName = prettify(profile.slug);
   let avatarUrl   = null;
 
-  /* 2️⃣ If verified, load public user profile */
   if (profile.verified_user_id) {
-
     const { data: userProfile } = await supabase
       .from("user_profiles")
       .select("alias, avatar_url")
@@ -77,15 +74,12 @@ async function loadPlayer() {
       displayName = userProfile.alias || displayName;
       avatarUrl   = userProfile.avatar_url || null;
     }
-
   } else {
-    // Publicly show that this name is unverified
     ratingEl.textContent = "Unverified player name";
   }
 
   nameEl.textContent = displayName;
 
-  /* Avatar */
   if (avatarEl) {
     if (avatarUrl) {
       avatarEl.src = avatarUrl;
@@ -96,7 +90,6 @@ async function loadPlayer() {
     }
   }
 
-  /* Load competitive data */
   await loadStandings(profile.id);
   await loadMatches(profile.id);
 }
@@ -123,7 +116,6 @@ async function loadStandings(playerId) {
   clear(standingsTbodyEl);
 
   data.forEach(row => {
-
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
@@ -141,7 +133,7 @@ async function loadStandings(playerId) {
 }
 
 /* -------------------------------------
-   Load matches
+   Load matches (FIXED ORDERING)
 ------------------------------------- */
 async function loadMatches(playerId) {
 
@@ -151,8 +143,21 @@ async function loadMatches(playerId) {
 
   const { data, error } = await supabase
     .from("match_history")
-    .select("created_at, event_name, opponent_id, opponent_name, result, elo_delta")
+    .select(`
+      created_at,
+      match_date,
+      round_number,
+      match_index,
+      event_name,
+      opponent_id,
+      opponent_name,
+      result,
+      elo_delta
+    `)
     .eq("player_id", playerId)
+    .order("match_date", { ascending: false })
+    .order("round_number", { ascending: false })
+    .order("match_index", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (error || !data || data.length === 0) {
@@ -174,8 +179,10 @@ async function loadMatches(playerId) {
       playerLink(m.opponent_id, m.opponent_name || "—")
     );
 
+    const displayDate = m.match_date || m.created_at;
+
     tr.innerHTML = `
-      <td>${new Date(m.created_at).toLocaleDateString()}</td>
+      <td>${new Date(displayDate).toLocaleDateString()}</td>
       <td>${m.event_name || "—"}</td>
       <td></td>
       <td>${m.result || "—"}</td>

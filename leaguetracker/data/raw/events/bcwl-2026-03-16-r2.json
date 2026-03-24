@@ -1,0 +1,26 @@
+{
+  "event": {
+    "id": "bcwl-2026-03-16-r2",
+    "name": "BC Winter League – Round 2",
+    "series": "bcwl",
+    "format": "Premodern",
+    "date": "2026-03-16",
+    "round": 2
+  },
+  "rounds": [
+    {
+      "round": 2,
+      "matches": [
+        { "playerA": "james-jost", "playerB": "alastair-mclellan", "gamesA": 1, "gamesB": 2 },
+        { "playerA": "cody-foley", "playerB": "gaetan-zell", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "malcolm-bradbury", "playerB": "kevin-mittertreiner", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "gerard-cadger", "playerB": "cody-frizzell", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "clint-taylor", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "james-onions", "playerB": "spencer-shaw-jaworek", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "bill-valeriote", "playerB": "marvin-goncalves-de-aquino", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "mark-egelhoff", "playerB": "luna-lawrence", "gamesA": 1, "gamesB": 2 },
+        { "playerA": "elliot-fisher", "playerB": null, "gamesA": 2, "gamesB": 0 }
+      ]
+    }
+  ]
+}

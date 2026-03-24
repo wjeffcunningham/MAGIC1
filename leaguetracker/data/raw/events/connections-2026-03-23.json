@@ -1,0 +1,79 @@
+{
+  "event": {
+    "name": "Connections Premodern",
+    "series": "Connections",
+    "format": "Premodern",
+    "date": "2026-03-23",
+    "rounds_total": 4
+  },
+
+  "rounds": [
+    {
+      "round": 1,
+      "matches": [
+        { "playerA": "arlen-wiesenthal", "playerB": "cody-frizzell", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "chad-g", "playerB": "lucine-windy", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "luna-lawrence", "playerB": "romulo-ramos", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "jahmaal-k", "playerB": "kevin-mittertreiner", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "jeff-cunningham", "playerB": null, "gamesA": 2, "gamesB": 0 },
+        { "playerA": "john-vanderby", "playerB": "dakota-blais", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "nat-h", "playerB": "spencer-shaw-jaworek", "gamesA": 0, "gamesB": 2 }
+      ]
+    },
+
+    {
+      "round": 2,
+      "matches": [
+        { "playerA": "arlen-wiesenthal", "playerB": "luna-lawrence", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "chad-g", "playerB": "dakota-blais", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "cody-frizzell", "playerB": "john-vanderby", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "jahmaal-k", "playerB": "spencer-shaw-jaworek", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "jeff-cunningham", "playerB": "romulo-ramos", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "kevin-mittertreiner", "playerB": null, "gamesA": 2, "gamesB": 0 },
+        { "playerA": "lucine-windy", "playerB": "nat-h", "gamesA": 2, "gamesB": 0 }
+      ]
+    },
+
+    {
+      "round": 3,
+      "matches": [
+        { "playerA": "arlen-wiesenthal", "playerB": "nat-h", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "chad-g", "playerB": "john-vanderby", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "cody-frizzell", "playerB": null, "gamesA": 2, "gamesB": 0 },
+        { "playerA": "luna-lawrence", "playerB": "spencer-shaw-jaworek", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "jahmaal-k", "playerB": "dakota-blais", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "jeff-cunningham", "playerB": "kevin-mittertreiner", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "lucine-windy", "playerB": "romulo-ramos", "gamesA": 0, "gamesB": 2 }
+      ]
+    },
+
+    {
+      "round": 4,
+      "matches": [
+        { "playerA": "arlen-wiesenthal", "playerB": "kevin-mittertreiner", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "chad-g", "playerB": "jahmaal-k", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "cody-frizzell", "playerB": "nat-h", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "luna-lawrence", "playerB": "dakota-blais", "gamesA": 1, "gamesB": 1 },
+        { "playerA": "jeff-cunningham", "playerB": "john-vanderby", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "lucine-windy", "playerB": null, "gamesA": 2, "gamesB": 0 },
+        { "playerA": "romulo-ramos", "playerB": "spencer-shaw-jaworek", "gamesA": 0, "gamesB": 2 }
+      ]
+    }
+  ],
+
+  "standings": [
+    { "rank": 1, "player": "luna-lawrence", "match_points": 10 },
+    { "rank": 2, "player": "dakota-blais", "match_points": 10 },
+    { "rank": 3, "player": "spencer-shaw-jaworek", "match_points": 9 },
+    { "rank": 4, "player": "jeff-cunningham", "match_points": 9 },
+    { "rank": 5, "player": "romulo-ramos", "match_points": 6 },
+    { "rank": 6, "player": "john-vanderby", "match_points": 6 },
+    { "rank": 7, "player": "chad-g", "match_points": 6 },
+    { "rank": 8, "player": "lucine-windy", "match_points": 6 },
+    { "rank": 9, "player": "nat-h", "match_points": 6 },
+    { "rank": 10, "player": "kevin-mittertreiner", "match_points": 6 },
+    { "rank": 11, "player": "jahmaal-k", "match_points": 3 },
+    { "rank": 12, "player": "arlen-wiesenthal", "match_points": 3 },
+    { "rank": 13, "player": "cody-frizzell", "match_points": 3 }
+  ]
+}
