@@ -362,7 +362,8 @@ async function loadLeaderboard() {
     const { data } = await supabase
       .from("leaderboard_elo")
       .select("player,rating")
-      .order("rating", { ascending: false });
+      .order("rating", { ascending: false })
+      .limit(32);
 
     rows = (data || []).map(function (r) {
 
