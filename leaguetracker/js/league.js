@@ -118,46 +118,34 @@ function seriesPriority(series) {
   return 9;
 
 }
-
 async function getStreakMap() {
 
   const supabase = getClient();
   if (!supabase) return {};
 
   const { data: rows } = await supabase
-    .from("matches")
+    .from("rating_history")
     .select(`
-      player_a,
-      player_b,
-      winner,
+      player_slug,
+      opponent_slug,
       match_date,
       round_number,
       match_index,
       created_at,
-      is_elimination,
-      events:event_id (
-        event_date,
-        series
-      )
+      before_rating,
+      after_rating,
+      league
     `);
 
   const grouped = {};
 
   (rows || []).forEach(function (m) {
 
-    if (m.player_a) {
+    const slug = m.player_slug;
+    if (!slug) return;
 
-      if (!grouped[m.player_a]) grouped[m.player_a] = [];
-      grouped[m.player_a].push(m);
-
-    }
-
-    if (m.player_b) {
-
-      if (!grouped[m.player_b]) grouped[m.player_b] = [];
-      grouped[m.player_b].push(m);
-
-    }
+    if (!grouped[slug]) grouped[slug] = [];
+    grouped[slug].push(m);
 
   });
 
@@ -169,20 +157,15 @@ async function getStreakMap() {
 
     const sorted = list.slice().sort(function (a, b) {
 
-      const ad = safeTime(a.match_date) || safeTime(a.events?.event_date);
-      const bd = safeTime(b.match_date) || safeTime(b.events?.event_date);
+      const ad = safeTime(a.match_date);
+      const bd = safeTime(b.match_date);
 
       if (bd !== ad) return bd - ad;
 
-      const as = seriesPriority(a.events?.series);
-      const bs = seriesPriority(b.events?.series);
+      const as = seriesPriority(a.league);
+      const bs = seriesPriority(b.league);
 
       if (bs !== as) return bs - as;
-
-      const ae = a.is_elimination ? 1 : 0;
-      const be = b.is_elimination ? 1 : 0;
-
-      if (be !== ae) return be - ae;
 
       const ar = numOrNegInf(a.round_number);
       const br = numOrNegInf(b.round_number);
@@ -202,14 +185,9 @@ async function getStreakMap() {
 
     for (const m of sorted) {
 
-      if (!m.winner) break;
+      const delta = (m.after_rating ?? 0) - (m.before_rating ?? 0);
 
-      if (!m.player_b && m.winner === slug) {
-        streak++;
-        continue;
-      }
-
-      if (m.winner === slug) streak++;
+      if (delta > 0) streak++;
       else break;
 
     }
