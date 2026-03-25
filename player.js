@@ -163,44 +163,47 @@ async function loadMatches(playerId) {
     return;
   }
 
-  /* =========================
-     SORT (THIS IS CORRECT)
-  ========================= */
-  data.sort((a, b) => {
+data.sort((a, b) => {
 
-    const ad = new Date(a.match_date || a.created_at).getTime();
-    const bd = new Date(b.match_date || b.created_at).getTime();
+  const ad = new Date(a.match_date || a.created_at).getTime();
+  const bd = new Date(b.match_date || b.created_at).getTime();
 
-    if (bd !== ad) return bd - ad;
+  if (bd !== ad) return bd - ad;
 
-    const priority = (row) => {
-      const s = (row.league || "").toLowerCase();
+  const priority = (row) => {
+    const s = (row.league || "").toLowerCase();
 
-      if (s === "bcwl") return 0;
-      if (s === "bcpmm") return 1;
-      if (s === "shg") return 2;
-      if (s === "connections") return 3;
+    if (s === "bcwl") return 0;
+    if (s === "bcpmm") return 1;
+    if (s === "shg") return 2;
+    if (s === "connections") return 3;
 
-      return 9;
-    };
+    return 9;
+  };
 
-    const pa = priority(a);
-    const pb = priority(b);
-    
-if (pa !== pb) return pb - pa;
+  const pa = priority(a);
+  const pb = priority(b);
 
-    const ra = a.round_number || 0;
-    const rb = b.round_number || 0;
+  if (pa !== pb) return pb - pa;
 
-    if (rb !== ra) return rb - ra;
+  // 🔴 NEW: group by event FIRST
+  if (a.event_name !== b.event_name) {
+    return a.event_name.localeCompare(b.event_name);
+  }
 
-    const ma = a.match_index || 0;
-    const mb = b.match_index || 0;
+  // THEN sort within event
+  const ra = a.round_number || 0;
+  const rb = b.round_number || 0;
 
-    if (mb !== ma) return mb - ma;
+  if (rb !== ra) return rb - ra;
 
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
+  const ma = a.match_index || 0;
+  const mb = b.match_index || 0;
+
+  if (mb !== ma) return mb - ma;
+
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+});
 
   /* =========================
      🔥 THIS WAS MISSING
