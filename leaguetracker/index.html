@@ -98,6 +98,12 @@
       width: 3rem;
       text-align: right;
     }
+
+.tracker {
+  position: relative;
+  border-left: 3px solid var(--accent-color);
+  padding-left: 1.75rem;
+}
   </style>
 </head>
 
@@ -146,6 +152,12 @@
 <script src="./js/league.js?v=20260303-2"></script>
 
 <script src="/js/bcpmm-shell.js"></script>
+
+<script>
+  const accents = ["#c0392b", "#2471a3", "#1e8449"];
+  const pick = accents[Math.floor(Math.random() * accents.length)];
+  document.documentElement.style.setProperty("--accent-color", pick);
+</script>
 
 </body>
 </html>
