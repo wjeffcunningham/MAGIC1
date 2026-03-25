@@ -116,6 +116,7 @@ async function loadStandings(playerId) {
   clear(standingsTbodyEl);
 
   data.forEach(row => {
+
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
@@ -133,7 +134,7 @@ async function loadStandings(playerId) {
 }
 
 /* -------------------------------------
-   Load matches (FIXED ORDERING)
+   Load matches (FINAL FIXED)
 ------------------------------------- */
 async function loadMatches(playerId) {
 
@@ -142,23 +143,19 @@ async function loadMatches(playerId) {
   const tbody   = tableEl.querySelector("tbody");
 
   const { data, error } = await supabase
-    .from("match_history")
+    .from("rating_history")
     .select(`
       created_at,
       match_date,
+      event_name,
+      league,
       round_number,
       match_index,
-      event_name,
-      opponent_id,
-      opponent_name,
-      result,
-      elo_delta
+      opponent_slug,
+      before_rating,
+      after_rating
     `)
-    .eq("player_id", playerId)
-    .order("match_date", { ascending: false })
-    .order("round_number", { ascending: false })
-    .order("match_index", { ascending: false })
-    .order("created_at", { ascending: false });
+    .eq("player_id", playerId);
 
   if (error || !data || data.length === 0) {
     emptyEl.style.display = "block";
@@ -166,8 +163,51 @@ async function loadMatches(playerId) {
     return;
   }
 
+  /* =========================
+     SORT (THIS IS CORRECT)
+  ========================= */
+  data.sort((a, b) => {
+
+    const ad = new Date(a.match_date || a.created_at).getTime();
+    const bd = new Date(b.match_date || b.created_at).getTime();
+
+    if (bd !== ad) return bd - ad;
+
+    const priority = (row) => {
+      const s = (row.league || "").toLowerCase();
+
+      if (s === "bcwl") return 0;
+      if (s === "bcpmm") return 1;
+      if (s === "shg") return 2;
+      if (s === "connections") return 3;
+
+      return 9;
+    };
+
+    const pa = priority(a);
+    const pb = priority(b);
+    
+if (pa !== pb) return pb - pa;
+
+    const ra = a.round_number || 0;
+    const rb = b.round_number || 0;
+
+    if (rb !== ra) return rb - ra;
+
+    const ma = a.match_index || 0;
+    const mb = b.match_index || 0;
+
+    if (mb !== ma) return mb - ma;
+
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
+  /* =========================
+     🔥 THIS WAS MISSING
+  ========================= */
   emptyEl.style.display = "none";
   tableEl.style.display = "table";
+
   clear(tbody);
 
   data.forEach(m => {
@@ -176,17 +216,18 @@ async function loadMatches(playerId) {
 
     const opponentCell = document.createElement("td");
     opponentCell.appendChild(
-      playerLink(m.opponent_id, m.opponent_name || "—")
+      playerLink(null, m.opponent_slug || "—")
     );
 
     const displayDate = m.match_date || m.created_at;
+    const delta = (m.after_rating ?? 0) - (m.before_rating ?? 0);
 
     tr.innerHTML = `
       <td>${new Date(displayDate).toLocaleDateString()}</td>
       <td>${m.event_name || "—"}</td>
       <td></td>
-      <td>${m.result || "—"}</td>
-      <td class="center">${m.elo_delta ?? "—"}</td>
+      <td>—</td>
+      <td class="center">${delta > 0 ? "+" + delta : delta}</td>
     `;
 
     tr.children[2].replaceWith(opponentCell);

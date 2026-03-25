@@ -289,6 +289,52 @@ function renderPager(totalRows) {
 
 async function loadLatestLeagueStandings(supabase) {
 
+  /* =============================
+     TRY month_standings FIRST
+  ============================= */
+
+  try {
+
+    const { data: latestMonthRows } = await supabase
+      .from("month_standings")
+      .select("month_index")
+      .order("month_index", { ascending: false })
+      .limit(1);
+
+    if (latestMonthRows && latestMonthRows.length) {
+
+      const monthIndex = latestMonthRows[0].month_index;
+
+      const { data: monthRows } = await supabase
+        .from("month_standings")
+        .select("player, points")
+        .eq("month_index", monthIndex)
+        .order("points", { ascending: false });
+
+      if (monthRows && monthRows.length) {
+
+        return monthRows.map(function (r) {
+
+          return {
+            player: r.player,
+            value: Number(r.points || 0),
+            champion: false
+          };
+
+        });
+
+      }
+
+    }
+
+  } catch (e) {
+    /* silent fallback */
+  }
+
+  /* =============================
+     FALLBACK → leaderboard_league
+  ============================= */
+
   const { data: latest } = await supabase
     .from("leaderboard_league")
     .select("month_index")
@@ -300,8 +346,8 @@ async function loadLatestLeagueStandings(supabase) {
   const monthIndex = latest[0].month_index;
 
   const { data: rows } = await supabase
-.from("leaderboard_league")
-.select("player, points")
+    .from("leaderboard_league")
+    .select("player, points")
     .eq("month_index", monthIndex)
     .order("points", { ascending: false });
 
@@ -310,7 +356,7 @@ async function loadLatestLeagueStandings(supabase) {
     return {
       player: r.player,
       value: Number(r.points || 0),
-      champion: r.leaderboard_points?.is_bcpmm_champion === true
+      champion: false
     };
 
   });
