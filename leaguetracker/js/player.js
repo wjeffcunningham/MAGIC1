@@ -291,11 +291,17 @@ async function loadMatchHistory(supabase, slug) {
     return;
   }
 
-  const sorted = [...history].sort((a,b)=>{
+const sorted = [...history].sort((a, b) => {
 
     const ad = safeTime(a.match_date);
     const bd = safeTime(b.match_date);
     if (bd !== ad) return bd - ad;
+
+    // Same date: Connections first, BCWL last
+    const priority = { connections: 0, shg: 1, bcpmm: 2, bcwl: 3 };
+    const pa = priority[(a.league || "").toLowerCase()] ?? 9;
+    const pb = priority[(b.league || "").toLowerCase()] ?? 9;
+    if (pa !== pb) return pa - pb;
 
     const ar = Number(a.round_number || 0);
     const br = Number(b.round_number || 0);

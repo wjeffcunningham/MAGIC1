@@ -37,23 +37,25 @@ function playerLink(id, name) {
   return a;
 }
 
-/* -------------------------------------
-   Load player
-------------------------------------- */
 async function loadPlayer() {
 
-  const playerId = qs("id");
+  const playerId   = qs("id");
+  const playerSlug = qs("player");
 
-  if (!playerId) {
+  if (!playerId && !playerSlug) {
     nameEl.textContent = "Player not found";
     return;
   }
 
-  const { data: profile, error: profileError } = await supabase
+  const profileQuery = supabase
     .from("player_profiles")
-    .select("id, slug, verified_user_id")
-    .eq("id", playerId)
-    .maybeSingle();
+    .select("id, slug, verified_user_id");
+
+  const { data: profile, error: profileError } = await (
+    playerId
+      ? profileQuery.eq("id", playerId)
+      : profileQuery.eq("slug", playerSlug)
+  ).maybeSingle();
 
   if (profileError || !profile) {
     nameEl.textContent = "Player not found";
@@ -136,15 +138,18 @@ async function loadStandings(playerId) {
 /* -------------------------------------
    Load matches (FINAL FIXED)
 ------------------------------------- */
-async function loadMatches(playerId) {
 
+async function loadMatches(playerId) {
+  console.log("loadMatches called with:", playerId);
+  
   const emptyEl = document.getElementById("matches-empty");
-  const tableEl = document.getElementById("matches-table");
+  const tableEl = document.getElementById("history-table");
   const tbody   = tableEl.querySelector("tbody");
 
   const { data, error } = await supabase
     .from("rating_history")
     .select(`
+      event_id,
       created_at,
       match_date,
       event_name,
@@ -155,61 +160,31 @@ async function loadMatches(playerId) {
       before_rating,
       after_rating
     `)
-    .eq("player_id", playerId);
+    .eq("player_id", playerId)
+    .order("match_date", { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    emptyEl.style.display = "block";
-    tableEl.style.display = "none";
-    return;
-  }
-
-data.sort((a, b) => {
-
-  const ad = new Date(a.match_date || a.created_at).getTime();
-  const bd = new Date(b.match_date || b.created_at).getTime();
-
-  if (bd !== ad) return bd - ad;
-
-  const priority = (row) => {
-    const s = (row.league || "").toLowerCase();
-
-    if (s === "bcwl") return 0;
-    if (s === "bcpmm") return 1;
-    if (s === "shg") return 2;
-    if (s === "connections") return 3;
-
-    return 9;
-  };
-
-  const pa = priority(a);
-  const pb = priority(b);
-
-  if (pa !== pb) return pb - pa;
-
-  // 🔴 NEW: group by event FIRST
-  if (a.event_name !== b.event_name) {
-    return a.event_name.localeCompare(b.event_name);
-  }
-
-  // THEN sort within event
-  const ra = a.round_number || 0;
-  const rb = b.round_number || 0;
-
-  if (rb !== ra) return rb - ra;
-
-  const ma = a.match_index || 0;
-  const mb = b.match_index || 0;
-
-  if (mb !== ma) return mb - ma;
-
-  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-});
-
-  /* =========================
-     🔥 THIS WAS MISSING
-  ========================= */
   emptyEl.style.display = "none";
   tableEl.style.display = "table";
+
+  data.sort((a, b) => {
+    const dateA = new Date(a.match_date || a.created_at);
+    const dateB = new Date(b.match_date || b.created_at);
+    if (dateB - dateA !== 0) return dateB - dateA;
+
+    // Same date: Connections first, BCWL last
+    const priority = { connections: 0, shg: 1, bcpmm: 2, bcwl: 3 };
+    const pa = priority[a.league] ?? 9;
+    const pb = priority[b.league] ?? 9;
+    if (pa !== pb) return pa - pb;
+
+    // Within same series: round descending
+    if ((b.round_number ?? 0) !== (a.round_number ?? 0))
+      return (b.round_number ?? 0) - (a.round_number ?? 0);
+
+    return (b.match_index ?? 0) - (a.match_index ?? 0);
+  });
+
+  console.log(data.map(m => `${m.match_date} | ${m.league} | r${m.round_number} | ${m.opponent_slug}`));
 
   clear(tbody);
 

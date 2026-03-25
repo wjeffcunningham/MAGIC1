@@ -110,10 +110,10 @@ function seriesPriority(series) {
 
   const s = (series || "").toLowerCase();
 
-  if (s === "bcwl") return 0;
-  if (s === "bcpmm") return 1;
-  if (s === "shg") return 2;
-  if (s === "connections") return 3;
+  if (s === "connections") return 0;
+  if (s === "shg") return 1;
+  if (s === "bcpmm") return 2;
+  if (s === "bcwl") return 3;
 
   return 9;
 
