@@ -1,0 +1,263 @@
+{
+  "event": {
+    "id": "bcwl-2026-03-30-r4",
+    "name": "BC Winter League – Round 4",
+    "series": "bcwl",
+    "format": "Premodern",
+    "date": "2026-03-30",
+    "round": 4,
+    "status": "in_progress"
+  },
+  "rounds": [
+    {
+      "round": 4,
+      "matches": [
+        {
+          "table": 0,
+          "playerA": "elliot-fisher",
+          "playerB": null,
+          "gamesA": 0,
+          "gamesB": 2,
+          "winner": null,
+          "status": "reported",
+          "note": "Pairings view showed only Elliot Fisher with 'has a loss'."
+        },
+        {
+          "table": 1,
+          "playerA": "gaetan-zell",
+          "playerB": "alastair-mclellan",
+          "gamesA": 2,
+          "gamesB": 1,
+          "winner": "gaetan-zell",
+          "status": "reported"
+        },
+        {
+          "table": 2,
+          "playerA": "mark-egelhoff",
+          "playerB": "clint-taylor",
+          "gamesA": null,
+          "gamesB": null,
+          "winner": null,
+          "status": "pending"
+        },
+        {
+          "table": 3,
+          "playerA": "james-jost",
+          "playerB": "spencer-shaw-jaworek",
+          "gamesA": 0,
+          "gamesB": 2,
+          "winner": "spencer-shaw-jaworek",
+          "status": "reported"
+        },
+        {
+          "table": 4,
+          "playerA": "kevin-mittertreiner",
+          "playerB": "marvin-goncalves-de-aquino",
+          "gamesA": 0,
+          "gamesB": 2,
+          "winner": "marvin-goncalves-de-aquino",
+          "status": "reported"
+        },
+        {
+          "table": 5,
+          "playerA": "gerard-cadger",
+          "playerB": "cody-foley",
+          "gamesA": 2,
+          "gamesB": 0,
+          "winner": "gerard-cadger",
+          "status": "reported"
+        },
+        {
+          "table": 6,
+          "playerA": "luna-lawrence",
+          "playerB": "james-onions",
+          "gamesA": 1,
+          "gamesB": 2,
+          "winner": "james-onions",
+          "status": "reported"
+        },
+        {
+          "table": 7,
+          "playerA": "malcolm-bradbury",
+          "playerB": "arlen-wiesenthal",
+          "gamesA": 2,
+          "gamesB": 1,
+          "winner": "malcolm-bradbury",
+          "status": "reported"
+        },
+        {
+          "table": 8,
+          "playerA": "cody-frizzell",
+          "playerB": "bill-valeriote",
+          "gamesA": 1,
+          "gamesB": 2,
+          "winner": "bill-valeriote",
+          "status": "reported"
+        }
+      ]
+    }
+  ],
+  "standings": [
+    {
+      "rank": 1,
+      "player": "gaetan-zell",
+      "match_points": 12,
+      "record": "4-0-0",
+      "omw": 0.6242,
+      "gw": 0.8000,
+      "ogw": 0.5594
+    },
+    {
+      "rank": 2,
+      "player": "alastair-mclellan",
+      "match_points": 9,
+      "record": "3-1-0",
+      "omw": 0.6450,
+      "gw": 0.6364,
+      "ogw": 0.5889
+    },
+    {
+      "rank": 3,
+      "player": "spencer-shaw-jaworek",
+      "display_name": "Spencer SJ",
+      "match_points": 9,
+      "record": "3-1-0",
+      "omw": 0.5825,
+      "gw": 0.7000,
+      "ogw": 0.5500
+    },
+    {
+      "rank": 4,
+      "player": "marvin-goncalves-de-aquino",
+      "match_points": 9,
+      "record": "3-1-0",
+      "omw": 0.5200,
+      "gw": 0.6364,
+      "ogw": 0.5025
+    },
+    {
+      "rank": 5,
+      "player": "gerard-cadger",
+      "match_points": 7,
+      "record": "2-1-1",
+      "omw": 0.3733,
+      "gw": 0.5926,
+      "ogw": 0.4024
+    },
+    {
+      "rank": 6,
+      "player": "kevin-mittertreiner",
+      "match_points": 6,
+      "record": "2-2-0",
+      "omw": 0.6250,
+      "gw": 0.5556,
+      "ogw": 0.5637
+    },
+    {
+      "rank": 7,
+      "player": "clint-taylor",
+      "match_points": 6,
+      "record": "2-1-0",
+      "omw": 0.6100,
+      "gw": 0.5714,
+      "ogw": 0.5852
+    },
+    {
+      "rank": 8,
+      "player": "james-jost",
+      "match_points": 6,
+      "record": "2-2-0",
+      "omw": 0.5825,
+      "gw": 0.5556,
+      "ogw": 0.5277
+    },
+    {
+      "rank": 9,
+      "player": "james-onions",
+      "match_points": 6,
+      "record": "2-2-0",
+      "omw": 0.4783,
+      "gw": 0.4444,
+      "ogw": 0.4949
+    },
+    {
+      "rank": 10,
+      "player": "malcolm-bradbury",
+      "match_points": 6,
+      "record": "2-2-0",
+      "omw": 0.4775,
+      "gw": 0.4545,
+      "ogw": 0.4889
+    },
+    {
+      "rank": 11,
+      "player": "luna-lawrence",
+      "match_points": 4,
+      "record": "1-2-1",
+      "omw": 0.4358,
+      "gw": 0.3939,
+      "ogw": 0.4243
+    },
+    {
+      "rank": 12,
+      "player": "cody-foley",
+      "display_name": "Cody F",
+      "match_points": 3,
+      "record": "1-3-0",
+      "omw": 0.6042,
+      "gw": 0.3300,
+      "ogw": 0.5577
+    },
+    {
+      "rank": 13,
+      "player": "bill-valeriote",
+      "match_points": 3,
+      "record": "1-3-0",
+      "omw": 0.5825,
+      "gw": 0.3636,
+      "ogw": 0.5143
+    },
+    {
+      "rank": 14,
+      "player": "arlen-wiesenthal",
+      "match_points": 3,
+      "record": "1-3-0",
+      "omw": 0.5617,
+      "gw": 0.4000,
+      "ogw": 0.5140
+    },
+    {
+      "rank": 15,
+      "player": "cody-frizzell",
+      "match_points": 3,
+      "record": "1-3-0",
+      "omw": 0.4358,
+      "gw": 0.3300,
+      "ogw": 0.4604
+    },
+    {
+      "rank": 16,
+      "player": "mark-egelhoff",
+      "match_points": 0,
+      "record": "0-3-0",
+      "omw": 0.3311,
+      "gw": 0.3300,
+      "ogw": 0.3746
+    },
+    {
+      "rank": 17,
+      "player": "elliot-fisher",
+      "match_points": 0,
+      "record": "0-4-0",
+      "omw": 0.3300,
+      "gw": 0.3300,
+      "ogw": 0.3300
+    }
+  ],
+  "notes": [
+    "Built to match the same structure/style as your Round 3 file.  [oai_citation:0‡bcwl-2026-03-23-r3.json](sediment://file_00000000638071fd958b907ff3ede481)",
+    "Round 4 appears to be in progress from the screenshots.",
+    "Table 2 was marked 'Not reported', so its games and winner are null.",
+    "Table 0 showed only Elliot Fisher with 'has a loss'; encoded as a reported loss with no opponent shown."
+  ]
+}

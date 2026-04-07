@@ -1,0 +1,67 @@
+{
+  "event": {
+    "name": "Connections Premodern",
+    "series": "Connections",
+    "format": "Premodern",
+    "date": "2026-04-06",
+    "rounds_total": 4
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "matches": [
+        { "playerA": "andrew-van-tunen", "playerB": null, "gamesA": 2, "gamesB": 0 },
+        { "playerA": "arlen-wiesenthal", "playerB": "rachael-hernandez", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "caitlyn-bethune", "playerB": "nat-h", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "jahmaal-k", "playerB": "owen-hogg", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "jeff-cunningham", "playerB": "lucine-windy", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "spencer-shaw-jaworek", "playerB": "romulo-ramos", "gamesA": 2, "gamesB": 0 }
+      ]
+    },
+    {
+      "round": 2,
+      "matches": [
+        { "playerA": "jeff-cunningham", "playerB": "arlen-wiesenthal", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "caitlyn-bethune", "playerB": "andrew-van-tunen", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "spencer-shaw-jaworek", "playerB": "owen-hogg", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "jahmaal-k", "playerB": "rachael-hernandez", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "lucine-windy", "playerB": "romulo-ramos", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "nat-h", "playerB": null, "gamesA": 2, "gamesB": 0 }
+      ]
+    },
+    {
+      "round": 3,
+      "matches": [
+        { "playerA": "andrew-van-tunen", "playerB": "jahmaal-k", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "arlen-wiesenthal", "playerB": "spencer-shaw-jaworek", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "caitlyn-bethune", "playerB": "jeff-cunningham", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "romulo-ramos", "playerB": "owen-hogg", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "rachael-hernandez", "playerB": "lucine-windy", "gamesA": 0, "gamesB": 2 }
+      ]
+    },
+    {
+      "round": 4,
+      "matches": [
+        { "playerA": "andrew-van-tunen", "playerB": "lucine-windy", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "arlen-wiesenthal", "playerB": "caitlyn-bethune", "gamesA": 2, "gamesB": 1 },
+        { "playerA": "jahmaal-k", "playerB": "spencer-shaw-jaworek", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "jeff-cunningham", "playerB": "owen-hogg", "gamesA": 2, "gamesB": 0 },
+        { "playerA": "nat-h", "playerB": "rachael-hernandez", "gamesA": 0, "gamesB": 2 },
+        { "playerA": "romulo-ramos", "playerB": null, "gamesA": 2, "gamesB": 0 }
+      ]
+    }
+  ],
+  "standings": [
+    { "rank": 1, "player": "arlen-wiesenthal", "match_points": 9, "omw": 0.68, "gw": 0.75, "ogw": 0.64 },
+    { "rank": 2, "player": "jeff-cunningham", "match_points": 9, "omw": 0.68, "gw": 0.66, "ogw": 0.61 },
+    { "rank": 3, "player": "caitlyn-bethune", "match_points": 9, "omw": 0.58, "gw": 0.60, "ogw": 0.57 },
+    { "rank": 4, "player": "spencer-shaw-jaworek", "match_points": 9, "omw": 0.47, "gw": 0.75, "ogw": 0.49 },
+    { "rank": 5, "player": "lucine-windy", "match_points": 9, "omw": 0.47, "gw": 0.60, "ogw": 0.48 },
+    { "rank": 6, "player": "rachael-hernandez", "match_points": 6, "omw": 0.61, "gw": 0.55, "ogw": 0.58 },
+    { "rank": 7, "player": "owen-hogg", "match_points": 6, "omw": 0.58, "gw": 0.50, "ogw": 0.53 },
+    { "rank": 8, "player": "jahmaal-k", "match_points": 6, "omw": 0.47, "gw": 0.55, "ogw": 0.47 },
+    { "rank": 9, "player": "nat-h", "match_points": 3, "omw": 0.66, "gw": 0.40, "ogw": 0.58 },
+    { "rank": 10, "player": "andrew-van-tunen", "match_points": 3, "omw": 0.66, "gw": 0.33, "ogw": 0.63 },
+    { "rank": 11, "player": "romulo-ramos", "match_points": 3, "omw": 0.58, "gw": 0.33, "ogw": 0.60 }
+  ]
+}
