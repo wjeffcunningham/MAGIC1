@@ -59,10 +59,6 @@
       93%        {color:#fff;text-shadow:none}
     }
 
-    /* logo overlay */
-    .hero-logo{position:absolute;top:14px;left:16px;width:clamp(48px,6vw,72px);height:auto;opacity:.88;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));pointer-events:none;transition:opacity .2s}
-    .hero-wrap:hover .hero-logo{opacity:.96}
-
     .splash-dots{position:absolute;bottom:10px;right:14px;display:flex;gap:6px}
     .sdot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);border:1.5px solid rgba(255,255,255,.75);cursor:pointer;transition:background .2s}
     .sdot.active{background:#fff}
@@ -169,7 +165,6 @@
   <header>
     <div class="hero-wrap" onclick="cycleSplash()">
       <img class="hero" id="splashImg" src="" alt="BCPMM #2: Brewhall Champs"/>
-      <img class="hero-logo" src="/assets/roundlogo.png" alt="BCPMM"/>
       <div class="hero-title">
         <div class="hero-title-text">BCPMM #2: Brewhall Champs</div>
       </div>
@@ -275,7 +270,7 @@
             <div class="cov-left"><span class="cov-icon">📸</span><div class="cov-text"><div class="cov-title">Photo Gallery</div><div class="cov-desc">Photos &amp; video from the day</div></div></div>
             <span class="btn">View</span>
           </a>
-        <!--  <a class="cov-item" href="raffle-winners.html">
+          <a class="cov-item" href="raffle-winners.html">
             <div class="cov-left"><span class="cov-icon">🎟️</span><div class="cov-text"><div class="cov-title">Raffle &amp; Donations</div><div class="cov-desc">Winners, lots, &amp; charity recap</div></div></div>
             <span class="btn">View</span>
           </a>
@@ -286,7 +281,7 @@
           <a class="cov-item" href="prizes.html">
             <div class="cov-left"><span class="cov-icon">🎁</span><div class="cov-text"><div class="cov-title">Prize Rundown</div><div class="cov-desc">Full payout breakdown</div></div></div>
             <span class="btn">View</span>
-          </a> -->
+          </a>
         </div>
 
         <div class="pg-footer">© B.C. Premodern Masters · Built for <a href="../">magic1.ca</a></div>
