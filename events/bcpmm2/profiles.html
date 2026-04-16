@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BCPMM #2 · Top 8 Player Profiles · magic1.ca</title>
+  <meta name="description" content="Top 8 player profiles for BCPMM #2: Brewhall Champs — April 11, 2026."/>
+
+  <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
+  <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+
+  <script>
+    if (localStorage.getItem('bcpmm-theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.addEventListener('DOMContentLoaded', function () {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.add('dark');
+      });
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg:      #f3f6ff;
+      --card:    #ffffff;
+      --item-bg: #fbfdff;
+      --ink:     #0f172a;
+      --muted:   #475569;
+      --border:  rgba(15,23,42,.12);
+      --shadow:  0 10px 30px rgba(15,23,42,.08);
+      --radius:  16px;
+      --max:     1100px;
+      --accent:  #1f6feb;
+      --gold:    #b8860b;
+    }
+
+    body.dark {
+      --bg:      #0d1117;
+      --card:    #161b22;
+      --item-bg: #0d1117;
+      --ink:     #e6edf3;
+      --muted:   #8b949e;
+      --border:  rgba(240,246,252,.1);
+      --shadow:  0 10px 30px rgba(0,0,0,.35);
+      --accent:  #58a6ff;
+      --gold:    #d4a017;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.18), transparent 60%),
+        linear-gradient(var(--bg), #ffffff 65%);
+      min-height: 100vh;
+    }
+
+    body.dark {
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.1), transparent 60%),
+        linear-gradient(var(--bg), #0d1117 65%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .shell {
+      max-width: var(--max);
+      margin: 32px auto 64px;
+      padding: 0 18px;
+    }
+
+    /* ── page header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .page-header h1 {
+      font-size: clamp(1.5rem, 3.5vw, 2rem);
+      font-weight: 800;
+      margin: 0 0 5px;
+      letter-spacing: -.02em;
+    }
+
+    .page-header p {
+      color: var(--muted);
+      margin: 0;
+      font-size: .92rem;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 9px;
+      font-size: .85rem;
+      color: var(--accent);
+      font-weight: 650;
+    }
+
+    /* ── photo grid ── */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    @media(max-width: 700px) {
+      .photo-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media(max-width: 380px) {
+      .photo-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    }
+
+    .mini-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: box-shadow .18s, border-color .18s;
+    }
+
+    .mini-card:hover {
+      box-shadow: 0 14px 36px rgba(15,23,42,.13);
+      border-color: rgba(31,111,235,.3);
+    }
+
+    .mini-card.champion {
+      border-color: rgba(184,134,11,.35);
+    }
+
+    .mini-card.champion:hover {
+      border-color: rgba(184,134,11,.6);
+      box-shadow: 0 14px 36px rgba(184,134,11,.12);
+    }
+
+    .mini-card.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(31,111,235,.2), 0 14px 36px rgba(15,23,42,.13);
+    }
+
+    .mini-card.champion.active {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(184,134,11,.25), 0 14px 36px rgba(184,134,11,.12);
+    }
+
+    body.dark .mini-card:hover { border-color: rgba(88,166,255,.3); }
+    body.dark .mini-card.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(88,166,255,.2); }
+
+    /* photo */
+    .mini-photo {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      object-position: center top;
+      background: var(--item-bg);
+    }
+
+    /* name bar */
+    .mini-bar {
+      padding: 7px 9px 8px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .mini-seed {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: .65rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .mini-card.champion .mini-seed { background: var(--gold); }
+
+    .mini-name {
+      font-size: .78rem;
+      font-weight: 700;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mini-deck {
+      font-size: .68rem;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── detail panel ── */
+    .detail-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 28px;
+      display: none;
+    }
+
+    .detail-panel.visible { display: block; }
+
+    .detail-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .detail-seed {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: .88rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .detail-panel.champion .detail-seed { background: var(--gold); }
+
+    .detail-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -.01em;
+    }
+
+    .detail-meta { font-size: .82rem; color: var(--muted); margin-top: 1px; }
+
+    .finish-pill {
+      margin-left: auto;
+      font-size: .75rem;
+      font-weight: 650;
+      color: var(--muted);
+      background: var(--item-bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .detail-panel.champion .finish-pill {
+      color: var(--gold);
+      border-color: rgba(184,134,11,.4);
+      background: rgba(184,134,11,.07);
+    }
+
+    /* detail body: 4-col answer grid */
+    .detail-body {
+      padding: 16px 18px 18px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px 20px;
+    }
+
+    @media(max-width: 700px) {
+      .detail-body { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media(max-width: 420px) {
+      .detail-body { grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+    }
+
+    .q-cell { display: flex; flex-direction: column; gap: 2px; }
+
+    .q-label {
+      font-size: .65rem;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+    }
+
+    .q-answer {
+      font-size: .88rem;
+      line-height: 1.35;
+    }
+
+    /* deck tag + decklist buttons row */
+    .deck-row {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+
+    .deck-tag {
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(31,111,235,.08);
+      border: 1px solid rgba(31,111,235,.2);
+      color: var(--accent);
+      font-size: .8rem;
+      font-weight: 650;
+    }
+
+    body.dark .deck-tag {
+      background: rgba(88,166,255,.08);
+      border-color: rgba(88,166,255,.2);
+    }
+
+    .decklist-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      font-size: .77rem;
+      font-weight: 650;
+      color: inherit;
+      text-decoration: none;
+      transition: border-color .18s, box-shadow .18s;
+    }
+
+    .decklist-btn:hover {
+      text-decoration: none;
+      border-color: rgba(31,111,235,.35);
+      box-shadow: 0 3px 10px rgba(31,111,235,.1);
+    }
+
+    /* footer */
+    .pg-footer {
+      margin-top: 8px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+    .pg-footer a { color: var(--accent); }
+  </style>
+</head>
+
+<body>
+<div id="global-menu-root"></div>
+
+<div class="shell">
+
+  <div class="page-header">
+    <h1>BCPMM #2: Brewhall Champs — Top 8</h1>
+    <p>Player profiles · April 11, 2026 · Strange Fellows Brewing · Vancouver · Click a card to expand</p>
+    <a class="back-link" href="index.html">← Back to Coverage</a>
+  </div>
+
+  <!-- ══ PHOTO GRID ══ -->
+  <div class="photo-grid" id="photoGrid">
+
+    <div class="mini-card" data-idx="0" onclick="toggle(0)">
+      <img class="mini-photo" src="01.jpg" alt="Andrew Kidston"/>
+      <div class="mini-bar">
+        <div class="mini-seed">1</div>
+        <div>
+          <div class="mini-name">Andrew Kidston</div>
+          <div class="mini-deck">Nought</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-card" data-idx="1" onclick="toggle(1)">
+      <img class="mini-photo" src="02.jpg" alt="Colin Whitwell"/>
+      <div class="mini-bar">
+        <div class="mini-seed">2</div>
+        <div>
+          <div class="mini-name">Colin Whitwell</div>
+          <div class="mini-deck">Terrageddon</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-card" data-idx="2" onclick="toggle(2)">
+      <img class="mini-photo" src="03.jpg" alt="Alastair McLellan"/>
+      <div class="mini-bar">
+        <div class="mini-seed">3</div>
+        <div>
+          <div class="mini-name">Alastair McLellan</div>
+          <div class="mini-deck">Goblins</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-card" data-idx="3" onclick="toggle(3)">
+      <img class="mini-photo" src="04.jpg" alt="Rob Hackney"/>
+      <div class="mini-bar">
+        <div class="mini-seed">4</div>
+        <div>
+          <div class="mini-name">Rob Hackney</div>
+          <div class="mini-deck">Iggy Pop (Storm)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-card champion" data-idx="4" onclick="toggle(4)">
+      <img class="mini-photo" src="05.jpg" alt="Markus Thibeau"/>
+      <div class="mini-bar">
+        <div class="mini-seed">5</div>
+        <div>
+          <div class="mini-name">Markus Thibeau 🏆</div>
+          <div class="mini-deck">Moneyball Black</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-card" data-idx="5" onclick="toggle(5)">
+      <img class="mini-photo" src="06.jpg" alt="William Niwinski"/>
+      <div class="mini-bar">
+        <div class="mini-seed">6</div>
+        <div>
+          <div class="mini-name">William Niwinski</div>
+          <div class="mini-deck">WB Eternal Dragon</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-card" data-idx="6" onclick="toggle(6)">
+      <img class="mini-photo" src="07.jpg" alt="Aeolius Alevizakis"/>
+      <div class="mini-bar">
+        <div class="mini-seed">7</div>
+        <div>
+          <div class="mini-name">Aeolius Alevizakis</div>
+          <div class="mini-deck">Blue-White</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-card" data-idx="7" onclick="toggle(7)">
+      <img class="mini-photo" src="08.jpg" alt="Chad Galpin"/>
+      <div class="mini-bar">
+        <div class="mini-seed">8</div>
+        <div>
+          <div class="mini-name">Chad Galpin</div>
+          <div class="mini-deck">Mono-B Reanimator</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /photo-grid -->
+
+  <!-- ══ DETAIL PANEL (shared, JS-populated) ══ -->
+  <div class="detail-panel" id="detailPanel"></div>
+
+  <div class="pg-footer">
+    © B.C. Premodern Masters · <a href="index.html">Coverage</a> · <a href="../../">magic1.ca</a>
+  </div>
+
+</div>
+
+<script>
+const PLAYERS = [
+  {
+    seed: 1,
+    name: "Andrew Kidston",
+    meta: "Magic Stronghold · Age 19",
+    finish: "QF Loss · Top 8",
+    champion: false,
+    deck: "Nought",
+    dl_mtgdecks: "DECKLIST_URL_HERE",
+    dl_mtgtop8:  "DECKLIST_URL_HERE",
+    facts: [
+      {l:"First Set",    a:"Kaladesh — 13 years playing"},
+      {l:"Other Formats",a:"Modern / Standard"},
+    ],
+    q: [
+      {l:"Unban?",       a:"Force of Will"},
+      {l:"Ban?",         a:"Duress"},
+      {l:"Underrated",   a:"Argothian Enchantress"},
+      {l:"Deck MVP",     a:"Crush"},
+    ]
+  },
+  {
+    seed: 2,
+    name: "Colin Whitwell",
+    meta: "Magic Stronghold · Age 34",
+    finish: "Finalist · 2nd Place",
+    champion: false,
+    deck: "Terrageddon",
+    dl_mtgdecks: "DECKLIST_URL_HERE",
+    dl_mtgtop8:  "DECKLIST_URL_HERE",
+    facts: [
+      {l:"First Set",    a:"Midnight Hunt (MID)"},
+      {l:"Other Formats",a:"Legacy / Cube"},
+    ],
+    q: [
+      {l:"Unban?",       a:"No idea"},
+      {l:"Ban?",         a:"Oath of Druids??"},
+      {l:"Underrated",   a:"Nimble Mongoose"},
+      {l:"Deck MVP",     a:"Armageddon"},
+    ]
+  },
+  {
+    seed: 3,
+    name: "Alastair McLellan",
+    meta: "Bastion / Stronghold · Age 32",
+    finish: "Semifinalist · Top 4",
+    champion: false,
+    deck: "Goblins",
+    dl_mtgdecks: "DECKLIST_URL_HERE",
+    dl_mtgtop8:  "DECKLIST_URL_HERE",
+    facts: [
+      {l:"First Set",    a:"Ixalan"},
+      {l:"Other Formats",a:"Legacy, Pioneer 😕"},
+    ],
+    q: [
+      {l:"Unban?",       a:"N/A"},
+      {l:"Ban?",         a:"Fetchlands? (jk)"},
+      {l:"Underrated",   a:"Brushhopper"},
+      {l:"Deck MVP",     a:"Goblin Ringleader!"},
+    ]
+  },
+  {
+    seed: 4,
+    name: "Rob Hackney",
+    meta: "Yellow Jacket → Oshawa Scavenger Folk · Age 42",
+    finish: "QF Loss · Top 8",
+    champion: false,
+    deck: "Iggy Pop (Storm)",
+    dl_mtgdecks: "DECKLIST_URL_HERE",
+    dl_mtgtop8:  "DECKLIST_URL_HERE",
+    facts: [
+      {l:"First Set",    a:"Ice Age"},
+      {l:"Other Formats",a:"Old School"},
+    ],
+    q: [
+      {l:"Unban?",       a:"Grim Monolith"},
+      {l:"Ban?",         a:"None — Gush I guess?"},
+      {l:"Underrated",   a:"Vampire Hounds"},
+      {l:"Deck MVP",     a:"Necro (Cogia)"},
+    ]
+  },
+  {
+    seed: 5,
+    name: "Markus Thibeau",
+    meta: "Magic Stronghold · Age 35",
+    finish: "Champion · 1st Place",
+    champion: true,
+    deck: "Moneyball Black",
+    dl_mtgdecks: "DECKLIST_URL_HERE",
+    dl_mtgtop8:  "DECKLIST_URL_HERE",
+    facts: [
+      {l:"First Set",    a:"Odyssey — 25 years playing"},
+      {l:"Other Formats",a:"Cube"},
+    ],
+    q: [
+      {l:"Unban?",       a:"Hymn to Tourach"},
+      {l:"Ban?",         a:"Dreadnought / Goblin Lackey / Gush"},
+      {l:"Underrated",   a:"Mishra's Factory"},
+      {l:"Deck MVP",     a:"Engineer Plague / Dark Ritual"},
+    ]
+  },
+  {
+    seed: 6,
+    name: "William Niwinski",
+    meta: "Connections / Team Lavascape · Age 23",
+    finish: "QF Loss · Top 8",
+    champion: false,
+    deck: "WB Eternal Dragon",
+    dl_mtgdecks: "DECKLIST_URL_HERE",
+    dl_mtgtop8:  "DECKLIST_URL_HERE",
+    facts: [
+      {l:"First Set",    a:"Return to Ravnica — ~15 years playing"},
+      {l:"Other Formats",a:"Pauper, Draft"},
+    ],
+    q: [
+      {l:"Unban?",       a:"Grim Monolith"},
+      {l:"Ban?",         a:"Goblin Piledriver"},
+      {l:"Underrated",   a:"Eternal Dragon"},
+      {l:"Deck MVP",     a:"Eternal Dragon"},
+    ]
+  },
+  {
+    seed: 7,
+    name: "Aeolius Alevizakis",
+    meta: "FfeJ · Age 40",
+    finish: "QF Loss · Top 8",
+    champion: false,
+    deck: "Blue-White",
+    dl_mtgdecks: "DECKLIST_URL_HERE",
+    dl_mtgtop8:  "DECKLIST_URL_HERE",
+    facts: [
+      {l:"First Set",    a:"~30 years playing"},
+      {l:"Other Formats",a:"Cube"},
+    ],
+    q: [
+      {l:"Unban?",       a:"Tide"},
+      {l:"Ban?",         a:"—"},
+      {l:"Underrated",   a:"—"},
+      {l:"Deck MVP",     a:"Mishra's Factory"},
+    ]
+  },
+  {
+    seed: 8,
+    name: "Chad Galpin",
+    meta: "Connections · Age 31",
+    finish: "Semifinalist · Top 4",
+    champion: false,
+    deck: "Mono-B Reanimator",
+    dl_mtgdecks: "DECKLIST_URL_HERE",
+    dl_mtgtop8:  "DECKLIST_URL_HERE",
+    facts: [
+      {l:"First Set",    a:"Tried 2012, started for real 2021/22 (All Will Be One)"},
+      {l:"Other Formats",a:"Pauper, Commander, Modern, Legacy"},
+    ],
+    q: [
+      {l:"Unban?",       a:"None (but Entomb anyways plz)"},
+      {l:"Ban?",         a:"Something from Dreadnought. Or Tormod's Crypt ;)"},
+      {l:"Underrated",   a:"Reanimate"},
+      {l:"Deck MVP",     a:"Unmask"},
+    ]
+  },
+];
+
+let openIdx = null;
+
+function toggle(i) {
+  // clicking same card closes it
+  if (openIdx === i) {
+    openIdx = null;
+    renderPanel();
+    document.querySelectorAll('.mini-card').forEach(c => c.classList.remove('active'));
+    return;
+  }
+  openIdx = i;
+  renderPanel();
+  document.querySelectorAll('.mini-card').forEach((c,j) => c.classList.toggle('active', j===i));
+  // scroll panel into view smoothly
+  setTimeout(() => {
+    document.getElementById('detailPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 50);
+}
+
+function renderPanel() {
+  const panel = document.getElementById('detailPanel');
+  if (openIdx === null) {
+    panel.classList.remove('visible');
+    panel.innerHTML = '';
+    return;
+  }
+  const p = PLAYERS[openIdx];
+
+  const dlRow = (p.dl_mtgdecks !== 'DECKLIST_URL_HERE' || p.dl_mtgtop8 !== 'DECKLIST_URL_HERE')
+    ? `<a class="decklist-btn" href="${p.dl_mtgdecks}" target="_blank" rel="noopener noreferrer">🃏 mtgdecks.net</a>
+       <a class="decklist-btn" href="${p.dl_mtgtop8}"  target="_blank" rel="noopener noreferrer">🃏 mtgtop8.com</a>`
+    : `<a class="decklist-btn" href="${p.dl_mtgdecks}" target="_blank" rel="noopener noreferrer">🃏 mtgdecks.net</a>
+       <a class="decklist-btn" href="${p.dl_mtgtop8}"  target="_blank" rel="noopener noreferrer">🃏 mtgtop8.com</a>`;
+
+  const factCells = p.facts.map(f =>
+    `<div class="q-cell"><span class="q-label">${f.l}</span><span class="q-answer">${f.a}</span></div>`
+  ).join('');
+
+  const qCells = p.q.map(q =>
+    `<div class="q-cell"><span class="q-label">${q.l}</span><span class="q-answer">${q.a}</span></div>`
+  ).join('');
+
+  panel.className = 'detail-panel visible' + (p.champion ? ' champion' : '');
+  panel.innerHTML = `
+    <div class="detail-head">
+      <div class="detail-seed">${p.seed}</div>
+      <div>
+        <div class="detail-name">${p.name}${p.champion ? ' 🏆' : ''}</div>
+        <div class="detail-meta">${p.meta}</div>
+      </div>
+      <span class="finish-pill">${p.finish}</span>
+    </div>
+    <div class="detail-body">
+      <div class="deck-row">
+        <span class="deck-tag">${p.deck}</span>
+        ${dlRow}
+      </div>
+      ${factCells}
+      ${qCells}
+    </div>
+  `;
+}
+
+// open first card by default
+toggle(0);
+</script>
+
+<script src="/js/bcpmm-shell.js"></script>
+</body>
+</html>

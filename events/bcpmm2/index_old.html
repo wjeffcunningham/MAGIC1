@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BCPMM II · Brewhall Champs</title>
+
+<link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg" />
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/bcpmm-shell.css" />
+
+<style>
+
+/* ===== LAYOUT ===== */
+
+.page {
+  max-width: 860px;
+  margin: 4rem auto;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+/* ===== TITLE ===== */
+
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.title-row img {
+  width: 60px;
+}
+
+h1 {
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* ===== ANIMATED BREWHALL ===== */
+
+.subtitle {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 16px 0 26px;
+  position: relative;
+  display: inline-block;
+  letter-spacing: 0.5px;
+  animation: subtitlePulse 3.2s ease-in-out infinite;
+}
+
+.subtitle::before,
+.subtitle::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.subtitle::before {
+  inset: -0.18em -0.35em;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 40, 40, 0.18) 0%, rgba(255, 40, 40, 0.08) 38%, rgba(255, 40, 40, 0) 68%);
+  opacity: 0;
+  transform: scale(0.94);
+  animation: redHaloBeat 3.2s ease-in-out infinite;
+}
+
+.subtitle::after {
+  top: -40%;
+  left: -65%;
+  width: 52%;
+  height: 190%;
+  background: linear-gradient(
+    100deg,
+    rgba(255,0,0,0) 0%,
+    rgba(255,110,110,0.10) 18%,
+    rgba(255,80,80,0.42) 42%,
+    rgba(255,20,20,0.88) 50%,
+    rgba(255,80,80,0.42) 58%,
+    rgba(255,110,110,0.10) 82%,
+    rgba(255,0,0,0) 100%
+  );
+  filter: blur(8px);
+  opacity: 0;
+  transform: translateX(0) skewX(-18deg);
+  animation: redSweepRhythm 3.2s cubic-bezier(.55,.08,.45,.95) infinite;
+}
+
+@keyframes redSweepRhythm {
+  0%   { opacity: 0; transform: translateX(-6%) skewX(-18deg); }
+  8%   { opacity: 0.95; transform: translateX(54%) skewX(-18deg); }
+  16%  { opacity: 0.08; transform: translateX(108%) skewX(-18deg); }
+
+  34%  { opacity: 0; transform: translateX(108%) skewX(-18deg); }
+  44%  { opacity: 0.9; transform: translateX(132%) skewX(-18deg); }
+  54%  { opacity: 0.12; transform: translateX(196%) skewX(-18deg); }
+
+  72%  { opacity: 0; transform: translateX(196%) skewX(-18deg); }
+  82%  { opacity: 0.82; transform: translateX(226%) skewX(-18deg); }
+  92%  { opacity: 0.05; transform: translateX(272%) skewX(-18deg); }
+  100% { opacity: 0; transform: translateX(272%) skewX(-18deg); }
+}
+
+@keyframes redHaloBeat {
+  0%, 100% { opacity: 0.08; transform: scale(0.96); }
+  10%      { opacity: 0.18; transform: scale(1.00); }
+  18%      { opacity: 0.05; transform: scale(0.97); }
+  44%      { opacity: 0.16; transform: scale(1.01); }
+  54%      { opacity: 0.06; transform: scale(0.98); }
+  82%      { opacity: 0.15; transform: scale(1.005); }
+  92%      { opacity: 0.04; transform: scale(0.985); }
+}
+
+@keyframes subtitlePulse {
+  0%, 100% { transform: translateY(0); text-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 0 0 rgba(255,40,40,0.00); }
+  10%      { transform: translateY(-0.5px); text-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(255,55,55,0.18); }
+  18%      { transform: translateY(0); text-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 0 4px rgba(255,55,55,0.06); }
+  44%      { transform: translateY(-0.5px); text-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(255,55,55,0.16); }
+  54%      { transform: translateY(0); text-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 0 4px rgba(255,55,55,0.06); }
+  82%      { transform: translateY(-0.5px); text-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 0 12px rgba(255,55,55,0.14); }
+  92%      { transform: translateY(0); text-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 0 3px rgba(255,55,55,0.05); }
+}
+
+/* ===== IMAGES ===== */
+
+.hero-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.hero-stack img {
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* ===== COUNTDOWN ===== */
+
+.countdown {
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin: 12px 0 28px;
+}
+
+/* ===== FACT BOX ===== */
+
+.info-box {
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 22px 18px;
+  margin: 20px auto;
+  max-width: 520px;
+  background: rgba(255,255,255,0.03);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  font-size: 1.15rem;
+  line-height: 1.7;
+}
+
+.info-box strong {
+  font-size: 1.2rem;
+}
+
+.info-box a {
+  text-decoration: underline;
+}
+
+.player-cap {
+  margin-top: 6px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* ===== HIGHLIGHT ===== */
+
+.highlight {
+  font-weight: 800;
+  margin: 20px 0;
+  font-size: 1.6rem;
+}
+
+/* ===== ENTRY ===== */
+
+.entry-fee {
+  margin-top: 12px;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+/* ===== CTA ===== */
+
+.cta a {
+  display: inline-block;
+  padding: 20px 40px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  border: 2px solid rgba(255,255,255,0.85);
+  text-decoration: none;
+  margin-top: 18px;
+  letter-spacing: 0.5px;
+
+  background: rgba(255,255,255,0.04);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+
+  transform: scale(1);
+  transition: all 0.18s ease;
+}
+
+.cta a:hover {
+  background: rgba(255,255,255,0.14);
+  transform: scale(1.06);
+  box-shadow: 0 16px 42px rgba(0,0,0,0.55);
+}
+/* ===== POSTER ===== */
+
+.poster-link {
+  margin-top: 14px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  opacity: 1;
+}
+
+.poster-link a {
+  text-decoration: underline;
+}
+
+/* ===== SPONSORS ===== */
+
+.sponsors {
+  margin: 34px 0 10px;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.sponsors img {
+  height: 60px;
+  opacity: 0.85;
+}
+
+/* ===== PRIZES ===== */
+
+.prizes {
+  margin: 56px auto 0;
+  padding-top: 28px;
+  border-top: 1px solid rgba(255,255,255,0.14);
+}
+
+.prizes h2 {
+  margin: 0 0 8px;
+  font-size: 1.7rem;
+  text-align: center;
+}
+
+.prize-note {
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.prize-note.subtle {
+  font-weight: 400;
+  opacity: 0.82;
+  margin-bottom: 28px;
+}
+
+.prize-tier {
+  margin: 0 0 48px;
+}
+
+.prize-tier h3 {
+  margin: 0 0 14px;
+  font-size: 1.24rem;
+  text-align: center;
+}
+
+.prize-stack-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.prize-stack {
+  --card-w: 116px;
+  --offset: calc(var(--card-w) / 2);
+  width: calc(var(--card-w) * 3);
+  height: calc(var(--card-w) * 1.42);
+  position: relative;
+  margin: 0 auto;
+}
+
+.prize-stack img {
+  position: absolute;
+  top: 0;
+  width: var(--card-w);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.42);
+  background: rgba(255,255,255,0.04);
+}
+
+.prize-stack img:nth-child(1) { left: calc(var(--offset) * 0); z-index: 1; }
+.prize-stack img:nth-child(2) { left: calc(var(--offset) * 1); z-index: 2; }
+.prize-stack img:nth-child(3) { left: calc(var(--offset) * 2); z-index: 3; }
+.prize-stack img:nth-child(4) { left: calc(var(--offset) * 3); z-index: 4; }
+.prize-stack img:nth-child(5) { left: calc(var(--offset) * 4); z-index: 5; }
+
+.prize-conds {
+  --card-w: 116px;
+  --offset: calc(var(--card-w) / 2);
+  width: calc(var(--card-w) * 3);
+  height: 44px;
+  position: relative;
+  margin: 10px auto 0;
+}
+
+.prize-conds span {
+  position: absolute;
+  width: var(--card-w);
+  font-size: 0.72rem;
+  line-height: 1.15;
+  font-style: italic;
+  opacity: 0.78;
+  text-align: center;
+}
+
+.prize-conds span:nth-child(1) { left: calc(var(--offset) * 0); }
+.prize-conds span:nth-child(2) { left: calc(var(--offset) * 1); }
+.prize-conds span:nth-child(3) { left: calc(var(--offset) * 2); }
+.prize-conds span:nth-child(4) { left: calc(var(--offset) * 3); }
+.prize-conds span:nth-child(5) { left: calc(var(--offset) * 4); }
+
+.prize-extra {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  opacity: 0.84;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .prize-stack {
+    --card-w: 94px;
+  }
+
+  .prize-conds {
+    --card-w: 94px;
+    height: 52px;
+  }
+
+  .prize-conds span {
+    font-size: 0.66rem;
+  }
+}
+
+/* ===== PRIZES BOXED GRID ===== */
+
+.prizes {
+  margin: 56px auto 0;
+  padding: 24px 18px 10px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.025);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+  max-width: 860px;
+}
+
+.prize-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px 28px;
+  margin-top: 24px;
+}
+
+.prize-tier {
+  margin: 0;
+}
+
+.prize-tier h3 {
+  margin-bottom: 12px;
+}
+
+/* slightly tighter stacks inside grid */
+.prize-stack {
+  transform: scale(0.95);
+}
+
+@media (max-width: 720px) {
+  .prize-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== PRIZE HEADER CARDS — PULLED IN + OVERLAP ===== */
+
+.prize-header-cards {
+  position: relative;
+  height: 60px;
+  margin-bottom: -10px; /* pulls box upward into them slightly */
+}
+
+.prize-header-cards img {
+  position: absolute;
+  width: 120px;
+  border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(0,0,0,0.5);
+  opacity: 0.9;
+  z-index: 3;
+}
+
+/* LEFT — Powder Keg */
+.prize-header-cards .left {
+  left: 14%;
+  top: -30px;
+  transform: rotate(-22deg);
+}
+
+/* RIGHT — City of Traitors */
+.prize-header-cards .right {
+  right: 14%;
+  top: -30px;
+  transform: rotate(22deg);
+}
+
+.prizes {
+  position: relative;
+  overflow: visible; /* important */
+}
+
+/* ===== MOBILE FIX FOR PRIZE HEADER CARDS ===== */
+
+@media (max-width: 600px) {
+
+  .prize-header-cards {
+    height: 40px;
+    margin-bottom: 0;
+  }
+
+  .prize-header-cards img {
+    width: 80px;
+    opacity: 0.7;
+  }
+
+  .prize-header-cards .left {
+    left: 6%;
+    top: -10px;
+    transform: rotate(-18deg);
+  }
+
+  .prize-header-cards .right {
+    right: 6%;
+    top: -10px;
+    transform: rotate(18deg);
+  }
+
+}
+
+/* HARD CUT — very small screens */
+
+@media (max-width: 480px) {
+  .prize-header-cards {
+    display: none;
+  }
+}
+
+/* ===== BACK ===== */
+
+.back {
+  margin-top: 40px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="global-menu-root"></div>
+
+<div class="page">
+
+  <div class="title-row">
+    <img src="/assets/BCPMM.svg" alt="BCPMM logo">
+    <h1>B.C. Premodern Masters II</h1>
+    <img src="/assets/BCPMM.svg" alt="BCPMM logo">
+  </div>
+
+  <div class="subtitle">🏆 BREWHALL CHAMPS 🏆</div>
+
+  <div class="hero-stack">
+    <img src="/assets/brew1.jpeg" alt="Strange Fellows Brewing interior">
+    <!--img src="/assets/brew4.jpeg" alt="Strange Fellows Brewing bar"-->
+  </div>
+
+          <div class="sponsors">
+    <img src="/assets/sponsor1.png" alt="Sponsor 1">
+    <img src="/assets/sponsor2.jpeg" alt="Sponsor 2">
+    <img src="/assets/sponsor3.webp" alt="Sponsor 3">
+    <img src="/assets/sponsor4.png" alt="Sponsor 4">
+    <img src="/assets/sponsor5.png" alt="Sponsor 5">
+    <img src="/assets/sponsor6.png" alt="Sponsor 6">
+  </div>
+<br>
+  <div class="countdown" id="countdown"></div>
+
+  <div class="info-box">
+
+    <strong>April 11, 2026 · 11:00 AM</strong><br>
+
+    <a href="https://www.google.com/maps/place/strange+fellows+clark+drive/data=!4m2!3m1!1s0x54867141b4e006a7:0xad338663431e413?sa=X&ved=1t:242&ictx=111" target="_blank" rel="noopener">
+      Strange Fellows Brewing<br>
+      1345 Clark Dr, Vancouver
+    </a>
+
+    <br><br>
+
+    <strong>5 Rounds · Cut to Top 8</strong><br>
+    Premodern Constructed<br>
+    48-player cap<br>
+    <a href="/leaguetracker/">8× BCPMM Points</a><br>
+
+  <div class="entry-fee">Entry: $40</div>
+
+  </div>
+
+  <div class="highlight">
+    All profits go to BC Cancer.<br><br>
+    Expect multiple drawings throughout the event with additional giveaways from our amazing sponsors!
+  </div>
+
+  <div class="poster-link">
+    <a href="/assets/bcpmm2-poster.jpg" target="_blank" rel="noopener">VIEW OFFICIAL POSTER</a>
+  </div>
+
+  <div class="cta">
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSddQ7btNYrgdmz73__Ukxr4di0F4_QxbYoOJ-dezau7wLpYhg/viewform">SIGN UP →</a>
+  </div>
+
+    <div class="prize-header-cards">
+<img class="left"
+  src="https://api.scryfall.com/cards/a7a8b6b8-b95f-4014-b17a-a6d44d965995?format=image&version=normal">
+  
+  <img class="right"
+    src="https://api.scryfall.com/cards/4d9715c2-9036-4ae2-a5b4-1b190d50c963?format=image&version=normal">
+</div>
+
+  <div class="prizes">
+  <h2>Top 8 Prizes
+</h2>
+  <div class="prize-note"><i>1st Place: HP City of Traitors & more!</i></div>
+  <div class="prize-note"><i>Make Top 8? Get a Keg!* (Powder)</i></div>
+
+  <div class="prize-grid">
+
+    <!-- 1ST -->
+    <div class="prize-tier">
+      <h3>1st Place</h3>
+      <div class="prize-stack-wrap">
+        <div class="prize-stack">
+          <img src="https://api.scryfall.com/cards/a7a8b6b8-b95f-4014-b17a-a6d44d965995?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/6e2ffcb9-e94f-4799-ae42-797091df2e09?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/df1d43ec-abf5-4e47-90fc-c8f533170474?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/b730bc14-1600-4bc2-838d-a3cfdf0cc017?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/043b8c8f-2731-4428-b9fb-43c55ab21dce?format=image&version=normal">
+        </div>
+      </div>
+      <div class="prize-conds">
+        <span>HP<br>EXO</span>
+        <span>HP<br>WC99</span>
+        <span>LP<br>WC98</span>
+        <span>LP<br>WC99</span>
+        <span>LP<br>WC98</span>
+      </div>
+    </div>
+
+    <!-- 2ND -->
+    <div class="prize-tier">
+      <h3>2nd Place</h3>
+      <div class="prize-stack-wrap">
+        <div class="prize-stack">
+          <img src="https://api.scryfall.com/cards/56816a2d-4faa-4fbd-bf1a-35fa3e90ccf6?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/4d9715c2-9036-4ae2-a5b4-1b190d50c963?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/10f6e07b-36c1-429b-a857-ada8c643556c?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/b730bc14-1600-4bc2-838d-a3cfdf0cc017?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/043b8c8f-2731-4428-b9fb-43c55ab21dce?format=image&version=normal">
+        </div>
+      </div>
+      <div class="prize-conds">
+        <span>HP<br>5ED</span>
+        <span>LP<br>UDS</span>
+        <span>LP<br>WC00</span>
+        <span>LP<br>WC99</span>
+        <span>LP<br>WC98</span>
+      </div>
+    </div>
+
+    <!-- 3/4 -->
+    <div class="prize-tier">
+      <h3>3rd / 4th</h3>
+      <div class="prize-stack-wrap">
+        <div class="prize-stack">
+          <img src="https://api.scryfall.com/cards/9ef93e7a-e799-4c73-b5a1-38b91f368072?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/2b77caf8-711b-4597-a5a5-dead81568e5b?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/74d29b3d-f588-431d-bf4e-f7215683ab39?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/b730bc14-1600-4bc2-838d-a3cfdf0cc017?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/043b8c8f-2731-4428-b9fb-43c55ab21dce?format=image&version=normal">
+        </div>
+      </div>
+      <div class="prize-conds">
+        <span>LP<br>WC00</span>
+        <span>LP<br>P04</span>
+        <span>LP<br>FTV</span>
+        <span>LP<br>WC99</span>
+        <span>LP<br>WC98</span>
+      </div>
+    </div>
+
+    <!-- 5-8 -->
+    <div class="prize-tier">
+      <h3>5th – 8th</h3>
+      <div class="prize-stack-wrap">
+        <div class="prize-stack">
+          <img src="https://api.scryfall.com/cards/d0dcf152-916e-4603-a688-7a05b57d1b4c?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/6e2ffcb9-e94f-4799-ae42-797091df2e09?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/bff41c6f-dfa3-44cb-bdd8-7d2629605e0e?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/b730bc14-1600-4bc2-838d-a3cfdf0cc017?format=image&version=normal">
+          <img src="https://api.scryfall.com/cards/043b8c8f-2731-4428-b9fb-43c55ab21dce?format=image&version=normal">
+        </div>
+      </div>
+      <div class="prize-conds">
+        <span>LP<br>PTC</span>
+        <span>LP<br>WC99</span>
+        <span>LP<br>WC00</span>
+        <span>LP<br>WC99</span>
+        <span>LP<br>WC98</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <div class="back">
+    <a href="/">← Back to Magic1</a>
+  </div>
+
+</div>
+
+<script>
+const target = new Date("2026-04-11T11:00:00-07:00");
+
+function tick() {
+  const diff = target - new Date();
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff / 3600000) % 24);
+  const m = Math.floor((diff / 60000) % 60);
+  const s = Math.floor((diff / 1000) % 60);
+
+  document.getElementById("countdown").innerText =
+    `${d}d ${h}h ${m}m ${s}s`;
+}
+
+setInterval(tick, 1000);
+tick();
+</script>
+
+<script src="/js/bcpmm-shell.js"></script>
+
+</body>
+</html>

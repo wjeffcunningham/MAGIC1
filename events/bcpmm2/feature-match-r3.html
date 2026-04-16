@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BCPMM #2 · Round 3 Feature Match · Kidston vs Luemers</title>
+  <meta name="description" content="BCPMM #2 Round 3 Feature Match — Andrew Kidston (Nought) vs Robert Luemers (Tog)."/>
+
+  <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
+  <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+
+  <script>
+    if (localStorage.getItem('bcpmm-theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.addEventListener('DOMContentLoaded', function () {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.add('dark');
+      });
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg:     #f3f6ff;
+      --card:   #ffffff;
+      --ink:    #0f172a;
+      --muted:  #475569;
+      --border: rgba(15,23,42,.12);
+      --shadow: 0 10px 30px rgba(15,23,42,.08);
+      --radius: 16px;
+      --max:    820px;
+      --pad:    18px;
+      --accent: #1f6feb;
+    }
+
+    body.dark {
+      --bg:     #0d1117;
+      --card:   #161b22;
+      --ink:    #e6edf3;
+      --muted:  #8b949e;
+      --border: rgba(240,246,252,.1);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --accent: #58a6ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.18), transparent 60%),
+        linear-gradient(var(--bg), #fff 65%);
+    }
+
+    body.dark {
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.1), transparent 60%),
+        linear-gradient(var(--bg), #0d1117 65%);
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .shell {
+      max-width: var(--max);
+      margin: 32px auto 56px;
+      padding: 0 var(--pad);
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      line-height: 1.15;
+      letter-spacing: -.02em;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin: 0 0 16px;
+      line-height: 1.45;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+    }
+
+    article p {
+      line-height: 1.7;
+      margin: 0 0 1em;
+      font-size: 1.02rem;
+    }
+
+    article h3 {
+      margin: 1.8em 0 .4em;
+      font-size: 1.08rem;
+      letter-spacing: -.01em;
+    }
+
+    article p:last-child { margin-bottom: 0; }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* single photo — half-width, centred */
+    .match-photo {
+      display: block;
+      max-width: 60%;
+      width: 100%;
+      border-radius: 12px;
+      margin: 20px auto;
+      box-shadow: 0 8px 24px rgba(15,23,42,.13);
+    }
+
+    body.dark .match-photo { box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+
+    @media(max-width: 500px) { .match-photo { max-width: 90%; } }
+
+    /* paired photos — side by side in a framed box */
+    .photo-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 20px 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--card);
+      box-shadow: 0 6px 20px rgba(15,23,42,.08);
+    }
+
+    body.dark .photo-pair { box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+
+    /* left side: single tall photo */
+    .photo-pair .pp-left img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    /* right side: player photo + card thumbnails below */
+    .photo-pair .pp-right {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .photo-pair .pp-right .pp-player {
+      display: block;
+      width: 100%;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    /* card thumbnails row — fills the gap */
+    .photo-pair .pp-cards {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .photo-pair .pp-cards a {
+      flex: 1;
+      display: block;
+      text-decoration: none;
+    }
+
+    .photo-pair .pp-cards img {
+      display: block;
+      width: 100%;
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(15,23,42,.18);
+      transition: transform .18s, box-shadow .18s;
+    }
+
+    body.dark .photo-pair .pp-cards img { box-shadow: 0 3px 10px rgba(0,0,0,.45); }
+
+    .photo-pair .pp-cards a:hover img {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 7px 18px rgba(15,23,42,.22);
+    }
+
+    @media(max-width: 480px) {
+      .photo-pair { grid-template-columns: 1fr; }
+      .photo-pair .pp-left img { height: auto; }
+    }
+
+    /* result callout */
+    .result-box {
+      margin: 24px 0 8px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: rgba(31,111,235,.06);
+      border: 1px solid rgba(31,111,235,.18);
+      font-weight: 700;
+      font-size: 1rem;
+      text-align: center;
+      letter-spacing: .01em;
+    }
+
+    body.dark .result-box {
+      background: rgba(88,166,255,.07);
+      border-color: rgba(88,166,255,.2);
+    }
+
+    .nav {
+      margin-top: 28px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: .92rem;
+    }
+
+    /* inline card art — Sideboard magazine style */
+    .card-float {
+      width: 100px;
+      border-radius: 6px;
+      box-shadow: 0 6px 18px rgba(15,23,42,.2);
+      display: block;
+      flex-shrink: 0;
+    }
+
+    body.dark .card-float { box-shadow: 0 6px 18px rgba(0,0,0,.5); }
+
+    .card-float.right {
+      float: right;
+      margin: 4px 0 12px 18px;
+      clear: right;
+    }
+
+    .card-float.left {
+      float: left;
+      margin: 4px 18px 12px 0;
+      clear: left;
+    }
+
+    .clearfix::after {
+      content: '';
+      display: table;
+      clear: both;
+    }
+
+    @media(max-width: 500px) {
+      .card-float { width: 72px; }
+    }
+  </style>
+</head>
+
+<body>
+<div id="global-menu-root"></div>
+
+<div class="shell">
+
+  <header>
+    <h1>BCPMM #2: Round 3 Feature Match</h1>
+    <p class="sub">Andrew Kidston (Nought) vs Robert Luemers (Tog) · April 11, 2026</p>
+  </header>
+
+  <article class="card">
+
+    <p><strong>Round 3. Table 2.</strong></p>
+
+    <!-- opening player pair photos with card IDs in the gap -->
+    <div class="photo-pair">
+      <div class="pp-left">
+        <img src="3_0_1.JPG" alt="Andrew Kidston" loading="lazy"/>
+      </div>
+      <div class="pp-right">
+        <img class="pp-player" src="3_0_2.JPG" alt="Robert Luemers" loading="lazy"/>
+        <div class="pp-cards">
+          <a href="https://scryfall.com/card/mir/315/phyrexian-dreadnought" target="_blank" rel="noopener noreferrer">
+            <img src="https://api.scryfall.com/cards/mir/315?format=image&version=normal" alt="Phyrexian Dreadnought" loading="lazy"/>
+          </a>
+          <a href="https://scryfall.com/card/ody/292/psychatog" target="_blank" rel="noopener noreferrer">
+            <img src="https://api.scryfall.com/cards/ody/292?format=image&version=normal" alt="Psychatog" loading="lazy"/>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <p><strong>Andrew KIDSTON</strong> vs <strong>Robert LUEMERS</strong></p>
+
+    <p>
+      Kidston and Luemers were among the 12 players remaining undefeated at 2–0.
+    </p>
+
+    <p>
+      Kidston was the runner-up at January's BCPMM #1, taking his same archetype — Nought — all the way to
+      the finals before being dispatched by Goblins in the hands of Caitlyn Bethune. Coincidentally enough,
+      Kidston was paired against Bethune in Round 1 of this event, this time coming out the victor. Was he
+      on the way to rewriting history?
+    </p>
+
+    <p>
+      Luemers, meanwhile, is a newcomer to the BCPMM. He'd already been awarded the <strong>"Road Warrior"</strong>
+      prize for travelling all the way from California. In part, this speaks to the grassroots enthusiasm
+      for the Premodern format. In part, it represents a genuine curiosity by other Premodern "crews" as
+      to just what was going on up in British Columbia. Luemers is an envoy from the
+      <strong><a href="https://www.instagram.com/mtgpunks/" target="_blank" rel="noopener noreferrer">East Bay Punks</a></strong>,
+      affiliated with the Oakland/San Francisco scene.
+      Jeffrey Scofield repping the <strong><a href="https://emeraldcitytrolls.com/" target="_blank" rel="noopener noreferrer">Emerald City Trolls</a></strong>
+      (Seattle) and Curran Delahanty repping
+      <strong><a href="https://www.portlandpremodern.com" target="_blank" rel="noopener noreferrer">Rose City Premodern</a></strong>
+      (Portland) also made appearances.
+    </p>
+
+    <p>
+      Luemers was on <strong>Tog</strong> — well-practiced, and with no illusions about the danger presented
+      by arguably the format's only "Tier 0" deck.
+    </p>
+
+    <h3>Game 1 —</h3>
+
+    <p>Luemers double mulligans. Andrew leads with Peek, seeing lands, Counterspell, Gush.</p>
+
+    <p>
+      Land-go, occasionally with a cantrip, continues on each side, until Kidston pulls the trigger on Turn 4.
+    </p>
+
+    <div class="clearfix">
+      <img class="card-float right"
+           src="https://api.scryfall.com/cards/mir/315?format=image&version=normal"
+           alt="Phyrexian Dreadnought"/>
+      <p>
+        He tried a Dreadnought — which gets Countered. And then another Dreadnought, which triggers a Gush
+        from Luemers, but ultimately resolves, along with a Stifle.
+      </p>
+    </div>
+
+    <img class="match-photo" src="3_1.jpg" alt="Game 1 — Dreadnought resolves" loading="lazy"/>
+
+    <p>
+      Luemers, without an answer and down on cards, is quickly ready to move on to Game 2.
+    </p>
+
+    <p><strong>1–0 Kidston</strong></p>
+
+    <hr/>
+
+    <p>
+      Kidston only boards out 2 cards, bringing in 2 Brain Freezes from the sideboard.
+    </p>
+
+    <p>
+      One of the most fascinating aspects of Premodern is that despite no or subtle changes to the format,
+      the metagame continues to evolve simply as a function of general format literacy. Case in point:
+      Kidston's Nought deck from BCPMM #1 in January — albeit when Parallax Tide was still legal —
+      didn't even play Brain Freeze in the sideboard.
+    </p>
+
+    <p>
+      Since then, Brain Freeze has become one of the most important cards in the archetype, giving it an
+      "Overdrive" gear to surpass most anyone trying to out-control the strategy.
+    </p>
+
+    <h3>Game 2 —</h3>
+
+    <img class="match-photo" src="3_2.jpg" alt="Game 2 — Luemers' Duress" loading="lazy"/>
+
+    <p>It's Luemers' turn to see what Kidston is working with.</p>
+
+    <p>Polluted Delta, fetch Swamp, into Duress — revealing:</p>
+
+    <p style="padding-left:1.2em;font-style:italic;">4 Island · 1 Foil · 1 Thwart · 1 Opt</p>
+
+    <p>
+      Luemers puzzles for a moment: <em>"I actually don't know which one is right here."</em>
+    </p>
+
+    <p>
+      Kidston gently suggests the choice is between Foil and Thwart. Luemers settles on the latter.
+      <em>Personally, I would have taken the Opt.</em>
+    </p>
+
+    <p>
+      On his next turn, Luemers lands a Powder Keg, giving some measure of defence against a potential
+      1-mana 12/12.
+    </p>
+
+    <p>
+      The two continue Land/Cantrip/Go until Luemers' 4th turn, when he floats mana, casts Gush (resolves),
+      and then tries a Tog.
+    </p>
+
+    <p>Andrew Gushes in response, then casts Foil.</p>
+
+    <p>Luemers Foils back.</p>
+
+    <p>Andrew seizes the last word with a Counterspell.</p>
+
+    <p>
+      And somehow, the two vicious kill-you-out-of-nowhere Control decks had attritioned each other into
+      a midgame where they were both running on empty.
+    </p>
+
+    <p>
+      After a few more turns of draw-go and cantrips, Luemers gets an update with Duress —
+    </p>
+
+    <p style="padding-left:1.2em;font-style:italic;">
+      Stifle · Stifle · Daze · Impulse · Vision Charm · Island
+    </p>
+
+    <p>— taking Impulse.</p>
+
+    <p>
+      Andrew flashes back his first of two Flashes of Insight, continuing to churn through his hand.
+    </p>
+
+    <p>
+      Luemers is also gathering steam, with a resolved Fact or Fiction picking up 3 cards.
+    </p>
+
+    <img class="match-photo" src="3_3.jpg" alt="Game 2 — Fact or Fiction pile" loading="lazy"/>
+
+    <p>
+      Then — Kidston draws a Nought, and decides it's time for another skirmish. He plays it right into
+      Luemers' Keg.
+    </p>
+
+    <p>It resolves. So does the Vision Charm.</p>
+
+    <p>
+      Luemers untaps and plays his second Powder Keg, then passes back to Kidston — both anticipating a
+      stop on Upkeep.
+    </p>
+
+    <p>Nought phases in. Luemers cracks the Keg.</p>
+
+    <p><em>"Stifle."</em></p>
+
+    <p>Luemers tries Smother.</p>
+
+    <p>
+      Kidston flashes back Flash of Insight #2 — for 8. Gushes. Smother resolves.
+    </p>
+
+    <p>
+      And once again, both players are back to relative parity. Draw, go, cantrips.
+    </p>
+
+    <p>
+      After several turns of this, and an innocent Portent by Luemers on himself — which Kidston double
+      Dazes, before playing another cantrip or two of his own — Kidston finally pops the question:
+    </p>
+
+    <p><em>"How many cards do you have in your library?"</em></p>
+
+    <p><em>"28."</em></p>
+
+    <p>
+      Kidston announces a Brain Freeze, with the Storm trigger on the stack representing 5 copies.
+    </p>
+
+    <p>
+      In response to the triggers — Luemers Gushes, and Kidston Foils — moving the looming trigger from
+      <em>bad</em> to <em>worse</em>.
+    </p>
+
+    <p>
+      By the time the Freezes resolve, Luemers is down to his final Tog, with 2 cards left in library.
+    </p>
+
+    <p>
+      I asked Kidston after the match why he didn't lead on the Brain Freeze turn with the mill effect
+      of the 2 Vision Charms he had remaining in hand. He explained that his main concern was that
+      Luemers might have a Brain Freeze of his own, that could've decked him before Luemers would
+      draw his final card — if he wasn't careful.
+    </p>
+
+    <div class="result-box">
+      WINNER: KIDSTON'S FREEZE-NOUGHT &nbsp;·&nbsp; 2–0
+    </div>
+
+  </article>
+
+  <nav class="nav">
+    <a href="index.html">← Tournament Coverage</a>
+    <a href="../../">magic1.ca</a>
+  </nav>
+
+</div>
+
+<script src="/js/bcpmm-shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BCPMM #2: Brewhall Champs · Gallery · magic1.ca</title>
+  <meta name="description" content="Photo and video gallery for BCPMM #2: Brewhall Champs — April 11, 2026."/>
+
+  <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
+  <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+
+  <script>
+    if (localStorage.getItem('bcpmm-theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.addEventListener('DOMContentLoaded', function () {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.add('dark');
+      });
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg:      #f3f6ff;
+      --card:    #ffffff;
+      --item-bg: #fbfdff;
+      --ink:     #0f172a;
+      --muted:   #475569;
+      --border:  rgba(15,23,42,.12);
+      --shadow:  0 10px 30px rgba(15,23,42,.08);
+      --radius:  16px;
+      --max:     1100px;
+      --accent:  #1f6feb;
+    }
+
+    body.dark {
+      --bg:      #0d1117;
+      --card:    #161b22;
+      --item-bg: #0d1117;
+      --ink:     #e6edf3;
+      --muted:   #8b949e;
+      --border:  rgba(240,246,252,.1);
+      --shadow:  0 10px 30px rgba(0,0,0,.35);
+      --accent:  #58a6ff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.18), transparent 60%),
+        linear-gradient(var(--bg), #ffffff 65%);
+      min-height: 100vh;
+    }
+
+    body.dark {
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.1), transparent 60%),
+        linear-gradient(var(--bg), #0d1117 65%);
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .shell {
+      max-width: var(--max);
+      margin: 32px auto 64px;
+      padding: 0 18px;
+    }
+
+    /* ── page header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .page-header h1 {
+      font-size: clamp(1.5rem, 3.5vw, 2rem);
+      font-weight: 800;
+      margin: 0 0 5px;
+      letter-spacing: -.02em;
+    }
+
+    .page-header p { color: var(--muted); margin: 0; font-size: .92rem; }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 9px;
+      font-size: .85rem;
+      font-weight: 650;
+    }
+
+    /* ── gallery grid ── */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    @media(max-width: 700px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 420px) { .gallery-grid { grid-template-columns: 1fr; } }
+
+    /* ── grid item ── */
+    .g-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: border-color .18s, box-shadow .18s, transform .18s;
+    }
+
+    .g-item:hover {
+      border-color: rgba(31,111,235,.3);
+      box-shadow: 0 14px 36px rgba(15,23,42,.13);
+      transform: translateY(-2px);
+    }
+
+    body.dark .g-item:hover { border-color: rgba(88,166,255,.3); }
+
+    /* thumbnail wrapper — 4:3 */
+    .g-thumb {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: var(--item-bg);
+      overflow: hidden;
+    }
+
+    .g-thumb img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      transition: transform .25s;
+    }
+
+    .g-item:hover .g-thumb img { transform: scale(1.03); }
+
+    /* video play overlay */
+    .g-play {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.28);
+      transition: background .18s;
+    }
+
+    .g-item:hover .g-play { background: rgba(0,0,0,.18); }
+
+    .g-play svg {
+      width: 48px;
+      height: 48px;
+      fill: rgba(255,255,255,.92);
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,.4));
+    }
+
+    /* caption */
+    .g-caption {
+      padding: 8px 12px 10px;
+      font-size: .8rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    /* ── lightbox ── */
+    .lb-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.88);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .lb-overlay.open { display: flex; }
+
+    .lb-media {
+      max-width: min(90vw, 900px);
+      max-height: 78vh;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .lb-media img {
+      display: block;
+      max-width: 100%;
+      max-height: 78vh;
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+
+    .lb-media video {
+      display: block;
+      max-width: 100%;
+      max-height: 78vh;
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+
+    .lb-caption {
+      color: rgba(255,255,255,.85);
+      font-size: .9rem;
+      text-align: center;
+      max-width: 700px;
+      line-height: 1.45;
+    }
+
+    /* nav arrows */
+    .lb-prev, .lb-next {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,.12);
+      border: none;
+      color: #fff;
+      font-size: 1.6rem;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .18s;
+      z-index: 1001;
+    }
+
+    .lb-prev { left: 14px; }
+    .lb-next { right: 14px; }
+    .lb-prev:hover, .lb-next:hover { background: rgba(255,255,255,.25); }
+
+    /* close button */
+    .lb-close {
+      position: fixed;
+      top: 14px;
+      right: 18px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.7);
+      font-size: 2rem;
+      cursor: pointer;
+      z-index: 1002;
+      line-height: 1;
+      transition: color .18s;
+    }
+
+    .lb-close:hover { color: #fff; }
+
+    /* counter */
+    .lb-counter {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,.5);
+      font-size: .8rem;
+      z-index: 1001;
+      letter-spacing: .06em;
+    }
+
+    /* footer */
+    .pg-footer {
+      margin-top: 28px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+    .pg-footer a { color: var(--accent); }
+  </style>
+</head>
+
+<body>
+<div id="global-menu-root"></div>
+
+<div class="shell">
+
+  <div class="page-header">
+    <h1>BCPMM #2: Brewhall Champs — Gallery</h1>
+    <p>Photos &amp; video from the day · April 11, 2026 · Strange Fellows Brewing</p>
+    <a class="back-link" href="index.html">← Back to Coverage</a>
+  </div>
+
+  <div class="gallery-grid" id="galleryGrid"></div>
+
+  <div class="pg-footer">
+    © B.C. Premodern Masters · <a href="index.html">Coverage</a> · <a href="../../">magic1.ca</a>
+  </div>
+
+</div>
+
+<!-- ── LIGHTBOX ── -->
+<div class="lb-overlay" id="lbOverlay">
+  <button class="lb-close" id="lbClose">✕</button>
+  <span class="lb-counter" id="lbCounter"></span>
+  <button class="lb-prev" id="lbPrev">‹</button>
+  <div class="lb-media" id="lbMedia"></div>
+  <button class="lb-next" id="lbNext">›</button>
+  <div class="lb-caption" id="lbCaption"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   GALLERY ITEMS — edit this array to add/remove media.
+   type defaults to 'image' if omitted.
+   For video, set type:'video'. Supported: mp4, mov, webm.
+   thumb is optional for video — if omitted the video itself
+   is used as its own poster.
+═══════════════════════════════════════════════════ */
+const ITEMS = [
+  { file: 'gallery/IMG_001.jpg',  caption: 'The field at Round 1' },
+  { file: 'gallery/IMG_002.jpg',  caption: 'Strange Fellows Brewing — venue shot' },
+  { file: 'gallery/IMG_003.jpg',  caption: '' },
+  { file: 'gallery/IMG_004.jpg',  caption: '' },
+  { file: 'gallery/IMG_005.jpg',  caption: '' },
+  { file: 'gallery/IMG_006.jpg',  caption: '' },
+  // Video example:
+  // { file: 'gallery/highlights.mp4', caption: 'Event highlights', type: 'video', thumb: 'gallery/highlights_thumb.jpg' },
+];
+
+/* ═══════════════════════════════════════════════════
+   Rendering — no need to edit below here
+═══════════════════════════════════════════════════ */
+
+function isVideo(item) {
+  return item.type === 'video' || /\.(mp4|mov|webm)$/i.test(item.file);
+}
+
+/* build grid */
+const grid = document.getElementById('galleryGrid');
+
+ITEMS.forEach((item, i) => {
+  const el = document.createElement('div');
+  el.className = 'g-item';
+  el.addEventListener('click', () => openLightbox(i));
+
+  const video = isVideo(item);
+
+  if (video) {
+    const thumbSrc = item.thumb || item.file;
+    el.innerHTML = `
+      <div class="g-thumb">
+        ${item.thumb
+          ? `<img src="${item.thumb}" alt="${item.caption || ''}" loading="lazy"/>`
+          : `<video src="${item.file}" preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`
+        }
+        <div class="g-play">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+      ${item.caption ? `<div class="g-caption">${item.caption}</div>` : ''}
+    `;
+  } else {
+    el.innerHTML = `
+      <div class="g-thumb">
+        <img src="${item.file}" alt="${item.caption || ''}" loading="lazy"/>
+      </div>
+      ${item.caption ? `<div class="g-caption">${item.caption}</div>` : ''}
+    `;
+  }
+
+  grid.appendChild(el);
+});
+
+/* lightbox */
+let currentIdx = 0;
+
+const overlay  = document.getElementById('lbOverlay');
+const lbMedia  = document.getElementById('lbMedia');
+const lbCap    = document.getElementById('lbCaption');
+const lbCount  = document.getElementById('lbCounter');
+
+function openLightbox(i) {
+  currentIdx = i;
+  renderLb();
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  overlay.classList.remove('open');
+  lbMedia.innerHTML = '';          // stop any playing video
+  document.body.style.overflow = '';
+}
+
+function renderLb() {
+  const item = ITEMS[currentIdx];
+  lbCount.textContent = `${currentIdx + 1} / ${ITEMS.length}`;
+  lbCap.textContent = item.caption || '';
+
+  if (isVideo(item)) {
+    lbMedia.innerHTML = `
+      <video controls autoplay playsinline
+             style="max-width:100%;max-height:78vh;border-radius:10px;">
+        <source src="${item.file}">
+      </video>`;
+  } else {
+    lbMedia.innerHTML = `<img src="${item.file}" alt="${item.caption || ''}"/>`;
+  }
+}
+
+function step(dir) {
+  currentIdx = (currentIdx + dir + ITEMS.length) % ITEMS.length;
+  lbMedia.innerHTML = '';
+  renderLb();
+}
+
+document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lbPrev').addEventListener('click', () => step(-1));
+document.getElementById('lbNext').addEventListener('click', () => step(1));
+
+/* close on overlay click (not on media) */
+overlay.addEventListener('click', e => { if (e.target === overlay) closeLightbox(); });
+
+/* keyboard nav */
+document.addEventListener('keydown', e => {
+  if (!overlay.classList.contains('open')) return;
+  if (e.key === 'Escape')      closeLightbox();
+  if (e.key === 'ArrowLeft')   step(-1);
+  if (e.key === 'ArrowRight')  step(1);
+});
+</script>
+
+<script src="/js/bcpmm-shell.js"></script>
+</body>
+</html>

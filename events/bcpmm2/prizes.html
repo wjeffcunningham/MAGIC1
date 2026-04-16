@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BCPMM #2: Brewhall Champs · Prize Rundown · magic1.ca</title>
+  <meta name="description" content="Full prize breakdown for BCPMM #2: Brewhall Champs — April 11, 2026."/>
+
+  <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
+  <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700;800&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+
+  <script>
+    if (localStorage.getItem('bcpmm-theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.addEventListener('DOMContentLoaded', function () {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.add('dark');
+      });
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg:      #f3f6ff;
+      --card:    #ffffff;
+      --item-bg: #fbfdff;
+      --ink:     #0f172a;
+      --muted:   #475569;
+      --border:  rgba(15,23,42,.12);
+      --shadow:  0 10px 30px rgba(15,23,42,.08);
+      --radius:  16px;
+      --max:     900px;
+      --accent:  #1f6feb;
+    }
+
+    body.dark {
+      --bg:      #0d1117;
+      --card:    #161b22;
+      --item-bg: #0d1117;
+      --ink:     #e6edf3;
+      --muted:   #8b949e;
+      --border:  rgba(240,246,252,.1);
+      --shadow:  0 10px 30px rgba(0,0,0,.35);
+      --accent:  #58a6ff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.18), transparent 60%),
+        linear-gradient(var(--bg), #ffffff 65%);
+      min-height: 100vh;
+    }
+
+    body.dark {
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.1), transparent 60%),
+        linear-gradient(var(--bg), #0d1117 65%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .shell {
+      max-width: var(--max);
+      margin: 32px auto 64px;
+      padding: 0 18px;
+    }
+
+    /* ── page header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+      font-family: 'Alegreya', Georgia, serif;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 800;
+      margin: 0 0 6px;
+      letter-spacing: -.01em;
+    }
+
+    .page-header p {
+      color: var(--muted);
+      margin: 0 0 4px;
+      font-size: 1rem;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: .88rem;
+      color: var(--accent);
+      font-weight: 650;
+    }
+
+    /* ── section ── */
+    .prize-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .section-head {
+      padding: 14px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+    }
+
+    .section-head .place {
+      font-size: .82rem;
+      color: var(--muted);
+    }
+
+    .section-body {
+      padding: 18px 20px 20px;
+    }
+
+    /* ── card fan ── */
+    .card-fan {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .prize-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .prize-card img {
+      width: 110px;
+      border-radius: 7px;
+      box-shadow: 0 6px 18px rgba(15,23,42,.18);
+      display: block;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    body.dark .prize-card img {
+      box-shadow: 0 6px 18px rgba(0,0,0,.45);
+    }
+
+    .prize-card img:hover {
+      transform: translateY(-4px) scale(1.04);
+      box-shadow: 0 14px 32px rgba(15,23,42,.22);
+    }
+
+    .prize-card .card-label {
+      font-size: .72rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.25;
+      max-width: 110px;
+    }
+
+    .prize-card .card-name {
+      font-size: .8rem;
+      font-weight: 650;
+      text-align: center;
+      line-height: 1.25;
+      max-width: 110px;
+    }
+
+    /* ── powder keg note ── */
+    .keg-note {
+      font-size: .88rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 4px;
+    }
+
+    /* ── token section ── */
+    .token-note {
+      font-size: .92rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ── gift card ── */
+    .gift-card-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .gift-card-box {
+      background: var(--item-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 22px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -.01em;
+    }
+
+    .gift-card-desc {
+      font-size: .9rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── participation section ── */
+    .participation-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    /* ── divider label ── */
+    .divider-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 28px 0 16px;
+    }
+
+    .divider-label::before,
+    .divider-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .divider-label span {
+      font-size: .72rem;
+      font-weight: 650;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ── charity note ── */
+    .charity-banner {
+      background: var(--item-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      text-align: center;
+      font-size: .95rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .charity-banner strong { color: var(--ink); }
+
+    /* ── footer ── */
+    .pg-footer {
+      margin-top: 14px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+    .pg-footer a { color: var(--accent); }
+  </style>
+</head>
+
+<body>
+<div id="global-menu-root"></div>
+
+<div class="shell">
+
+  <div class="page-header">
+    <h1>BCPMM #2: Brewhall Champs</h1>
+    <p>Prize Rundown · April 11, 2026 · Strange Fellows Brewing · Vancouver</p>
+    <p>47 players · 5 Swiss rounds · Top 8 single elimination · Premodern</p>
+    <a class="back-link" href="index.html">← Back to Coverage</a>
+  </div>
+
+  <div class="charity-banner">
+    <strong>All profits donated to BC Cancer Foundation.</strong>
+    Thank you to every player, sponsor, and volunteer who made this possible.
+  </div>
+
+  <!-- ══ 1ST PLACE ══ -->
+  <div class="prize-section">
+    <div class="section-head">
+      <h2>🥇 1st Place</h2>
+      <span class="place">Markus Thibeau</span>
+    </div>
+    <div class="section-body">
+      <div class="card-fan">
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/a7a8b6b8-b95f-4014-b17a-a6d44d965995?format=image&version=normal" alt="City of Traitors"/>
+          <div class="card-name">City of Traitors</div>
+          <div class="card-label">HP · EXO</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/6e2ffcb9-e94f-4799-ae42-797091df2e09?format=image&version=normal" alt="Survival of the Fittest"/>
+          <div class="card-name">Powder Keg</div>
+          <div class="card-label">HP · WC99</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/df1d43ec-abf5-4e47-90fc-c8f533170474?format=image&version=normal" alt="Intuition"/>
+          <div class="card-name">Scroll Rack</div>
+          <div class="card-label">LP · WC98</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/b730bc14-1600-4bc2-838d-a3cfdf0cc017?format=image&version=normal" alt="Powder Keg"/>
+          <div class="card-name">Masticore</div>
+          <div class="card-label">LP · WC99</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/043b8c8f-2731-4428-b9fb-43c55ab21dce?format=image&version=normal" alt="Powder Keg"/>
+          <div class="card-name">Cursed Scroll</div>
+          <div class="card-label">LP · WC98</div>
+        </div>
+      </div>
+      <div class="keg-note">* Powder Kegs awarded to all Top 8 finishers</div>
+    </div>
+  </div>
+
+  <!-- ══ 2ND PLACE ══ -->
+  <div class="prize-section">
+    <div class="section-head">
+      <h2>🥈 2nd Place</h2>
+      <span class="place">Colin Whitwell</span>
+    </div>
+    <div class="section-body">
+      <div class="card-fan">
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/56816a2d-4faa-4fbd-bf1a-35fa3e90ccf6?format=image&version=normal" alt="Gaea's Cradle"/>
+          <div class="card-name">City of Brass</div>
+          <div class="card-label">HP · 5ED</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/4d9715c2-9036-4ae2-a5b4-1b190d50c963?format=image&version=normal" alt="City of Traitors"/>
+          <div class="card-name">Powder Keg</div>
+          <div class="card-label">LP · UDS</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/10f6e07b-36c1-429b-a857-ada8c643556c?format=image&version=normal" alt="Intuition"/>
+          <div class="card-name">Intuition</div>
+          <div class="card-label">LP · WC00</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/b730bc14-1600-4bc2-838d-a3cfdf0cc017?format=image&version=normal" alt="Powder Keg"/>
+          <div class="card-name">Masticore</div>
+          <div class="card-label">LP · WC99</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/043b8c8f-2731-4428-b9fb-43c55ab21dce?format=image&version=normal" alt="Powder Keg"/>
+          <div class="card-name">Cursed Scroll</div>
+          <div class="card-label">LP · WC98</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 3RD / 4TH ══ -->
+  <div class="prize-section">
+    <div class="section-head">
+      <h2>🥉 3rd / 4th Place</h2>
+      <span class="place">Alastair McLellan · Chad Galpin</span>
+    </div>
+    <div class="section-body">
+      <div class="card-fan">
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/9ef93e7a-e799-4c73-b5a1-38b91f368072?format=image&version=normal" alt="Mox Diamond"/>
+          <div class="card-name">Dust Bowl</div>
+          <div class="card-label">LP · WC00</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/2b77caf8-711b-4597-a5a5-dead81568e5b?format=image&version=normal" alt="Scroll Rack"/>
+          <div class="card-name">Powder Keg</div>
+          <div class="card-label">LP · P04</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/74d29b3d-f588-431d-bf4e-f7215683ab39?format=image&version=normal" alt="Goblin Lackey"/>
+          <div class="card-name">Tangle Wire</div>
+          <div class="card-label">LP · FTV</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/b730bc14-1600-4bc2-838d-a3cfdf0cc017?format=image&version=normal" alt="Powder Keg"/>
+          <div class="card-name">Masticore</div>
+          <div class="card-label">LP · WC99</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/043b8c8f-2731-4428-b9fb-43c55ab21dce?format=image&version=normal" alt="Powder Keg"/>
+          <div class="card-name">Cursed Scroll</div>
+          <div class="card-label">LP · WC98</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 5TH–8TH ══ -->
+  <div class="prize-section">
+    <div class="section-head">
+      <h2>5th – 8th Place</h2>
+      <span class="place">Rob Hackney · Markus Thibeau · William Niwinski · Aeolius Alevizakis</span>
+    </div>
+    <div class="section-body">
+      <div class="card-fan">
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/d0dcf152-916e-4603-a688-7a05b57d1b4c?format=image&version=normal" alt="Recurring Nightmare"/>
+          <div class="card-name">Mishra's Factory</div>
+          <div class="card-label">LP · PTC</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/6e2ffcb9-e94f-4799-ae42-797091df2e09?format=image&version=normal" alt="Survival of the Fittest"/>
+          <div class="card-name">Powder Keg</div>
+          <div class="card-label">LP · WC99</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/bff41c6f-dfa3-44cb-bdd8-7d2629605e0e?format=image&version=normal" alt="Recurring Nightmare"/>
+          <div class="card-name">Tangle Wire</div>
+          <div class="card-label">LP · WC00</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/b730bc14-1600-4bc2-838d-a3cfdf0cc017?format=image&version=normal" alt="Powder Keg"/>
+          <div class="card-name">Masticore</div>
+          <div class="card-label">LP · WC99</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/043b8c8f-2731-4428-b9fb-43c55ab21dce?format=image&version=normal" alt="Powder Keg"/>
+          <div class="card-name">Cursed Scroll</div>
+          <div class="card-label">LP · WC98</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 9TH–12TH ══ -->
+  <div class="prize-section">
+    <div class="section-head">
+      <h2>9th – 12th Place</h2>
+      <span class="place">Dakota Blais · Dustin Fennell · Andrew Van Tunen · Ed Yueh</span>
+    </div>
+    <div class="section-body">
+      <div class="card-fan">
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/named?exact=Forsaken+City&set=pls&format=image&version=normal" alt="Forsaken City"/>
+          <div class="card-name">Forsaken City</div>
+          <div class="card-label">LP · PLS</div>
+        </div>
+              <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/named?exact=Squirrel+Token&format=image&version=normal" alt="Squirrel Token"/>
+          <div class="card-name">Tokens</div>
+          <div class="card-label">×4</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/named?exact=Static+Orb&set=wc01&format=image&version=normal" alt="Static Orb"/>
+          <div class="card-name">Static Orb</div>
+          <div class="card-label">LP · WC01</div>
+        </div>
+                <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/named?exact=Triskelion&set=mrd&format=image&version=normal" alt="Triskelion"/>
+          <div class="card-name">Triskelion</div>
+          <div class="card-label">LP · MIR (Foil)</div>
+        </div>
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/named?exact=Phyrexian+Furnace&set=wc98&format=image&version=normal" alt="Phyrexian Furnace"/>
+          <div class="card-name">Phyrexian Furnace</div>
+          <div class="card-label">LP · WC01</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 13TH–16TH ══ -->
+  <div class="prize-section">
+    <div class="section-head">
+      <h2>13th – 16th Place</h2>
+      <span class="place">Steven Duarte · Reilly Wood · Alex Kim · Spencer Shaw-Jaworek</span>
+    </div>
+    <div class="section-body">
+      <div class="gift-card-row">
+        <div class="gift-card-box">$25</div>
+        <div class="gift-card-desc">
+          <strong>Strange Fellows Brewing gift card</strong><br>
+          Redeemable at 1345 Clark Dr, Vancouver
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider-label"><span>Promo Prizes</span></div>
+
+  <!-- ══ TOP 16 PROMO ══ -->
+  <div class="prize-section">
+    <div class="section-head">
+      <h2>Top 16</h2>
+      <span class="place">All players finishing 1st–16th</span>
+    </div>
+    <div class="section-body">
+      <div class="card-fan">
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/named?exact=Phyrexian+Furnace&set=wth&format=image&version=normal" alt="Phyrexian Furnace Promo"/>
+          <div class="card-name">Phyrexian Furnace</div>
+          <div class="card-label">Promo (Altered) · Weatherlight</div>
+        </div>
+      </div>
+      <p style="margin:10px 0 0;font-size:.88rem;color:var(--muted);">Every player finishing in the Top 16 received a promo Phyrexian Furnace (Weatherlight art).</p>
+    </div>
+  </div>
+
+  <!-- ══ ALL PLAYERS ══ -->
+  <div class="prize-section">
+    <div class="section-head">
+      <h2>Participation</h2>
+      <span class="place">Every player in attendance</span>
+    </div>
+    <div class="section-body">
+      <div class="card-fan">
+        <div class="prize-card">
+          <img src="https://api.scryfall.com/cards/named?exact=Goblin+War+Buggy&set=usg&format=image&version=normal" alt="Goblin War Buggy"/>
+          <div class="card-name">Goblin War Buggy</div>
+          <div class="card-label">Promo (Altered) · Urza's Saga</div>
+        </div>
+      </div>
+      <p style="margin:10px 0 0;font-size:.88rem;color:var(--muted);">All 47 players received a promo altered Goblin War Buggy (Urza's Saga art).</p>
+    </div>
+  </div>
+
+  <div class="divider-label"><span>Sponsors</span></div>
+
+  <div class="prize-section">
+    <div class="section-head">
+      <h2>Thank You to Our Sponsors</h2>
+    </div>
+    <div class="section-body" style="text-align:center;">
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:18px;align-items:center;">
+        <img src="/assets/sponsor1.png" alt="Sponsor" style="height:52px;opacity:.85;">
+        <img src="/assets/sponsor2.jpeg" alt="Sponsor" style="height:52px;opacity:.85;">
+        <img src="/assets/sponsor3.webp" alt="Sponsor" style="height:52px;opacity:.85;">
+        <img src="/assets/sponsor4.png" alt="Sponsor" style="height:52px;opacity:.85;">
+        <img src="/assets/sponsor5.png" alt="Sponsor" style="height:52px;opacity:.85;">
+        <img src="/assets/sponsor6.png" alt="Sponsor" style="height:52px;opacity:.85;">
+      </div>
+    </div>
+  </div>
+
+  <div class="pg-footer">
+    © B.C. Premodern Masters · <a href="index.html">Coverage</a> · <a href="../../">magic1.ca</a>
+  </div>
+
+</div>
+
+<script src="/js/bcpmm-shell.js"></script>
+</body>
+</html>
