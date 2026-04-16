@@ -100,12 +100,6 @@
     .sc-pill.draw{font-style:italic}
     .bye-note{padding:7px 12px;font-size:.78rem;color:var(--muted);font-style:italic;border-top:1px solid var(--border)}
 
-    /* player page links */
-    a.plink{color:inherit;text-decoration:none;border-bottom:1px dotted rgba(15,23,42,.3)}
-    a.plink:hover{border-bottom-color:var(--accent);color:var(--accent);text-decoration:none}
-    body.dark a.plink{border-bottom-color:rgba(240,246,252,.25)}
-    body.dark a.plink:hover{border-bottom-color:var(--accent);color:var(--accent)}
-
     /* standings */
     .std-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
     .std-tbl{width:100%;min-width:240px;border-collapse:collapse;font-size:.83rem}
@@ -288,11 +282,11 @@
           <a class="cov-item" href="trailer.html">
             <div class="cov-left"><span class="cov-icon">🎬</span><div class="cov-text"><div class="cov-title">Event Trailer</div><div class="cov-desc">Video</div></div></div>
             <span class="btn">Watch</span>
-          </a> -->
+          </a>
           <a class="cov-item" href="prizes.html">
             <div class="cov-left"><span class="cov-icon">🎁</span><div class="cov-text"><div class="cov-title">Prize Rundown</div><div class="cov-desc">Full payout breakdown</div></div></div>
             <span class="btn">View</span>
-          </a>
+          </a> -->
         </div>
 
         <div class="pg-footer">© B.C. Premodern Masters · Built for <a href="../">magic1.ca</a></div>
@@ -364,26 +358,13 @@ const ROUNDS={
   4:{byes:[],matches:[{t:1,a:"Colin Whitwell",b:"Andrew Van Tunen",ga:2,gb:1},{t:2,a:"Alastair McLellan",b:"Dustin Fennell",ga:2,gb:0},{t:3,a:"Andrew Kidston",b:"Rob Hackney",ga:2,gb:1},{t:4,a:"Kevin Lavery",b:"Spencer Shaw-Jaworek",ga:1,gb:2},{t:5,a:"Cameron Wolber",b:"Aeolius Alevizakis",ga:0,gb:2},{t:6,a:"Alex Kim",b:"Mazin Marwan",ga:2,gb:1},{t:7,a:"Chad Galpin",b:"Steven Duarte",ga:2,gb:1},{t:8,a:"Reilly Wood",b:"Marvin Gonçalves de Aquino",ga:2,gb:1},{t:9,a:"Curran Delahanty",b:"Markus Thibeau",ga:0,gb:2},{t:10,a:"William Niwinski",b:"Matthew Thiessen",ga:2,gb:0},{t:11,a:"Dakota Blais",b:"Kevin Mittertreiner",ga:2,gb:1},{t:12,a:"Ed Yueh",b:"Robert Luemers",ga:2,gb:1},{t:13,a:"Doug Raymond",b:"Scott Peters",ga:2,gb:1},{t:14,a:"Penny Flegel",b:"Dustyn Greenwell-Baker",ga:1,gb:2},{t:15,a:"Dakota Boin",b:"Chris Erickson",ga:0,gb:2},{t:16,a:"Lucas F.",b:"Romulo Ramos",draw:true},{t:17,a:"Jack Standing",b:"Puck Edwards",ga:1,gb:2},{t:18,a:"James Onions",b:"Cody Peters",ga:2,gb:1},{t:19,a:"Owen Hogg",b:"Bill Valeriote",ga:1,gb:2},{t:20,a:"Arlen Wiesenthal",b:"Seth Stuve",ga:2,gb:1},{t:21,a:"Jeffrey Scofield",b:"Clint Taylor",ga:2,gb:0}]},
   5:{byes:[],matches:[{t:1,a:"Colin Whitwell",b:"Alastair McLellan",draw:true},{t:2,a:"Dustin Fennell",b:"Andrew Kidston",ga:0,gb:2},{t:3,a:"Andrew Van Tunen",b:"William Niwinski",ga:0,gb:2},{t:4,a:"Markus Thibeau",b:"Ed Yueh",ga:2,gb:1},{t:5,a:"Rob Hackney",b:"Alex Kim",ga:2,gb:0},{t:6,a:"Chad Galpin",b:"Spencer Shaw-Jaworek",ga:2,gb:0},{t:7,a:"Aeolius Alevizakis",b:"Reilly Wood",ga:2,gb:1},{t:8,a:"Marvin Gonçalves de Aquino",b:"Dakota Blais",ga:0,gb:2},{t:9,a:"Robert Luemers",b:"Steven Duarte",ga:1,gb:2},{t:10,a:"Kevin Lavery",b:"Puck Edwards",ga:2,gb:1},{t:11,a:"Dustyn Greenwell-Baker",b:"Doug Raymond",ga:1,gb:2},{t:12,a:"Matthew Thiessen",b:"Mazin Marwan",ga:0,gb:2},{t:13,a:"Curran Delahanty",b:"Chris Erickson",ga:0,gb:2},{t:14,a:"Kevin Mittertreiner",b:"Bill Valeriote",ga:2,gb:0},{t:15,a:"James Onions",b:"Cameron Wolber",ga:2,gb:0},{t:16,a:"Romulo Ramos",b:"Arlen Wiesenthal",draw:true},{t:17,a:"Lucas F.",b:"Dakota Boin",ga:1,gb:2},{t:18,a:"Owen Hogg",b:"Cody Peters",ga:0,gb:2},{t:19,a:"Penny Flegel",b:"Scott Peters",ga:2,gb:1},{t:20,a:"Jeffrey Scofield",b:"Seth Stuve",ga:2,gb:0}]},
 };
-/* ── player page links ── */
-function slug(name){
-  return name.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')  /* strip accents */
-    .replace(/[^a-z0-9\s-]/g,'')
-    .trim().replace(/\s+/g,'-');
-}
-function plink(name){
-  if(name.length < 6 || !name.includes(' ')) return name;
-  const s=slug(name);
-  return `<a class="plink" href="https://magic1.ca/leaguetracker/player.html?player=${s}">${name}</a>`;
-}
-
-function renderStandings(){document.getElementById('std-body').innerHTML=STANDINGS.map(s=>`<tr class="${s.rank<=8?'t8':''}"><td class="s-rank">${s.rank}</td><td>${plink(s.player)}</td><td class="s-pts">${s.pts}</td><td class="s-omw">${s.omw.toFixed(2)}</td></tr>`).join('')}
-function renderPairings(r){const d=ROUNDS[r];let html=d.matches.map(m=>{let sc,winA=false,winB=false;if(m.draw){sc=`<span class="sc-pill draw">D</span>`}else{winA=m.ga>m.gb;winB=!winA;sc=`<span class="sc-pill">${m.ga}–${m.gb}</span>`}return`<div class="pair-row"><span class="t-num">${m.t}</span><span class="pn${winA?' w':''}" title="${m.a}">${plink(m.a)}</span>${sc}<span class="pn r${winB?' w':''}" title="${m.b}">${plink(m.b)}</span></div>`}).join('');if(d.byes.length)html+=`<div class="bye-note">Bye: ${d.byes.map(plink).join(', ')}</div>`;document.getElementById(`scroll-r${r}`).innerHTML=html}
+function renderStandings(){document.getElementById('std-body').innerHTML=STANDINGS.map(s=>`<tr class="${s.rank<=8?'t8':''}"><td class="s-rank">${s.rank}</td><td>${s.player}</td><td class="s-pts">${s.pts}</td><td class="s-omw">${s.omw.toFixed(2)}</td></tr>`).join('')}
+function renderPairings(r){const d=ROUNDS[r];let html=d.matches.map(m=>{let sc,winA=false,winB=false;if(m.draw){sc=`<span class="sc-pill draw">D</span>`}else{winA=m.ga>m.gb;winB=!winA;sc=`<span class="sc-pill">${m.ga}–${m.gb}</span>`}return`<div class="pair-row"><span class="t-num">${m.t}</span><span class="pn${winA?' w':''}" title="${m.a}">${m.a}</span>${sc}<span class="pn r${winB?' w':''}" title="${m.b}">${m.b}</span></div>`}).join('');if(d.byes.length)html+=`<div class="bye-note">Bye: ${d.byes.join(', ')}</div>`;document.getElementById(`scroll-r${r}`).innerHTML=html}
 function showRound(r){setPane(`r${r}`);document.querySelectorAll('.rtab').forEach((b,i)=>b.classList.toggle('active',i===r-1))}
 function showStandings(){setPane('std');document.querySelectorAll('.rtab').forEach((b,i)=>b.classList.toggle('active',i===5))}
 function setPane(id){document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));document.getElementById(`pane-${id}`).classList.add('active')}
 function buildBracket(){
-  function bp(n,s,w){return`<div class="b-player ${w?'w':'l'}"><span>${plink(n)}</span><span class="b-sc">${s}</span></div>`}
+  function bp(n,s,w){return`<div class="b-player ${w?'w':'l'}"><span>${n}</span><span class="b-sc">${s}</span></div>`}
   function bm(pA,sA,pB,sB){const w=parseInt(sA)>parseInt(sB);return`<div class="b-match">${bp(pA,sA,w)}${bp(pB,sB,!w)}</div>`}
   document.getElementById('bracketEl').innerHTML=`
     <div class="b-col"><div class="b-lbl">Quarterfinals</div>${bm("Andrew Kidston","0","Chad Galpin","2")}${bm("Rob Hackney","0","Markus Thibeau","2")}${bm("Alastair McLellan","2","William Niwinski","0")}${bm("Colin Whitwell","2","Aeolius Alevizakis","0")}</div>
@@ -392,7 +373,7 @@ function buildBracket(){
     <div class="b-conn"></div>
     <div class="b-col"><div class="b-lbl">Finals</div>${bm("Markus Thibeau","2","Colin Whitwell","1")}</div>
     <div class="b-conn"></div>
-    <div class="b-col champ-box"><div class="b-lbl">Champion</div><div class="champ-trophy">🏆</div><div class="champ-name">${plink("Markus Thibeau")}</div></div>`;
+    <div class="b-col champ-box"><div class="b-lbl">Champion</div><div class="champ-trophy">🏆</div><div class="champ-name">Markus<br>Thibeau</div></div>`;
 }
 renderStandings();
 for(let r=1;r<=5;r++)renderPairings(r);
