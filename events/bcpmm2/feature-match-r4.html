@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BCPMM #2 · Round 4 Feature Match · Whitwell vs Van Tunen</title>
+  <meta name="description" content="BCPMM #2 Round 4 Feature Match — Colin Whitwell (TerraGeddon) vs Andrew Van Tunen (Moneyball Black)."/>
+
+  <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
+  <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+
+  <script>
+    if (localStorage.getItem('bcpmm-theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.addEventListener('DOMContentLoaded', function () {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.add('dark');
+      });
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg:     #f3f6ff;
+      --card:   #ffffff;
+      --ink:    #0f172a;
+      --muted:  #475569;
+      --border: rgba(15,23,42,.12);
+      --shadow: 0 10px 30px rgba(15,23,42,.08);
+      --radius: 16px;
+      --max:    820px;
+      --pad:    18px;
+      --accent: #1f6feb;
+    }
+
+    body.dark {
+      --bg:     #0d1117;
+      --card:   #161b22;
+      --ink:    #e6edf3;
+      --muted:  #8b949e;
+      --border: rgba(240,246,252,.1);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --accent: #58a6ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.18), transparent 60%),
+        linear-gradient(var(--bg), #fff 65%);
+    }
+
+    body.dark {
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.1), transparent 60%),
+        linear-gradient(var(--bg), #0d1117 65%);
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .shell {
+      max-width: var(--max);
+      margin: 32px auto 56px;
+      padding: 0 var(--pad);
+    }
+
+    h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.15; letter-spacing: -.02em; }
+    .sub { color: var(--muted); margin: 0 0 16px; line-height: 1.45; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+    }
+
+    article p { line-height: 1.7; margin: 0 0 1em; font-size: 1.02rem; }
+    article h3 { margin: 1.8em 0 .4em; font-size: 1.08rem; letter-spacing: -.01em; }
+    article p:last-child { margin-bottom: 0; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+    .match-photo {
+      display: block;
+      max-width: 60%;
+      width: 100%;
+      border-radius: 12px;
+      margin: 20px auto;
+      box-shadow: 0 8px 24px rgba(15,23,42,.13);
+    }
+
+    body.dark .match-photo { box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+    @media(max-width: 500px) { .match-photo { max-width: 90%; } }
+
+    .photo-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 20px 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--card);
+      box-shadow: 0 6px 20px rgba(15,23,42,.08);
+    }
+
+    body.dark .photo-pair { box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+
+    .photo-pair img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    @media(max-width: 480px) { .photo-pair { grid-template-columns: 1fr; } }
+
+    .card-float {
+      width: 100px;
+      border-radius: 6px;
+      box-shadow: 0 6px 18px rgba(15,23,42,.2);
+      display: block;
+      flex-shrink: 0;
+      transition: transform .18s, box-shadow .18s;
+    }
+
+    .card-float:hover {
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 10px 24px rgba(15,23,42,.25);
+    }
+
+    body.dark .card-float { box-shadow: 0 6px 18px rgba(0,0,0,.5); }
+    .card-float.right { float: right; margin: 4px 0 12px 18px; clear: right; }
+    .card-float.left  { float: left;  margin: 4px 18px 12px 0; clear: left; }
+    .clearfix::after  { content: ''; display: table; clear: both; }
+    @media(max-width: 500px) { .card-float { width: 72px; } }
+
+    .sideboard {
+      margin: 16px 0;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      font-size: .9rem;
+      line-height: 1.7;
+    }
+
+    .sideboard strong {
+      display: block;
+      font-size: .72rem;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .result-box {
+      margin: 24px 0 8px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: rgba(31,111,235,.06);
+      border: 1px solid rgba(31,111,235,.18);
+      font-weight: 700;
+      font-size: 1rem;
+      text-align: center;
+      letter-spacing: .01em;
+    }
+
+    body.dark .result-box { background: rgba(88,166,255,.07); border-color: rgba(88,166,255,.2); }
+
+    .nav {
+      margin-top: 28px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: .92rem;
+    }
+  </style>
+</head>
+
+<body>
+<div id="global-menu-root"></div>
+
+<div class="shell">
+
+  <header>
+    <h1>BCPMM #2: Round 4 Feature Match</h1>
+    <p class="sub">Colin Whitwell (TerraGeddon) vs Andrew Van Tunen (Moneyball Black) · April 11, 2026</p>
+  </header>
+
+  <article class="card">
+
+    <p><strong>Round 4. Table 1.</strong></p>
+
+    <div class="photo-pair">
+      <img src="4_0_1.JPG" alt="Colin Whitwell" loading="lazy"/>
+      <img src="4_0_2.JPG" alt="Andrew Van Tunen" loading="lazy"/>
+    </div>
+
+    <p>
+      Round 4 saw Colin Whitwell and Andrew Van Tunen, both 3–0, square off for a Top 8 spot.
+    </p>
+
+    <p>
+      Whitwell was on G/W TerraGeddon; Van Tunen was on Moneyball Black, a metagame player that started
+      winning about 3 months ago and has been punching above its weight ever since.
+    </p>
+
+    <h3>Game 1 —</h3>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/ema/187/sylvan-library" target="_blank" rel="noopener noreferrer">
+        <img class="card-float right"
+             src="https://api.scryfall.com/cards/ema/187?format=image&version=normal"
+             alt="Sylvan Library" loading="lazy"/>
+      </a>
+      <p>
+        Whitwell leads on Heath. Van Tunen opens with Duress, seeing:
+        Sylvan Library, Swords, Terravore, and 3 more land — sniping the "Green Necro" in the nick of time.
+      </p>
+    </div>
+
+    <p>
+      Whitwell plays a Port, and Ports Van Tunen on upkeep, who then plays a Spawning Pool.
+    </p>
+
+    <p>Whitwell drops a land and Nimble Mongoose, and keeps the Port going.</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/ody/278/terravore" target="_blank" rel="noopener noreferrer">
+        <img class="card-float left"
+             src="https://api.scryfall.com/cards/ody/278?format=image&version=normal"
+             alt="Terravore" loading="lazy"/>
+      </a>
+      <p>
+        Van Tunen, unfortunately, remained stuck on 2 land. Although he managed a Cursed Scroll and another
+        Duress, it wasn't long before Whitwell stuck the Terravore. A follow-up Wasteland was the nail in
+        the coffin.
+      </p>
+    </div>
+
+    <img class="match-photo" src="4_1.JPG" alt="Game 1 — Terravore closes it out" loading="lazy"/>
+
+    <p><strong>1–0 Whitwell</strong></p>
+
+    <div class="sideboard">
+      <strong>Whitwell sides</strong>
+      −3 Fire // Ice &nbsp;·&nbsp; −1 Swords to Plowshares<br>
+      +2 Ray of Revelation &nbsp;·&nbsp; +1 Worship &nbsp;·&nbsp; +1 Naturalize
+    </div>
+
+    <div class="sideboard">
+      <strong>Van Tunen sides</strong>
+      Shaves some Shades for a smattering of Dystopias, and a singleton Gloom, Perish, and Tormod's Crypt.
+    </div>
+
+    <h3>Game 2 —</h3>
+
+    <p>Van Tunen plays Swamp, and passes.</p>
+    <p>Whitwell plays land, Mox Diamond, Sylvan Library.</p>
+    <p>Van Tunen plays a Ravenous Rat, eating a second Mox.</p>
+    <p>Whitwell plays a land.</p>
+
+    <img class="match-photo" src="4_2.JPG" alt="Game 2 — early board" loading="lazy"/>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/all/47/dystopia" target="_blank" rel="noopener noreferrer">
+        <img class="card-float right"
+             src="https://api.scryfall.com/cards/all/47?format=image&version=normal"
+             alt="Dystopia" loading="lazy"/>
+      </a>
+      <p>
+        Van Tunen attacks for 1, then plays a Dystopia to eat the Library before it can gain any more
+        advantage. But Whitwell has Naturalize. He untaps and casts a Call of the Herd, making an Elephant
+        token — a relative nightmare for Van Tunen's attrition strategy.
+      </p>
+    </div>
+
+    <p>
+      But Van Tunen volleys back with a second Dystopia. Whitwell gives up the Library during his upkeep,
+      before getting any last looks at the top of his library. He Flashes back the Call into the active
+      Dystopia, signalling a willingness to race it.
+    </p>
+
+    <p>Van Tunen pays 1, and then plays a third Dystopia!</p>
+
+    <p>Whitwell scoops both Elephants on his turn and then shrugs and casts Armageddon.</p>
+
+    <p>Van Tunen gives up one of the Dystopias, and keeps the other around. He plays a Factory.</p>
+
+    <p>The Rat continues to chip, bringing Whitwell down to just 10 life.</p>
+
+    <p>Whitwell Wastelands the Factory, ships it back.</p>
+
+    <p>9 from the Rat now.</p>
+
+    <p>Whitwell plays Port. Taps down a land during upkeep. Van Tunen maintains the Dystopia.</p>
+
+    <p>8 from the Rat.</p>
+
+    <p>Whitwell plays land. Ports on Upkeep.</p>
+
+    <p>Van Tunen gives up the Dystopia. Cracks with Rat — down to 7.</p>
+
+    <p>Whitwell plays a fetch land. Down to 6. And finally Swords the Rat.</p>
+
+    <p>
+      Van Tunen's still on just one Swamp against Whitwell's four land. But finally — a Wasteland for the
+      belligerent Port.
+    </p>
+
+    <p>Whitwell drops a Nimble Mongoose. <em>"I think I have threshold,"</em> he jokes, indicating the stacked graveyard.</p>
+
+    <p>Van Tunen Rituals a Black Knight. Because of the life disparity — with Van Tunen still in his teens — Whitwell can't profitably attack.</p>
+
+    <p>Another Rat eats a Cataclysm. Ritual, Graveborn Muse.</p>
+
+    <p>Then, Whitwell draws a game-changer:</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/usg/61/worship" target="_blank" rel="noopener noreferrer">
+        <img class="card-float right"
+             src="https://api.scryfall.com/cards/usg/61?format=image&version=normal"
+             alt="Worship" loading="lazy"/>
+      </a>
+      <p>
+        Worship — a sideboard silver bullet meant, in tandem with Mongoose, to keep decks like Van Tunen's
+        honest.
+      </p>
+    </div>
+
+    <img class="match-photo" src="4_3.JPG" alt="Game 2 — Worship resolved" loading="lazy"/>
+
+    <p>
+      But Van Tunen remains stoic. Rituals out a Graveborn Muse. A few turns later, a Cursed Scroll
+      revealing Bane of the Living, and a peeled Perish off the top — Van Tunen had been keeping honest indeed.
+    </p>
+
+    <div class="sideboard">
+      <strong>Whitwell adjusts</strong>
+      −3 Weathered Wayfarer &nbsp;·&nbsp; −1 Worship<br>
+      +3 Fire // Ice &nbsp;·&nbsp; +1 Swords to Plowshares
+    </div>
+
+    <h3>Game 3 —</h3>
+
+    <p>
+      Whitwell, on the play, keeps. Van Tunen mulligans… and again… down to 5. But it wouldn't be the
+      first time his back had been against the wall in the match.
+    </p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/ema/187/sylvan-library" target="_blank" rel="noopener noreferrer">
+        <img class="card-float right"
+             src="https://api.scryfall.com/cards/ema/187?format=image&version=normal"
+             alt="Sylvan Library" loading="lazy"/>
+      </a>
+      <p>Whitwell "Ritual Necros": Land, Mox, Sylvan.</p>
+    </div>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/all/47/dystopia" target="_blank" rel="noopener noreferrer">
+        <img class="card-float left"
+             src="https://api.scryfall.com/cards/all/47?format=image&version=normal"
+             alt="Dystopia" loading="lazy"/>
+      </a>
+      <p>
+        Van Tunen fires back — literal Dark Ritual, Dystopia. Munch your Sylvan in your Upkeep, before you
+        can get any value in your Draw step!
+      </p>
+    </div>
+
+    <p>Whitwell passes it back, committed to waiting out the Dystopia.</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/lgn/86/withered-wretch" target="_blank" rel="noopener noreferrer">
+        <img class="card-float right"
+             src="https://api.scryfall.com/cards/lgn/86?format=image&version=normal"
+             alt="Withered Wretch" loading="lazy"/>
+      </a>
+      <p>
+        Van Tunen sustains it for 1 life, and then plays a Withered Wretch — one of the format's rising
+        stars.
+      </p>
+    </div>
+
+    <p>Whitwell Plows it. Misses his 3rd land drop. Passes it back.</p>
+
+    <p>Van Tunen pays 2. Plays Factory. Passes.</p>
+
+    <p>Whitwell misses again. Passes.</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/3ed/115/hypnotic-specter" target="_blank" rel="noopener noreferrer">
+        <img class="card-float left"
+             src="https://api.scryfall.com/cards/3ed/115?format=image&version=normal"
+             alt="Hypnotic Specter" loading="lazy"/>
+      </a>
+      <p>3 life now. Animates Factory and attacks — Naturalized. Plays a Hypnotic Specter.</p>
+    </div>
+
+    <p>
+      Whitwell plays a Port. Passes. Van Tunen gives up the Dystopia. Hypnotic Specter grabs a Ray of Revelation.
+    </p>
+
+    <p>
+      Whitwell sticks a Nimble Mongoose, still just below Threshold. Under threat of losing it to Hyppie
+      anyway, Whitwell casts a Defensive Geddon, sending both players back to the Stone Age. Although this
+      destroys two of his own Ports, it fills the graveyard with lands.
+    </p>
+
+    <p>Specter cracks Whitwell down to 16. Goose cracks Van Tunen down to 10.</p>
+
+    <p>Specter cracks… Plowed.</p>
+
+    <p>Van Tunen Ritual-Perishes to clear the Mongoose.</p>
+
+    <p>Parity — the calm before the storm.</p>
+
+    <p>Whitwell's on a few land and a Mox. Van Tunen on two land, Cursed Scroll, 3 cards in hand.</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/ody/278/terravore" target="_blank" rel="noopener noreferrer">
+        <img class="card-float right"
+             src="https://api.scryfall.com/cards/ody/278?format=image&version=normal"
+             alt="Terravore" loading="lazy"/>
+      </a>
+      <p>Then Whitwell draws a game-breaker: Terravore. 11/11.</p>
+    </div>
+
+    <p><em>"Smother."</em></p>
+
+    <p>Van Tunen peels Withered Wretch #2.</p>
+
+    <p>Whitwell rips a second Terravore!</p>
+
+    <img class="match-photo" src="4_4.JPG" alt="Game 3 — two Terravores" loading="lazy"/>
+
+    <p>Wretch munches one land, bringing it down to a 10/10. Untaps and plays land 4.</p>
+
+    <p>Whitwell cracks, and after 4 more Wretchings, the 6/6 brings Van Tunen down to 3.</p>
+
+    <p>Whitwell slams a third Terravore off the top!! But would it be enough to get across the finish line?</p>
+
+    <p>Van Tunen draws his fifth land.</p>
+
+    <p>
+      Whitwell draws a Naturalize for the Scroll, then cracks with both Terravores. Van Tunen removes 5
+      more cards, blocking one harmlessly and taking the other down to 2 life.
+    </p>
+
+    <p>
+      Van Tunen untaps, removes the last land to pick off the final Terravore, attacks Whitwell down to 12,
+      and after being down a game in the second, double-mulliganing in the third — the win, the signature on
+      the slip, was finally just a few faded draw steps away…
+    </p>
+
+    <hr/>
+
+    <p>Whitwell untaps, knocks his deck, and peels Fire off the top. Tables it.</p>
+
+    <p><em>"You."</em></p>
+
+    <p><em>"I had three,"</em> he shrugs.</p>
+
+    <div class="result-box">
+      COLIN WHITWELL WINS &nbsp;·&nbsp; 2–1
+    </div>
+
+  </article>
+
+  <nav class="nav">
+    <a href="index.html">← Tournament Coverage</a>
+    <a href="../../">magic1.ca</a>
+  </nav>
+
+</div>
+
+<script src="/js/bcpmm-shell.js"></script>
+</body>
+</html>

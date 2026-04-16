@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BCPMM #2 · Round 5 Round-Up</title>
+  <meta name="description" content="BCPMM #2 Round 5 Round-Up — the final Swiss round, Top 8 locked."/>
+
+  <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
+  <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+
+  <script>
+    if (localStorage.getItem('bcpmm-theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.addEventListener('DOMContentLoaded', function () {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.add('dark');
+      });
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg:     #f3f6ff;
+      --card:   #ffffff;
+      --ink:    #0f172a;
+      --muted:  #475569;
+      --border: rgba(15,23,42,.12);
+      --shadow: 0 10px 30px rgba(15,23,42,.08);
+      --radius: 16px;
+      --max:    820px;
+      --pad:    18px;
+      --accent: #1f6feb;
+    }
+
+    body.dark {
+      --bg:     #0d1117;
+      --card:   #161b22;
+      --ink:    #e6edf3;
+      --muted:  #8b949e;
+      --border: rgba(240,246,252,.1);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --accent: #58a6ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.18), transparent 60%),
+        linear-gradient(var(--bg), #fff 65%);
+    }
+
+    body.dark {
+      background:
+        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.1), transparent 60%),
+        linear-gradient(var(--bg), #0d1117 65%);
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .shell {
+      max-width: var(--max);
+      margin: 32px auto 56px;
+      padding: 0 var(--pad);
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      line-height: 1.15;
+      letter-spacing: -.02em;
+    }
+
+    .sub { color: var(--muted); margin: 0 0 16px; line-height: 1.45; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+    }
+
+    article p {
+      line-height: 1.7;
+      margin: 0 0 1em;
+      font-size: 1.02rem;
+    }
+
+    article h3 {
+      margin: 1.6em 0 .35em;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      color: var(--accent);
+    }
+
+    article p:last-child { margin-bottom: 0; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+
+    /* single photo — half-width, centred */
+    .match-photo {
+      display: block;
+      max-width: 60%;
+      width: 100%;
+      border-radius: 12px;
+      margin: 20px auto;
+      box-shadow: 0 8px 24px rgba(15,23,42,.13);
+    }
+
+    body.dark .match-photo { box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+    @media(max-width: 500px) { .match-photo { max-width: 90%; } }
+
+    /* diptych */
+    .photo-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 20px 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--card);
+      box-shadow: 0 6px 20px rgba(15,23,42,.08);
+    }
+
+    body.dark .photo-pair { box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+
+    .photo-pair img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    @media(max-width: 480px) { .photo-pair { grid-template-columns: 1fr; } }
+
+    /* result callout */
+    .result-box {
+      margin: 24px 0 8px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: rgba(31,111,235,.06);
+      border: 1px solid rgba(31,111,235,.18);
+      font-weight: 700;
+      font-size: 1rem;
+      text-align: center;
+      letter-spacing: .01em;
+    }
+
+    body.dark .result-box {
+      background: rgba(88,166,255,.07);
+      border-color: rgba(88,166,255,.2);
+    }
+
+    .nav {
+      margin-top: 28px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: .92rem;
+    }
+  </style>
+</head>
+
+<body>
+<div id="global-menu-root"></div>
+
+<div class="shell">
+
+  <header>
+    <h1>BCPMM #2: Round 5 Round-Up</h1>
+    <p class="sub">The final Swiss round · April 11, 2026</p>
+  </header>
+
+  <article class="card">
+
+    <img class="match-photo" src="5_1.JPG" alt="Round 5 — the field" loading="lazy"/>
+
+    <p>
+      Typically, Swiss-format tournaments have their rounds scaled to ensure players with 1 loss make the
+      Top 8. Typically, 33–64 players recommends 6 rounds. Today, with 47, we're running 5. Partly due
+      to time constraints, partly as an artificial restraint on intentional and unintentional draws,
+      maximizing action right into the final round. In the end, only a single X–1 player would miss,
+      suggesting that "the sweet spot" for Swiss round thresholds might be higher than conventional wisdom
+      suggests.
+    </p>
+
+    <hr/>
+
+    <h3>Table 1 — Colin Whitwell (TerraGeddon) vs Alastair McLellan (Goblins)</h3>
+
+    <p>
+      Table 1 decided to draw, locking up 2 slots in the Top 8. That left at least 7 tables "live" for
+      the remaining spots.
+    </p>
+
+    <h3>Table 2 — Andrew Kidston (Nought) vs Dustin Fennell (Goblins)</h3>
+
+    <img class="match-photo" src="5_2.JPG" alt="Kidston vs Fennell" loading="lazy"/>
+
+    <p>
+      The third 4–0 — Andrew Kidston (Nought) — was paired down against Dustin Fennell (Goblins), who'd
+      just lost the previous round. Kidston, based on his tiebreaks, was almost certainly in even with a
+      loss. But he wasn't willing to concede, meaning Fennell was in control of his own destiny for his
+      Top 8 slot. In the end, Kidston knocked him out to guarantee himself the 1st seed in Top 8, leaving
+      5 spots remaining.
+    </p>
+
+    <h3>Table 3 — Andrew Van Tunen (Moneyball Black) vs William Niwinski (B/W Control)</h3>
+
+    <img class="match-photo" src="5_3.JPG" alt="Van Tunen vs Niwinski" loading="lazy"/>
+
+    <p>
+      Table 3 saw Andrew Van Tunen (Moneyball Black) facing off against William Niwinski (B/W Control),
+      a Pauper-regular who'd been rattling off wins from 1–1, with a deadly Enlightened-Tutor-based
+      sideboard package. Niwinski edges it out.
+    </p>
+
+    <h3>Table 4 — Markus Thibeau (Moneyball Black) vs Ed Yueh (Elves)</h3>
+
+    <p>Thibeau wins 2–0.</p>
+
+    <h3>Table 5 — Rob Hackney (Iggy Pop) vs Alex Kim (Gro-a-Tog)</h3>
+
+    <div class="photo-pair">
+      <img src="5_4_1.JPG" alt="Table 5 — Hackney vs Kim" loading="lazy"/>
+      <img src="5_4_2.JPG" alt="Table 5 — Hackney vs Kim" loading="lazy"/>
+    </div>
+
+    <p>
+      Kim is a skilled local player, gradually moving up the local BCPMM Elo rankings. He loses the first
+      one quickly, but by the time I walk over seems to have the upper hand in Game 2. Hackney's already
+      successfully fired off a Necrologia for 10. A Gaea's Blessing sits at the top of his graveyard,
+      indicating that if Hackney doesn't have an answer, his Brain Freezes won't be enough to get the job
+      done. But Hackney successfully changes gears, and Cunning Wishes for a Hunting Pack, which he fires
+      off for 19. Kim concedes, lamenting that he tipped his hand too soon. Hackney wins 2–0.
+    </p>
+
+    <h3>Table 6 — Chad Galpin (Reanimator) vs Spencer Shaw-Jaworek (U/W Control)</h3>
+
+    <img class="match-photo" src="5_5.JPG" alt="Galpin vs Shaw-Jaworek" loading="lazy"/>
+
+    <p>
+      Table 6 features Chad Galpin (Reanimator) against Spencer Shaw-Jaworek (U/W Control), who settle
+      themselves away from the fray. Shaw-Jaworek's build, which seems to have most of the rest of the
+      metagame covered, struggles against this obscure matchup. Galpin wins 2–0.
+    </p>
+
+    <h3>Table 7 — Aeolius Alevizakis (U/W Control) vs Reilly Wood (Moneyball Black)</h3>
+
+    <img class="match-photo" src="5_6.JPG" alt="Alevizakis vs Wood" loading="lazy"/>
+
+    <p>
+      Table 7 has Aeolius Alevizakis (also on U/W Control) against Reilly Wood (Moneyball Black). After
+      a Round 1 loss to Thibeau, Alevizakis climbed his way back, eking out every sliver of value. The
+      turning point in this match is when Alevizakis animates Faerie Conclave and — in response to Wood's
+      Smother — casts a Teferi's Response for a 3-for-1.
+    </p>
+
+    <p>
+      But all day, Aeo had been complaining that his build lacked win conditions. He had to go all the way
+      down to 1 life, 1 card in deck before his man-lands could close out the game.
+    </p>
+
+    <p><strong>Aeo 2–0.</strong></p>
+
+    <h3>Table 8 — Dakota Blais (Burn) vs Marvin Gonçalves de Aquino (Aluren)</h3>
+
+    <img class="match-photo" src="5_7.JPG" alt="Blais vs Gonçalves de Aquino" loading="lazy"/>
+
+    <p>
+      Table 8 has Dakota Blais (Burn) overcoming a pair-down against Grand Raffle winner Marvin Gonçalves
+      de Aquino (Aluren). Unfortunately, Blais had the lowest tiebreaks among the 4–1s and had to settle
+      for 9th–12th.
+    </p>
+
+    <img class="match-photo" src="5_8.JPG" alt="End of Swiss — Top 8 locked" loading="lazy"/>
+
+    <div class="result-box">
+      Top 8 locked · <a href="profiles.html" style="color:inherit;">Player profiles →</a>
+    </div>
+
+  </article>
+
+  <nav class="nav">
+    <a href="index.html">← Tournament Coverage</a>
+    <a href="../../">magic1.ca</a>
+  </nav>
+
+</div>
+
+<script src="/js/bcpmm-shell.js"></script>
+</body>
+</html>

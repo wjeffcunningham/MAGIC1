@@ -5,13 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>BCPMM #2: Brewhall Champs · Coverage · magic1.ca</title>
   <meta name="description" content="Full tournament coverage for BCPMM #2: Brewhall Champs — April 11, 2026."/>
-
   <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
   <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/auth.js"></script>
-
   <script>
     if (localStorage.getItem('bcpmm-theme') === 'dark') {
       document.documentElement.classList.add('dark');
@@ -21,541 +18,162 @@
       });
     }
   </script>
-
   <style>
     :root {
-      --bg:      #f3f6ff;
-      --card:    #ffffff;
-      --item-bg: #fbfdff;
-      --ink:     #0f172a;
-      --muted:   #475569;
-      --border:  rgba(15,23,42,.12);
-      --shadow:  0 10px 30px rgba(15,23,42,.08);
-      --radius:  16px;
-      --max:     1160px;
-      --pad:     18px;
-      --accent:  #1f6feb;
-      --t8-bg:   rgba(31,111,235,.05);
-      --t8-mark: #1f6feb;
+      --bg:#f3f6ff; --card:#ffffff; --item-bg:#fbfdff;
+      --ink:#0f172a; --muted:#475569;
+      --border:rgba(15,23,42,.12); --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:0px; --max:1160px; --pad:18px; --accent:#1f6feb;
+      --t8-bg:rgba(31,111,235,.05); --t8-mark:#1f6feb;
     }
-
     body.dark {
-      --bg:      #0d1117;
-      --card:    #161b22;
-      --item-bg: #0d1117;
-      --ink:     #e6edf3;
-      --muted:   #8b949e;
-      --border:  rgba(240,246,252,.1);
-      --shadow:  0 10px 30px rgba(0,0,0,.35);
-      --accent:  #58a6ff;
-      --t8-bg:   rgba(88,166,255,.07);
-      --t8-mark: #58a6ff;
+      --bg:#0d1117; --card:#161b22; --item-bg:#0d1117;
+      --ink:#e6edf3; --muted:#8b949e;
+      --border:rgba(240,246,252,.1); --shadow:0 10px 30px rgba(0,0,0,.35);
+      --accent:#58a6ff; --t8-bg:rgba(88,166,255,.07); --t8-mark:#58a6ff;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:radial-gradient(1200px 600px at 50% -150px,rgba(31,111,235,.18),transparent 60%),linear-gradient(var(--bg),#ffffff 65%);min-height:100vh}
+    body.dark{background:radial-gradient(1200px 600px at 50% -150px,rgba(31,111,235,.1),transparent 60%),linear-gradient(var(--bg),#0d1117 65%)}
+    a{color:inherit;text-decoration:none} a:hover{text-decoration:underline}
+    .shell{max-width:var(--max);margin:28px auto 56px;padding:0 var(--pad)}
+
+    /* hard-edge card */
+    .card{background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:0;overflow:hidden}
+
+    /* header */
+    header{background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:0;overflow:hidden;margin-bottom:16px}
+
+    .hero-wrap{position:relative;cursor:pointer;display:block;background:#111;line-height:0;overflow:hidden}
+    .hero{display:block;width:100%;aspect-ratio:5/3;object-fit:cover;transition:opacity .25s}
+    .hero-wrap:hover .hero{opacity:.88}
+
+    /* neon title */
+    .hero-title{position:absolute;bottom:0;left:0;right:0;padding:40px 22px 20px;background:linear-gradient(transparent,rgba(0,0,0,.75) 55%);pointer-events:none}
+    .hero-title-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:clamp(1.4rem,3.8vw,2.6rem);font-weight:900;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;color:#fff;text-shadow:0 0 8px #ff2fff,0 0 20px #ff2fff,0 0 40px #bf00ff,0 0 80px rgba(191,0,255,.4);animation:neon-pulse 2.8s ease-in-out infinite alternate}
+    @keyframes neon-pulse{
+      0%{text-shadow:0 0 6px #ff2fff,0 0 16px #ff2fff,0 0 32px #bf00ff,0 0 60px rgba(191,0,255,.35)}
+      100%{text-shadow:0 0 10px #ff6fff,0 0 28px #ff2fff,0 0 56px #bf00ff,0 0 100px rgba(191,0,255,.55),0 0 4px #fff}
     }
 
-    *, *::before, *::after { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.18), transparent 60%),
-        linear-gradient(var(--bg), #ffffff 65%);
-      min-height: 100vh;
-    }
-
-    body.dark {
-      background:
-        radial-gradient(1200px 600px at 50% -150px, rgba(31,111,235,.1), transparent 60%),
-        linear-gradient(var(--bg), #0d1117 65%);
-    }
-
-    a { color: inherit; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    .shell {
-      max-width: var(--max);
-      margin: 28px auto 56px;
-      padding: 0 var(--pad);
-    }
-
-    /* ── header / hero ── */
-    header {
-      background: var(--card);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-
-    .hero-wrap {
-      position: relative;
-      cursor: pointer;
-      display: block;
-      background: #e5e7eb;
-      line-height: 0;
-    }
-
-    body.dark .hero-wrap { background: #21262d; }
-
-    .hero {
-      display: block;
-      width: 100%;
-      aspect-ratio: 5 / 3;
-      object-fit: cover;
-      transition: opacity .25s;
-    }
-
-    .hero-wrap:hover .hero { opacity: .92; }
-
-    .splash-dots {
-      position: absolute;
-      bottom: 10px;
-      right: 14px;
-      display: flex;
-      gap: 6px;
-    }
-
-    .sdot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.4);
-      border: 1.5px solid rgba(255,255,255,.75);
-      cursor: pointer;
-      transition: background .2s;
-    }
-    .sdot.active { background: #fff; }
-
-    .head-inner { padding: 18px; }
-
-    h1 {
-      margin: 0 0 5px;
-      font-size: clamp(1.35rem, 2.8vw, 2rem);
-      line-height: 1.2;
-      letter-spacing: -.02em;
-    }
-
-    .sub { margin: 0; color: var(--muted); line-height: 1.45; }
-
-    .meta {
-      margin-top: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .meta-home { color: var(--accent); font-weight: 650; }
-
-    .feed-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 13px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--item-bg);
-      font-size: .82rem;
-      font-weight: 650;
-      color: var(--muted);
-      cursor: pointer;
-      transition: border-color .2s, color .2s, box-shadow .2s;
-      user-select: none;
-      line-height: 1;
-    }
-
-    .feed-pill:hover {
-      border-color: rgba(31,111,235,.4);
-      color: var(--accent);
-      box-shadow: 0 4px 12px rgba(31,111,235,.1);
-      text-decoration: none;
-    }
-
-    .feed-pill.on {
-      border-color: rgba(31,111,235,.5);
-      color: var(--accent);
-      background: rgba(31,111,235,.06);
-    }
-
-    body.dark .feed-pill:hover,
-    body.dark .feed-pill.on {
-      border-color: rgba(88,166,255,.45);
-      color: var(--accent);
-    }
-
-    /* ── layout ── */
-    .main-grid {
-      display: grid;
-      grid-template-columns: 300px 1fr;
-      gap: 16px;
-      align-items: start;
-    }
-
-    @media(max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
-
-    .sidebar { display: grid; gap: 16px; }
-
-    /* ── card ── */
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .card-h2 {
-      margin: 0;
-      padding: 14px 16px 12px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      letter-spacing: -.01em;
-      border-bottom: 1px solid var(--border);
-    }
-
-    /* ── round tabs ── */
-    .round-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .rtab {
-      flex: 1;
-      padding: 8px 2px;
-      font-size: .77rem;
-      font-weight: 650;
-      text-align: center;
-      cursor: pointer;
-      color: var(--muted);
-      background: none;
-      border: none;
-      border-bottom: 2px solid transparent;
-      transition: color .15s, border-color .15s;
-    }
-
-    .rtab:hover { color: var(--ink); }
-    .rtab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-    /* ── panes ── */
-    .pane { display: none; }
-    .pane.active { display: block; }
-
-    .pairings-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-    .pair-row {
-      display: grid;
-      grid-template-columns: 22px minmax(0,1fr) 46px minmax(0,1fr);
-      align-items: center;
-      gap: 0 6px;
-      padding: 7px 12px;
-      border-bottom: 1px solid rgba(15,23,42,.055);
-      font-size: .83rem;
-      min-width: 260px;
-    }
-
-    body.dark .pair-row { border-bottom-color: rgba(240,246,252,.05); }
-    .pair-row:last-child { border-bottom: none; }
-
-    .t-num { font-size: .65rem; color: var(--muted); text-align: center; flex-shrink: 0; }
-    .pn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pn.r { text-align: right; }
-    .pn.w { font-weight: 700; }
-
-    .sc-pill {
-      font-size: .7rem;
-      padding: 2px 6px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--item-bg);
-      color: var(--muted);
-      white-space: nowrap;
-      text-align: center;
-      justify-self: center;
-    }
-
-    .sc-pill.draw { font-style: italic; }
-
-    .bye-note {
-      padding: 7px 12px;
-      font-size: .78rem;
-      color: var(--muted);
-      font-style: italic;
-      border-top: 1px solid var(--border);
-    }
-
-    /* ── standings ── */
-    .std-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-    .std-tbl {
-      width: 100%;
-      min-width: 240px;
-      border-collapse: collapse;
-      font-size: .83rem;
-    }
-
-    .std-tbl th {
-      padding: 7px 10px;
-      font-size: .68rem;
-      font-weight: 650;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      color: var(--muted);
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-
-    .std-tbl td {
-      padding: 6px 10px;
-      border-bottom: 1px solid rgba(15,23,42,.055);
-    }
-
-    .std-tbl td:nth-child(2) { word-break: break-word; min-width: 80px; }
-
-    body.dark .std-tbl td { border-bottom-color: rgba(240,246,252,.04); }
-    .std-tbl tr:last-child td { border-bottom: none; }
-
-    .std-tbl tr.t8 { background: var(--t8-bg); }
-    .std-tbl tr.t8 td:first-child { border-left: 2px solid var(--t8-mark); }
-
-    .s-rank { color: var(--muted); font-size: .74rem; white-space: nowrap; }
-    .s-pts  { font-weight: 700; color: var(--accent); white-space: nowrap; }
-    .s-omw  { color: var(--muted); font-size: .74rem; white-space: nowrap; }
-
-    /* ── main col ── */
-    .main-col { display: grid; gap: 16px; }
-
-    /* ── bracket ── */
-    .bracket-scroll { padding: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-    .bracket {
-      display: grid;
-      grid-template-columns: 1fr 44px 1fr 44px 1fr 44px 130px;
-      min-width: 560px;
-    }
-
-    .b-col { display: flex; flex-direction: column; justify-content: space-around; }
-
-    .b-lbl {
-      font-size: .7rem;
-      font-weight: 650;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--muted);
-      text-align: center;
-      padding-bottom: 10px;
-    }
-
-    .b-match { margin: 5px 0; }
-
-    .b-player {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 6px 10px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: .82rem;
-      margin-bottom: 2px;
-      background: var(--item-bg);
-    }
-
-    .b-player.w {
-      background: rgba(31,111,235,.06);
-      border-color: rgba(31,111,235,.3);
-      font-weight: 700;
-    }
-
-    body.dark .b-player.w {
-      background: rgba(88,166,255,.08);
-      border-color: rgba(88,166,255,.3);
-    }
-
-    .b-player.l { opacity: .45; }
-    .b-sc { font-size: .72rem; color: var(--muted); flex-shrink: 0; }
-    .b-player.w .b-sc { color: var(--accent); }
-
-    .b-conn { display: flex; align-items: center; justify-content: center; }
-    .b-conn::after {
-      content: '';
-      display: block;
-      width: 2px;
-      height: 55%;
-      background: var(--border);
-      border-radius: 2px;
-    }
-
-    .champ-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 10px 8px;
-    }
-
-    .champ-trophy { font-size: 1.9rem; }
-
-    .champ-name {
-      font-size: 1rem;
-      font-weight: 700;
-      text-align: center;
-      color: var(--accent);
-      line-height: 1.2;
-    }
-
-    /* ── coverage list ── */
-    .cov-section {
-      padding: 10px 16px 4px;
-      font-size: .72rem;
-      font-weight: 650;
-      letter-spacing: .07em;
-      text-transform: uppercase;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
-    }
-    .cov-section:first-of-type { border-top: none; }
-
-    .cov-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 10px 16px;
-      border-bottom: 1px solid rgba(15,23,42,.055);
-      text-decoration: none;
-      color: inherit;
-      transition: background .15s;
-    }
-    body.dark .cov-item { border-bottom-color: rgba(240,246,252,.04); }
-    .cov-item:last-child { border-bottom: none; }
-    .cov-item:hover { background: rgba(31,111,235,.04); text-decoration: none; }
-
-    .cov-left { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
-    .cov-icon { font-size: .95rem; margin-top: 1px; width: 20px; text-align: center; flex-shrink: 0; }
-    .cov-text { min-width: 0; }
-    .cov-title { font-size: .9rem; font-weight: 650; line-height: 1.3; }
-    .cov-desc  { font-size: .79rem; color: var(--muted); line-height: 1.3; margin-top: 1px;
-                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    .btn {
-      padding: 7px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      font-weight: 650;
-      font-size: .82rem;
-      white-space: nowrap;
-      flex-shrink: 0;
-      color: inherit;
-      text-decoration: none;
-      line-height: 1;
-    }
-    .btn:hover {
-      text-decoration: none;
-      border-color: rgba(31,111,235,.35);
-      box-shadow: 0 6px 16px rgba(31,111,235,.12);
-    }
-
-    /* ── feed mode ── */
-    body.feed-mode .normal-view { display: none; }
-    .feed-panel { display: none; }
-    body.feed-mode .feed-panel { display: block; }
-
-    .feed-entry {
-      display: flex;
-      gap: 14px;
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(15,23,42,.055);
-    }
-    body.dark .feed-entry { border-bottom-color: rgba(240,246,252,.04); }
-    .feed-entry:last-child { border-bottom: none; }
-
-    .f-ts {
-      font-size: .7rem;
-      font-weight: 700;
-      color: var(--muted);
-      flex-shrink: 0;
-      padding-top: 2px;
-      width: 34px;
-      text-align: right;
-    }
-
-    .f-title { font-weight: 700; font-size: .9rem; margin-bottom: 2px; }
-    .f-desc  { font-size: .82rem; color: var(--muted); }
-    .f-desc a { color: var(--accent); font-weight: 650; }
-
-    /* ── sponsors strip ── */
-    .sponsors-strip {
-      margin-top: 24px;
-      padding: 20px 28px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      border-radius: var(--radius);
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-
-    .sponsors-label {
-      font-size: .7rem;
-      font-weight: 650;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      flex-shrink: 0;
-    }
-
-    .sponsors-strip img {
-      height: 52px;
-      width: auto;
-      max-width: 120px;
-      opacity: .85;
-      transition: opacity .2s;
-      object-fit: contain;
-    }
-
-    .sponsors-strip img:hover { opacity: 1; }
-    body.dark .sponsors-strip img { filter: brightness(.88); }
-
-    /* ── footer ── */
-    .pg-footer {
-      margin-top: 14px;
-      text-align: center;
-      color: var(--muted);
-      font-size: .88rem;
-    }
-    .pg-footer a { color: var(--accent); }
+    .splash-dots{position:absolute;bottom:10px;right:14px;display:flex;gap:6px}
+    .sdot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);border:1.5px solid rgba(255,255,255,.75);cursor:pointer;transition:background .2s}
+    .sdot.active{background:#fff}
+
+    .head-inner{padding:14px 18px}
+    h1{margin:0 0 4px;font-size:clamp(1.05rem,2vw,1.4rem);line-height:1.2;letter-spacing:-.01em}
+    .sub{margin:0;color:var(--muted);line-height:1.45;font-size:.88rem}
+    .meta{margin-top:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    .meta-home{color:var(--accent);font-weight:650}
+
+    .feed-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:0;border:1px solid var(--border);background:var(--item-bg);font-size:.82rem;font-weight:650;color:var(--muted);cursor:pointer;transition:border-color .2s,color .2s;user-select:none}
+    .feed-pill:hover{border-color:rgba(31,111,235,.4);color:var(--accent);text-decoration:none}
+    .feed-pill.on{border-color:rgba(31,111,235,.5);color:var(--accent);background:rgba(31,111,235,.06)}
+
+    /* layout */
+    .main-grid{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+    @media(max-width:860px){.main-grid{grid-template-columns:1fr}}
+    .sidebar{display:grid;gap:16px}
+
+    .card-h2{margin:0;padding:12px 16px 10px;font-size:1rem;font-weight:700;letter-spacing:-.01em;border-bottom:1px solid var(--border)}
+
+    /* tabs */
+    .round-tabs{display:flex;border-bottom:1px solid var(--border)}
+    .rtab{flex:1;padding:8px 2px;font-size:.77rem;font-weight:650;text-align:center;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+    .rtab:hover{color:var(--ink)} .rtab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+    .pane{display:none} .pane.active{display:block}
+    .pairings-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .pair-row{display:grid;grid-template-columns:22px minmax(0,1fr) 46px minmax(0,1fr);align-items:center;gap:0 6px;padding:7px 12px;border-bottom:1px solid rgba(15,23,42,.055);font-size:.83rem;min-width:260px}
+    body.dark .pair-row{border-bottom-color:rgba(240,246,252,.05)}
+    .pair-row:last-child{border-bottom:none}
+    .t-num{font-size:.65rem;color:var(--muted);text-align:center;flex-shrink:0}
+    .pn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .pn.r{text-align:right} .pn.w{font-weight:700}
+    .sc-pill{font-size:.7rem;padding:2px 6px;border-radius:0;border:1px solid var(--border);background:var(--item-bg);color:var(--muted);white-space:nowrap;text-align:center;justify-self:center}
+    .sc-pill.draw{font-style:italic}
+    .bye-note{padding:7px 12px;font-size:.78rem;color:var(--muted);font-style:italic;border-top:1px solid var(--border)}
+
+    /* standings */
+    .std-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .std-tbl{width:100%;min-width:240px;border-collapse:collapse;font-size:.83rem}
+    .std-tbl th{padding:7px 10px;font-size:.68rem;font-weight:650;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+    .std-tbl td{padding:6px 10px;border-bottom:1px solid rgba(15,23,42,.055)}
+    .std-tbl td:nth-child(2){word-break:break-word;min-width:80px}
+    body.dark .std-tbl td{border-bottom-color:rgba(240,246,252,.04)}
+    .std-tbl tr:last-child td{border-bottom:none}
+    .std-tbl tr.t8{background:var(--t8-bg)} .std-tbl tr.t8 td:first-child{border-left:2px solid var(--t8-mark)}
+    .s-rank{color:var(--muted);font-size:.74rem;white-space:nowrap}
+    .s-pts{font-weight:700;color:var(--accent);white-space:nowrap}
+    .s-omw{color:var(--muted);font-size:.74rem;white-space:nowrap}
+
+    /* main col */
+    .main-col{display:grid;gap:16px}
+    .bracket-scroll{padding:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .bracket{display:grid;grid-template-columns:1fr 44px 1fr 44px 1fr 44px 130px;min-width:560px}
+    .b-col{display:flex;flex-direction:column;justify-content:space-around}
+    .b-lbl{font-size:.7rem;font-weight:650;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding-bottom:10px}
+    .b-match{margin:5px 0}
+    .b-player{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:0;font-size:.82rem;margin-bottom:2px;background:var(--item-bg)}
+    .b-player.w{background:rgba(31,111,235,.06);border-color:rgba(31,111,235,.3);font-weight:700}
+    body.dark .b-player.w{background:rgba(88,166,255,.08);border-color:rgba(88,166,255,.3)}
+    .b-player.l{opacity:.45}
+    .b-sc{font-size:.72rem;color:var(--muted);flex-shrink:0} .b-player.w .b-sc{color:var(--accent)}
+    .b-conn{display:flex;align-items:center;justify-content:center}
+    .b-conn::after{content:'';display:block;width:2px;height:55%;background:var(--border)}
+    .champ-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 8px}
+    .champ-trophy{font-size:1.9rem}
+    .champ-name{font-size:1rem;font-weight:700;text-align:center;color:var(--accent);line-height:1.2}
+
+    /* coverage list */
+    .cov-section{padding:10px 16px 4px;font-size:.72rem;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--border)}
+    .cov-section:first-of-type{border-top:none}
+    .cov-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(15,23,42,.055);text-decoration:none;color:inherit;transition:background .15s}
+    body.dark .cov-item{border-bottom-color:rgba(240,246,252,.04)}
+    .cov-item:last-child{border-bottom:none} .cov-item:hover{background:rgba(31,111,235,.04);text-decoration:none}
+    .cov-left{display:flex;align-items:flex-start;gap:10px;min-width:0}
+    .cov-icon{font-size:.95rem;margin-top:1px;width:20px;text-align:center;flex-shrink:0}
+    .cov-text{min-width:0}
+    .cov-title{font-size:.9rem;font-weight:650;line-height:1.3}
+    .cov-desc{font-size:.79rem;color:var(--muted);line-height:1.3;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .btn{padding:7px 12px;border-radius:0;border:1px solid var(--border);background:var(--card);font-weight:650;font-size:.82rem;white-space:nowrap;flex-shrink:0;color:inherit;text-decoration:none;line-height:1}
+    .btn:hover{text-decoration:none;border-color:rgba(31,111,235,.35);box-shadow:0 4px 12px rgba(31,111,235,.1)}
+
+    /* feed */
+    body.feed-mode .normal-view{display:none} .feed-panel{display:none} body.feed-mode .feed-panel{display:block}
+    .feed-entry{display:flex;gap:14px;padding:12px 16px;border-bottom:1px solid rgba(15,23,42,.055)}
+    body.dark .feed-entry{border-bottom-color:rgba(240,246,252,.04)} .feed-entry:last-child{border-bottom:none}
+    .f-ts{font-size:.7rem;font-weight:700;color:var(--muted);flex-shrink:0;padding-top:2px;width:34px;text-align:right}
+    .f-title{font-weight:700;font-size:.9rem;margin-bottom:2px} .f-desc{font-size:.82rem;color:var(--muted)} .f-desc a{color:var(--accent);font-weight:650}
+
+    /* sponsors */
+    .sponsors-strip{margin-top:16px;padding:16px 24px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:0;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+    .sponsors-label{font-size:.7rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);flex-shrink:0}
+    .sponsors-strip a{display:flex;align-items:center;opacity:.82;transition:opacity .2s;text-decoration:none} .sponsors-strip a:hover{opacity:1}
+    .sponsors-strip img{height:52px;width:auto;max-width:120px;object-fit:contain;display:block}
+    body.dark .sponsors-strip img{filter:brightness(.88)}
+
+    .pg-footer{margin-top:14px;text-align:center;color:var(--muted);font-size:.88rem} .pg-footer a{color:var(--accent)}
   </style>
 </head>
-
 <body>
-
 <div id="global-menu-root"></div>
-
 <div class="shell">
 
-  <!-- ══ HEADER ══ -->
   <header>
     <div class="hero-wrap" onclick="cycleSplash()">
       <img class="hero" id="splashImg" src="" alt="BCPMM #2: Brewhall Champs"/>
+      <div class="hero-title">
+        <div class="hero-title-text">BCPMM #2: Brewhall Champs</div>
+      </div>
       <div class="splash-dots">
         <div class="sdot active" id="sdot0" onclick="event.stopPropagation();setSplash(0)"></div>
-        <div class="sdot"        id="sdot1" onclick="event.stopPropagation();setSplash(1)"></div>
-        <div class="sdot"        id="sdot2" onclick="event.stopPropagation();setSplash(2)"></div>
+        <div class="sdot" id="sdot1" onclick="event.stopPropagation();setSplash(1)"></div>
+        <div class="sdot" id="sdot2" onclick="event.stopPropagation();setSplash(2)"></div>
       </div>
     </div>
-
     <div class="head-inner">
       <h1>BCPMM #2: Brewhall Champs — Tournament Coverage</h1>
-      <p class="sub">
-        47 players · 5 Swiss rounds · Top 8 single elimination · Premodern · April 11, 2026
-      </p>
+      <p class="sub">47 players · 5 Swiss rounds · Top 8 single elimination · Premodern · April 11, 2026</p>
       <div class="meta">
         <a class="meta-home" href="../">magic1.ca</a>
         <span class="feed-pill" id="feedPill" onclick="toggleFeed()">📡 Feed Mode</span>
@@ -563,13 +181,9 @@
     </div>
   </header>
 
-  <!-- ══ NORMAL VIEW ══ -->
   <div class="normal-view">
     <div class="main-grid">
-
-      <!-- ── sidebar ── -->
       <aside class="sidebar">
-
         <div class="card">
           <h2 class="card-h2">Standings &amp; Pairings</h2>
           <div class="round-tabs">
@@ -580,13 +194,11 @@
             <button class="rtab" onclick="showRound(5)">R5</button>
             <button class="rtab active" onclick="showStandings()">Final</button>
           </div>
-
           <div class="pane" id="pane-r1"><div class="pairings-scroll" id="scroll-r1"></div></div>
           <div class="pane" id="pane-r2"><div class="pairings-scroll" id="scroll-r2"></div></div>
           <div class="pane" id="pane-r3"><div class="pairings-scroll" id="scroll-r3"></div></div>
           <div class="pane" id="pane-r4"><div class="pairings-scroll" id="scroll-r4"></div></div>
           <div class="pane" id="pane-r5"><div class="pairings-scroll" id="scroll-r5"></div></div>
-
           <div class="pane active" id="pane-std">
             <div class="std-scroll">
               <table class="std-tbl">
@@ -596,570 +208,169 @@
             </div>
           </div>
         </div>
-
         <div class="card">
           <h2 class="card-h2">External</h2>
           <a class="cov-item" href="https://www.spicerack.gg/events/3164431" target="_blank" rel="noopener noreferrer">
-            <div class="cov-left">
-              <span class="cov-icon">🌐</span>
-              <div class="cov-text">
-                <div class="cov-title">Spicerack.gg</div>
-                <div class="cov-desc">Full pairings &amp; standings</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">🌐</span><div class="cov-text"><div class="cov-title">Spicerack.gg</div><div class="cov-desc">Full pairings &amp; standings</div></div></div>
             <span class="btn">Open</span>
           </a>
           <a class="cov-item" href="https://www.mtgdecks.net" target="_blank" rel="noopener noreferrer">
-            <div class="cov-left">
-              <span class="cov-icon">📚</span>
-              <div class="cov-text">
-                <div class="cov-title">Decklists — mtgdecks.net</div>
-                <div class="cov-desc">Full submitted decklists</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">🃏</span><div class="cov-text"><div class="cov-title">Decklists — mtgdecks.net</div><div class="cov-desc">Full submitted decklists</div></div></div>
             <span class="btn">Open</span>
           </a>
           <a class="cov-item" href="https://www.mtgtop8.com" target="_blank" rel="noopener noreferrer">
-            <div class="cov-left">
-              <span class="cov-icon">📚</span>
-              <div class="cov-text">
-                <div class="cov-title">Decklists — mtgtop8.com</div>
-                <div class="cov-desc">Alternate decklist source</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">🃏</span><div class="cov-text"><div class="cov-title">Decklists — mtgtop8.com</div><div class="cov-desc">Alternate decklist source</div></div></div>
             <span class="btn">Open</span>
           </a>
         </div>
-
       </aside>
 
-      <!-- ── main column ── -->
       <div class="main-col">
-
         <div class="card">
           <h2 class="card-h2">Top 8 Bracket</h2>
-          <div class="bracket-scroll">
-            <div class="bracket" id="bracketEl"></div>
-          </div>
+          <div class="bracket-scroll"><div class="bracket" id="bracketEl"></div></div>
         </div>
 
         <div class="card">
           <h2 class="card-h2">Event Coverage</h2>
 
           <div class="cov-section">Feature Matches</div>
-
           <a class="cov-item" href="feature-match-r3.html">
-            <div class="cov-left">
-              <span class="cov-icon">⚔️</span>
-              <div class="cov-text">
-                <div class="cov-title">Round 3 Feature Match</div>
-                <div class="cov-desc">Andrew Kidston (Nought) vs Robert Luemers (Tog)</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">⚔️</span><div class="cov-text"><div class="cov-title">Round 3 Feature Match</div><div class="cov-desc">Andrew Kidston (Nought) vs Robert Luemers (Tog)</div></div></div>
             <span class="btn">Read</span>
           </a>
-
           <a class="cov-item" href="feature-match-r4.html">
-            <div class="cov-left">
-              <span class="cov-icon">⚔️</span>
-              <div class="cov-text">
-                <div class="cov-title">Round 4 Feature Match</div>
-                <div class="cov-desc">Colin Whitwell (TerraGeddon) vs Andrew Van Tunen (Moneyball Black)</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">⚔️</span><div class="cov-text"><div class="cov-title">Round 4 Feature Match</div><div class="cov-desc">Colin Whitwell (TerraGeddon) vs Andrew Van Tunen (Moneyball Black)</div></div></div>
             <span class="btn">Read</span>
           </a>
-
           <a class="cov-item" href="round5-roundup.html">
-            <div class="cov-left">
-              <span class="cov-icon">📋</span>
-              <div class="cov-text">
-                <div class="cov-title">Round 5 Round-Up</div>
-                <div class="cov-desc">Results &amp; notes from the final Swiss round</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">📋</span><div class="cov-text"><div class="cov-title">Round 5 Round-Up</div><div class="cov-desc">Results &amp; notes from the final Swiss round</div></div></div>
             <span class="btn">Read</span>
           </a>
 
           <div class="cov-section">Top 8</div>
-
           <a class="cov-item" href="profiles.html">
-            <div class="cov-left">
-              <span class="cov-icon">🏆</span>
-              <div class="cov-text">
-                <div class="cov-title">Top 8 Player Profiles</div>
-                <div class="cov-desc">Decks, bios &amp; takes</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">🏆</span><div class="cov-text"><div class="cov-title">Top 8 Player Profiles</div><div class="cov-desc">Decks, bios &amp; takes</div></div></div>
             <span class="btn">Read</span>
           </a>
-
-          <a class="cov-item" href="qf-roundup.html">
-            <div class="cov-left">
-              <span class="cov-icon">📋</span>
-              <div class="cov-text">
-                <div class="cov-title">Quarterfinals Round-Up</div>
-                <div class="cov-desc">All four matches</div>
-              </div>
-            </div>
-            <span class="btn">Read</span>
-          </a>
-
           <a class="cov-item" href="semifinals-feature.html">
-            <div class="cov-left">
-              <span class="cov-icon">⚔️</span>
-              <div class="cov-text">
-                <div class="cov-title">Semifinals Feature Match</div>
-                <div class="cov-desc">Chad Galpin (Reanimator) vs Markus Thibeau (Moneyball Black)</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">⚔️</span><div class="cov-text"><div class="cov-title">Semifinals Feature Match</div><div class="cov-desc">Chad Galpin (Reanimator) vs Markus Thibeau (Moneyball Black)</div></div></div>
             <span class="btn">Read</span>
           </a>
-
           <a class="cov-item" href="finals.html">
-            <div class="cov-left">
-              <span class="cov-icon">👑</span>
-              <div class="cov-text">
-                <div class="cov-title">Finals Feature Match</div>
-                <div class="cov-desc">Markus Thibeau (Moneyball Black) vs Colin Whitwell (TerraGeddon)</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">👑</span><div class="cov-text"><div class="cov-title">Finals Feature Match</div><div class="cov-desc">Markus Thibeau (Moneyball Black) vs Colin Whitwell (TerraGeddon)</div></div></div>
             <span class="btn">Read</span>
           </a>
 
           <div class="cov-section">Event Extras</div>
-
-          <a class="cov-item" href="gallery/gallery.html">
-            <div class="cov-left">
-              <span class="cov-icon">📸</span>
-              <div class="cov-text">
-                <div class="cov-title">Photo Gallery</div>
-                <div class="cov-desc">Photos from the day</div>
-              </div>
-            </div>
+          <a class="cov-item" href="gallery.html">
+            <div class="cov-left"><span class="cov-icon">📸</span><div class="cov-text"><div class="cov-title">Photo Gallery</div><div class="cov-desc">Photos &amp; video from the day</div></div></div>
             <span class="btn">View</span>
           </a>
-
           <a class="cov-item" href="raffle-winners.html">
-            <div class="cov-left">
-              <span class="cov-icon">🎟️</span>
-              <div class="cov-text">
-                <div class="cov-title">Raffle Winners</div>
-                <div class="cov-desc">Prizes drawn on the day</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">🎟️</span><div class="cov-text"><div class="cov-title">Raffle &amp; Donations</div><div class="cov-desc">Winners, lots, &amp; charity recap</div></div></div>
             <span class="btn">View</span>
           </a>
-
-          <a class="cov-item" href="donations.html">
-            <div class="cov-left">
-              <span class="cov-icon">💛</span>
-              <div class="cov-text">
-                <div class="cov-title">Donations Summary</div>
-                <div class="cov-desc">BC Cancer Foundation recap</div>
-              </div>
-            </div>
-            <span class="btn">View</span>
-          </a>
-
           <a class="cov-item" href="trailer.html">
-            <div class="cov-left">
-              <span class="cov-icon">🎬</span>
-              <div class="cov-text">
-                <div class="cov-title">Event Trailer</div>
-                <div class="cov-desc">Video</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">🎬</span><div class="cov-text"><div class="cov-title">Event Trailer</div><div class="cov-desc">Video</div></div></div>
             <span class="btn">Watch</span>
           </a>
-
           <a class="cov-item" href="prizes.html">
-            <div class="cov-left">
-              <span class="cov-icon">🎁</span>
-              <div class="cov-text">
-                <div class="cov-title">Prize Rundown</div>
-                <div class="cov-desc">Full payout breakdown</div>
-              </div>
-            </div>
+            <div class="cov-left"><span class="cov-icon">🎁</span><div class="cov-text"><div class="cov-title">Prize Rundown</div><div class="cov-desc">Full payout breakdown</div></div></div>
             <span class="btn">View</span>
           </a>
-
-        </div><!-- /card -->
-
-        <div class="pg-footer">
-          © B.C. Premodern Masters · Built for <a href="../">magic1.ca</a>
         </div>
 
-      </div><!-- /main-col -->
-    </div><!-- /main-grid -->
-
-    <!-- ══ SPONSORS ══ -->
-    <div class="sponsors-strip">
-      <span class="sponsors-label">Sponsors</span>
-      <img src="/assets/sponsor1.png"  alt="Strange Fellows Brewing" title="Strange Fellows Brewing">
-      <img src="/assets/sponsor2.jpeg" alt="Face to Face Games"      title="Face to Face Games">
-      <img src="/assets/sponsor3.webp" alt="Rain City Games"         title="Rain City Games">
-      <img src="/assets/sponsor4.png"  alt="House of Cards"          title="House of Cards">
-      <img src="/assets/sponsor5.png"  alt="Connection Games"        title="Connection Games">
-      <img src="/assets/logo2.webp"       alt="Magic Stronghold"        title="Magic Stronghold">
+        <div class="pg-footer">© B.C. Premodern Masters · Built for <a href="../">magic1.ca</a></div>
+      </div>
     </div>
 
-  </div><!-- /normal-view -->
+    <div class="sponsors-strip">
+      <span class="sponsors-label">Sponsors</span>
+      <a href="https://strangefellowsbrewing.com" target="_blank" rel="noopener noreferrer"><img src="/assets/sponsor1.png" alt="Strange Fellows Brewing"/></a>
+      <a href="https://www.magicstronghold.com" target="_blank" rel="noopener noreferrer"><img src="/assets/shg.jpg" alt="Magic Stronghold"/></a>
+      <a href="https://raincitygames.com" target="_blank" rel="noopener noreferrer"><img src="/assets/sponsor3.webp" alt="Rain City Games"/></a>
+      <a href="https://www.theconnectiongames.com" target="_blank" rel="noopener noreferrer"><img src="/assets/sponsor5.png" alt="The Connection Games"/></a>
+      <a href="https://facetofacegames.com" target="_blank" rel="noopener noreferrer"><img src="/assets/sponsor2.jpeg" alt="Face to Face Games"/></a>
+      <a href="https://houseofcards.ca" target="_blank" rel="noopener noreferrer"><img src="/assets/sponsor4.png" alt="House of Cards"/></a>
+    </div>
+  </div>
 
-  <!-- ══ FEED PANEL ══ -->
   <div class="feed-panel">
     <div class="card">
       <h2 class="card-h2">📡 Event Feed — BCPMM #2: Brewhall Champs</h2>
-
-      <div class="feed-entry">
-        <span class="f-ts">FIN</span>
-        <div>
-          <div class="f-title">🏆 Markus Thibeau wins BCPMM #2: Brewhall Champs</div>
-          <div class="f-desc">Thibeau defeats Colin Whitwell 2-1 in the Finals. <a href="finals.html">Finals feature match →</a></div>
-        </div>
-      </div>
-
-      <div class="feed-entry">
-        <span class="f-ts">SF</span>
-        <div>
-          <div class="f-title">Semifinals complete</div>
-          <div class="f-desc">Thibeau def. Chad Galpin 2-1 · Whitwell def. McLellan 2-0. <a href="semifinals-feature.html">SF feature match →</a></div>
-        </div>
-      </div>
-
-      <div class="feed-entry">
-        <span class="f-ts">QF</span>
-        <div>
-          <div class="f-title">Quarterfinals complete</div>
-          <div class="f-desc">Chad Galpin def. Kidston 2-0 · Thibeau def. Hackney 2-0 · McLellan def. Niwinski 2-0 · Whitwell def. Alevizakis 2-0. <a href="qf-roundup.html">QF round-up →</a></div>
-        </div>
-      </div>
-
-      <div class="feed-entry">
-        <span class="f-ts">R5</span>
-        <div>
-          <div class="f-title">Round 5 complete — Top 8 locked</div>
-          <div class="f-desc">Whitwell/McLellan intentional draw · Kidston def. Fennell 2-0. <a href="round5-roundup.html">Round 5 round-up →</a></div>
-        </div>
-      </div>
-
-      <div class="feed-entry">
-        <span class="f-ts">R4</span>
-        <div>
-          <div class="f-title">Round 4 Feature Match</div>
-          <div class="f-desc">Table 1: Whitwell def. Van Tunen 2-1. <a href="feature-match-r4.html">Read →</a></div>
-        </div>
-      </div>
-
-      <div class="feed-entry">
-        <span class="f-ts">R3</span>
-        <div>
-          <div class="f-title">Round 3 Feature Match</div>
-          <div class="f-desc">Table 2: Kidston def. Luemers 2-0. <a href="feature-match-r3.html">Read →</a></div>
-        </div>
-      </div>
-
-      <div class="feed-entry">
-        <span class="f-ts">EVT</span>
-        <div>
-          <div class="f-title">Event extras</div>
-          <div class="f-desc">
-            <a href="gallery.html">Gallery</a> ·
-            <a href="raffle-winners.html">Raffle</a> ·
-            <a href="donations.html">Donations</a> ·
-            <a href="trailer.html">Trailer</a> ·
-            <a href="prizes.html">Prize Rundown</a>
-          </div>
-        </div>
-      </div>
-
+      <div class="feed-entry"><span class="f-ts">FIN</span><div><div class="f-title">🏆 Markus Thibeau wins BCPMM #2</div><div class="f-desc">Thibeau defeats Colin Whitwell 2-1. <a href="finals.html">Finals →</a></div></div></div>
+      <div class="feed-entry"><span class="f-ts">SF</span><div><div class="f-title">Semifinals complete</div><div class="f-desc">Thibeau def. Galpin 2-1 · Whitwell def. McLellan 2-0. <a href="semifinals-feature.html">SF feature →</a></div></div></div>
+      <div class="feed-entry"><span class="f-ts">R5</span><div><div class="f-title">Round 5 complete — Top 8 locked</div><div class="f-desc">Whitwell/McLellan draw · Kidston def. Fennell 2-0. <a href="round5-roundup.html">R5 round-up →</a></div></div></div>
+      <div class="feed-entry"><span class="f-ts">R4</span><div><div class="f-title">Round 4 Feature Match</div><div class="f-desc">Table 1: Whitwell def. Van Tunen 2-1. <a href="feature-match-r4.html">Read →</a></div></div></div>
+      <div class="feed-entry"><span class="f-ts">R3</span><div><div class="f-title">Round 3 Feature Match</div><div class="f-desc">Table 2: Kidston def. Luemers 2-0. <a href="feature-match-r3.html">Read →</a></div></div></div>
+      <div class="feed-entry"><span class="f-ts">EVT</span><div><div class="f-title">Event extras</div><div class="f-desc"><a href="gallery.html">Gallery</a> · <a href="raffle-winners.html">Raffle &amp; Donations</a> · <a href="trailer.html">Trailer</a> · <a href="prizes.html">Prize Rundown</a></div></div></div>
     </div>
-  </div><!-- /feed-panel -->
-
-</div><!-- /shell -->
+  </div>
+</div>
 
 <script>
-/* ── splash ── */
-const SPLASHES = ['coverage-splash.jpg','coverage-splash2.jpg','coverage-splash3.jpg'];
-let splashIdx = Math.floor(Math.random() * SPLASHES.length);
+const SPLASHES=['coverage-splash.jpg','coverage-splash2.jpg','coverage-splash3.jpg'];
+let splashIdx=Math.floor(Math.random()*SPLASHES.length);
 setSplash(splashIdx);
-
-function setSplash(i) {
-  splashIdx = i;
-  document.getElementById('splashImg').src = SPLASHES[i];
-  document.querySelectorAll('.sdot').forEach((d,j) => d.classList.toggle('active', j===i));
-}
-function cycleSplash() { setSplash((splashIdx+1) % SPLASHES.length); }
-
-/* ── feed toggle ── */
-let feedOn = false;
-function toggleFeed() {
-  feedOn = !feedOn;
-  document.body.classList.toggle('feed-mode', feedOn);
-  const pill = document.getElementById('feedPill');
-  pill.classList.toggle('on', feedOn);
-  pill.textContent = feedOn ? '✕ Exit Feed' : '📡 Feed Mode';
-}
-
-/* ── data ── */
-const STANDINGS = [
-  {rank:1, player:"Andrew Kidston",             pts:15, omw:50.67},
-  {rank:2, player:"Colin Whitwell",              pts:13, omw:61.33},
-  {rank:3, player:"Alastair McLellan",           pts:13, omw:59.93},
-  {rank:4, player:"Rob Hackney",                 pts:12, omw:58.6},
-  {rank:5, player:"Markus Thibeau",              pts:12, omw:56.0},
-  {rank:6, player:"William Niwinski",            pts:12, omw:53.33},
-  {rank:7, player:"Aeolius Alevizakis",          pts:12, omw:49.2},
-  {rank:8, player:"Chad Galpin",                 pts:12, omw:46.67},
-  {rank:9, player:"Dakota Blais",                pts:12, omw:45.27},
-  {rank:10,player:"Dustin Fennell",              pts:9,  omw:71.93},
-  {rank:11,player:"Andrew Van Tunen",            pts:9,  omw:65.33},
-  {rank:12,player:"Ed Yueh",                     pts:9,  omw:64.0},
-  {rank:13,player:"Steven Duarte",               pts:9,  omw:60.0},
-  {rank:14,player:"Reilly Wood",                 pts:9,  omw:56.0},
-  {rank:15,player:"Alex Kim",                    pts:9,  omw:56.0},
-  {rank:16,player:"Spencer Shaw-Jaworek",        pts:9,  omw:54.6},
-  {rank:17,player:"Doug Raymond",                pts:9,  omw:51.93},
-  {rank:18,player:"Mazin Marwan",                pts:9,  omw:50.6},
-  {rank:19,player:"Kevin Lavery",                pts:9,  omw:50.6},
-  {rank:20,player:"James Onions",                pts:9,  omw:50.0},
-  {rank:21,player:"Kevin Mittertreiner",         pts:9,  omw:49.27},
-  {rank:22,player:"Chris Erickson",              pts:9,  omw:46.6},
-  {rank:23,player:"Arlen Wiesenthal",            pts:7,  omw:34.83},
-  {rank:24,player:"Marvin Gonçalves de Aquino",  pts:6,  omw:67.93},
-  {rank:25,player:"Curran Delahanty",            pts:6,  omw:65.0},
-  {rank:26,player:"Robert Luemers",              pts:6,  omw:62.6},
-  {rank:27,player:"Dustyn Greenwell-Baker",      pts:6,  omw:58.6},
-  {rank:28,player:"Dakota Boin",                 pts:6,  omw:55.93},
-  {rank:29,player:"Cody Peters",                 pts:6,  omw:54.6},
-  {rank:30,player:"Matthew Thiessen",            pts:6,  omw:54.6},
-  {rank:31,player:"Scott Peters",                pts:6,  omw:53.2},
-  {rank:32,player:"Puck Edwards",                pts:6,  omw:51.93},
-  {rank:33,player:"Bill Valeriote",              pts:6,  omw:49.27},
-  {rank:34,player:"Cameron Wolber",              pts:6,  omw:49.2},
-  {rank:35,player:"Romulo Ramos",                pts:5,  omw:46.53},
-  {rank:36,player:"Lucas F.",                    pts:4,  omw:35.93},
-  {rank:37,player:"Caitlyn Bethune",             pts:3,  omw:71.0},
-  {rank:38,player:"Owen Hogg",                   pts:3,  omw:53.33},
-  {rank:39,player:"Rachael Hernandez",           pts:3,  omw:51.0},
-  {rank:40,player:"Penny Flegel",                pts:3,  omw:47.93},
-  {rank:41,player:"Seth Stuve",                  pts:3,  omw:46.53},
-  {rank:42,player:"Jeffrey Scofield",            pts:3,  omw:43.8},
-  {rank:43,player:"Jack Standing",               pts:3,  omw:41.58},
-  {rank:44,player:"Tyler Woolley",               pts:0,  omw:70.0},
-  {rank:45,player:"Kevin Wu",                    pts:0,  omw:51.0},
-  {rank:46,player:"Clint Taylor",                pts:0,  omw:46.58},
-  {rank:47,player:"Bruce Liu",                   pts:0,  omw:40.0},
+function setSplash(i){splashIdx=i;document.getElementById('splashImg').src=SPLASHES[i];document.querySelectorAll('.sdot').forEach((d,j)=>d.classList.toggle('active',j===i))}
+function cycleSplash(){setSplash((splashIdx+1)%SPLASHES.length)}
+let feedOn=false;
+function toggleFeed(){feedOn=!feedOn;document.body.classList.toggle('feed-mode',feedOn);const p=document.getElementById('feedPill');p.classList.toggle('on',feedOn);p.textContent=feedOn?'✕ Exit Feed':'📡 Feed Mode'}
+const STANDINGS=[
+  {rank:1,player:"Andrew Kidston",pts:15,omw:50.67},{rank:2,player:"Colin Whitwell",pts:13,omw:61.33},
+  {rank:3,player:"Alastair McLellan",pts:13,omw:59.93},{rank:4,player:"Rob Hackney",pts:12,omw:58.6},
+  {rank:5,player:"Markus Thibeau",pts:12,omw:56.0},{rank:6,player:"William Niwinski",pts:12,omw:53.33},
+  {rank:7,player:"Aeolius Alevizakis",pts:12,omw:49.2},{rank:8,player:"Chad Galpin",pts:12,omw:46.67},
+  {rank:9,player:"Dakota Blais",pts:12,omw:45.27},{rank:10,player:"Dustin Fennell",pts:9,omw:71.93},
+  {rank:11,player:"Andrew Van Tunen",pts:9,omw:65.33},{rank:12,player:"Ed Yueh",pts:9,omw:64.0},
+  {rank:13,player:"Steven Duarte",pts:9,omw:60.0},{rank:14,player:"Reilly Wood",pts:9,omw:56.0},
+  {rank:15,player:"Alex Kim",pts:9,omw:56.0},{rank:16,player:"Spencer Shaw-Jaworek",pts:9,omw:54.6},
+  {rank:17,player:"Doug Raymond",pts:9,omw:51.93},{rank:18,player:"Mazin Marwan",pts:9,omw:50.6},
+  {rank:19,player:"Kevin Lavery",pts:9,omw:50.6},{rank:20,player:"James Onions",pts:9,omw:50.0},
+  {rank:21,player:"Kevin Mittertreiner",pts:9,omw:49.27},{rank:22,player:"Chris Erickson",pts:9,omw:46.6},
+  {rank:23,player:"Arlen Wiesenthal",pts:7,omw:34.83},{rank:24,player:"Marvin Gonçalves de Aquino",pts:6,omw:67.93},
+  {rank:25,player:"Curran Delahanty",pts:6,omw:65.0},{rank:26,player:"Robert Luemers",pts:6,omw:62.6},
+  {rank:27,player:"Dustyn Greenwell-Baker",pts:6,omw:58.6},{rank:28,player:"Dakota Boin",pts:6,omw:55.93},
+  {rank:29,player:"Cody Peters",pts:6,omw:54.6},{rank:30,player:"Matthew Thiessen",pts:6,omw:54.6},
+  {rank:31,player:"Scott Peters",pts:6,omw:53.2},{rank:32,player:"Puck Edwards",pts:6,omw:51.93},
+  {rank:33,player:"Bill Valeriote",pts:6,omw:49.27},{rank:34,player:"Cameron Wolber",pts:6,omw:49.2},
+  {rank:35,player:"Romulo Ramos",pts:5,omw:46.53},{rank:36,player:"Lucas F.",pts:4,omw:35.93},
+  {rank:37,player:"Caitlyn Bethune",pts:3,omw:71.0},{rank:38,player:"Owen Hogg",pts:3,omw:53.33},
+  {rank:39,player:"Rachael Hernandez",pts:3,omw:51.0},{rank:40,player:"Penny Flegel",pts:3,omw:47.93},
+  {rank:41,player:"Seth Stuve",pts:3,omw:46.53},{rank:42,player:"Jeffrey Scofield",pts:3,omw:43.8},
+  {rank:43,player:"Jack Standing",pts:3,omw:41.58},{rank:44,player:"Tyler Woolley",pts:0,omw:70.0},
+  {rank:45,player:"Kevin Wu",pts:0,omw:51.0},{rank:46,player:"Clint Taylor",pts:0,omw:46.58},
+  {rank:47,player:"Bruce Liu",pts:0,omw:40.0},
 ];
-
-const ROUNDS = {
-  1:{byes:["James Onions"],matches:[
-    {t:1,a:"Chris Erickson",b:"Alex Kim",ga:1,gb:2},
-    {t:2,a:"Andrew Van Tunen",b:"Puck Edwards",ga:2,gb:1},
-    {t:3,a:"Kevin Wu",b:"Rob Hackney",ga:1,gb:2},
-    {t:4,a:"Steven Duarte",b:"Rachael Hernandez",ga:2,gb:0},
-    {t:5,a:"Bruce Liu",b:"Robert Luemers",ga:0,gb:2},
-    {t:6,a:"Dustin Fennell",b:"Jack Standing",ga:2,gb:1},
-    {t:7,a:"Seth Stuve",b:"Mazin Marwan",ga:0,gb:2},
-    {t:8,a:"Lucas F.",b:"Marvin Gonçalves de Aquino",ga:1,gb:2},
-    {t:9,a:"Colin Whitwell",b:"Doug Raymond",ga:2,gb:0},
-    {t:10,a:"Reilly Wood",b:"Dakota Boin",ga:0,gb:2},
-    {t:11,a:"Caitlyn Bethune",b:"Andrew Kidston",ga:0,gb:2},
-    {t:12,a:"Kevin Lavery",b:"Kevin Mittertreiner",ga:2,gb:1},
-    {t:13,a:"Matthew Thiessen",b:"Ed Yueh",ga:1,gb:2},
-    {t:14,a:"Bill Valeriote",b:"Cody Peters",ga:0,gb:2},
-    {t:15,a:"Alastair McLellan",b:"Penny Flegel",ga:2,gb:0},
-    {t:16,a:"Dakota Blais",b:"Tyler Woolley",ga:2,gb:1},
-    {t:17,a:"Romulo Ramos",b:"Chad Galpin",ga:1,gb:2},
-    {t:18,a:"Spencer Shaw-Jaworek",b:"Jeffrey Scofield",ga:2,gb:0},
-    {t:19,a:"Clint Taylor",b:"Scott Peters",ga:1,gb:2},
-    {t:20,a:"Dustyn Greenwell-Baker",b:"Cameron Wolber",ga:2,gb:0},
-    {t:21,a:"Markus Thibeau",b:"Aeolius Alevizakis",ga:2,gb:1},
-    {t:22,a:"Owen Hogg",b:"Arlen Wiesenthal",ga:2,gb:1},
-    {t:23,a:"William Niwinski",b:"Curran Delahanty",ga:2,gb:1},
-  ]},
-  2:{byes:["Curran Delahanty"],matches:[
-    {t:1,a:"Chad Galpin",b:"Marvin Gonçalves de Aquino",ga:0,gb:2},
-    {t:2,a:"Dustyn Greenwell-Baker",b:"Rob Hackney",ga:0,gb:2},
-    {t:3,a:"Mazin Marwan",b:"Andrew Van Tunen",ga:1,gb:2},
-    {t:4,a:"Colin Whitwell",b:"Dakota Boin",ga:2,gb:0},
-    {t:5,a:"Scott Peters",b:"Andrew Kidston",ga:1,gb:2},
-    {t:6,a:"William Niwinski",b:"Alastair McLellan",ga:0,gb:2},
-    {t:7,a:"Owen Hogg",b:"Kevin Lavery",ga:0,gb:2},
-    {t:8,a:"Dakota Blais",b:"Ed Yueh",ga:1,gb:2},
-    {t:9,a:"Robert Luemers",b:"Alex Kim",ga:0,gb:2},
-    {t:10,a:"Markus Thibeau",b:"Dustin Fennell",ga:1,gb:2},
-    {t:11,a:"Cody Peters",b:"Spencer Shaw-Jaworek",ga:1,gb:2},
-    {t:12,a:"James Onions",b:"Steven Duarte",ga:1,gb:2},
-    {t:13,a:"Jack Standing",b:"Rachael Hernandez",ga:1,gb:2},
-    {t:14,a:"Jeffrey Scofield",b:"Doug Raymond",ga:1,gb:2},
-    {t:15,a:"Puck Edwards",b:"Arlen Wiesenthal",ga:2,gb:0},
-    {t:16,a:"Matthew Thiessen",b:"Bruce Liu",ga:2,gb:1},
-    {t:17,a:"Reilly Wood",b:"Chris Erickson",ga:2,gb:1},
-    {t:18,a:"Caitlyn Bethune",b:"Lucas F.",ga:2,gb:0},
-    {t:19,a:"Penny Flegel",b:"Seth Stuve",ga:2,gb:1},
-    {t:20,a:"Tyler Woolley",b:"Kevin Mittertreiner",ga:1,gb:2},
-    {t:21,a:"Aeolius Alevizakis",b:"Clint Taylor",ga:2,gb:0},
-    {t:22,a:"Kevin Wu",b:"Cameron Wolber",ga:0,gb:2},
-    {t:23,a:"Romulo Ramos",b:"Bill Valeriote",ga:1,gb:2},
-  ]},
-  3:{byes:["Arlen Wiesenthal"],matches:[
-    {t:1,a:"Steven Duarte",b:"Colin Whitwell",ga:1,gb:2},
-    {t:2,a:"Andrew Kidston",b:"Robert Luemers",ga:2,gb:0},
-    {t:3,a:"Marvin Gonçalves de Aquino",b:"Alastair McLellan",ga:0,gb:2},
-    {t:4,a:"Andrew Van Tunen",b:"Kevin Lavery",ga:2,gb:0},
-    {t:5,a:"Ed Yueh",b:"Rob Hackney",ga:1,gb:2},
-    {t:6,a:"Spencer Shaw-Jaworek",b:"Dustin Fennell",ga:0,gb:2},
-    {t:7,a:"James Onions",b:"Mazin Marwan",ga:0,gb:2},
-    {t:8,a:"Alex Kim",b:"Puck Edwards",ga:2,gb:1},
-    {t:9,a:"Rachael Hernandez",b:"Kevin Mittertreiner",ga:0,gb:2},
-    {t:10,a:"Matthew Thiessen",b:"Scott Peters",ga:2,gb:0},
-    {t:11,a:"Chad Galpin",b:"Bill Valeriote",ga:2,gb:0},
-    {t:12,a:"Penny Flegel",b:"Cameron Wolber",ga:0,gb:2},
-    {t:13,a:"Aeolius Alevizakis",b:"Owen Hogg",ga:2,gb:1},
-    {t:14,a:"Dakota Blais",b:"Caitlyn Bethune",ga:2,gb:1},
-    {t:15,a:"Reilly Wood",b:"Doug Raymond",ga:2,gb:1},
-    {t:16,a:"William Niwinski",b:"Dustyn Greenwell-Baker",ga:2,gb:0},
-    {t:17,a:"Markus Thibeau",b:"Cody Peters",ga:2,gb:1},
-    {t:18,a:"Curran Delahanty",b:"Dakota Boin",ga:2,gb:0},
-    {t:19,a:"Romulo Ramos",b:"Clint Taylor",ga:2,gb:1},
-    {t:20,a:"Chris Erickson",b:"Seth Stuve",ga:2,gb:1},
-    {t:21,a:"Kevin Wu",b:"Lucas F.",ga:0,gb:2},
-    {t:22,a:"Jack Standing",b:"Jeffrey Scofield",ga:2,gb:1},
-  ]},
-  4:{byes:[],matches:[
-    {t:1,a:"Colin Whitwell",b:"Andrew Van Tunen",ga:2,gb:1},
-    {t:2,a:"Alastair McLellan",b:"Dustin Fennell",ga:2,gb:0},
-    {t:3,a:"Andrew Kidston",b:"Rob Hackney",ga:2,gb:1},
-    {t:4,a:"Kevin Lavery",b:"Spencer Shaw-Jaworek",ga:1,gb:2},
-    {t:5,a:"Cameron Wolber",b:"Aeolius Alevizakis",ga:0,gb:2},
-    {t:6,a:"Alex Kim",b:"Mazin Marwan",ga:2,gb:1},
-    {t:7,a:"Chad Galpin",b:"Steven Duarte",ga:2,gb:1},
-    {t:8,a:"Reilly Wood",b:"Marvin Gonçalves de Aquino",ga:2,gb:1},
-    {t:9,a:"Curran Delahanty",b:"Markus Thibeau",ga:0,gb:2},
-    {t:10,a:"William Niwinski",b:"Matthew Thiessen",ga:2,gb:0},
-    {t:11,a:"Dakota Blais",b:"Kevin Mittertreiner",ga:2,gb:1},
-    {t:12,a:"Ed Yueh",b:"Robert Luemers",ga:2,gb:1},
-    {t:13,a:"Doug Raymond",b:"Scott Peters",ga:2,gb:1},
-    {t:14,a:"Penny Flegel",b:"Dustyn Greenwell-Baker",ga:1,gb:2},
-    {t:15,a:"Dakota Boin",b:"Chris Erickson",ga:0,gb:2},
-    {t:16,a:"Lucas F.",b:"Romulo Ramos",draw:true},
-    {t:17,a:"Jack Standing",b:"Puck Edwards",ga:1,gb:2},
-    {t:18,a:"James Onions",b:"Cody Peters",ga:2,gb:1},
-    {t:19,a:"Owen Hogg",b:"Bill Valeriote",ga:1,gb:2},
-    {t:20,a:"Arlen Wiesenthal",b:"Seth Stuve",ga:2,gb:1},
-    {t:21,a:"Jeffrey Scofield",b:"Clint Taylor",ga:2,gb:0},
-  ]},
-  5:{byes:[],matches:[
-    {t:1,a:"Colin Whitwell",b:"Alastair McLellan",draw:true},
-    {t:2,a:"Dustin Fennell",b:"Andrew Kidston",ga:0,gb:2},
-    {t:3,a:"Andrew Van Tunen",b:"William Niwinski",ga:0,gb:2},
-    {t:4,a:"Markus Thibeau",b:"Ed Yueh",ga:2,gb:1},
-    {t:5,a:"Rob Hackney",b:"Alex Kim",ga:2,gb:0},
-    {t:6,a:"Chad Galpin",b:"Spencer Shaw-Jaworek",ga:2,gb:0},
-    {t:7,a:"Aeolius Alevizakis",b:"Reilly Wood",ga:2,gb:1},
-    {t:8,a:"Marvin Gonçalves de Aquino",b:"Dakota Blais",ga:0,gb:2},
-    {t:9,a:"Robert Luemers",b:"Steven Duarte",ga:1,gb:2},
-    {t:10,a:"Kevin Lavery",b:"Puck Edwards",ga:2,gb:1},
-    {t:11,a:"Dustyn Greenwell-Baker",b:"Doug Raymond",ga:1,gb:2},
-    {t:12,a:"Matthew Thiessen",b:"Mazin Marwan",ga:0,gb:2},
-    {t:13,a:"Curran Delahanty",b:"Chris Erickson",ga:0,gb:2},
-    {t:14,a:"Kevin Mittertreiner",b:"Bill Valeriote",ga:2,gb:0},
-    {t:15,a:"James Onions",b:"Cameron Wolber",ga:2,gb:0},
-    {t:16,a:"Romulo Ramos",b:"Arlen Wiesenthal",draw:true},
-    {t:17,a:"Lucas F.",b:"Dakota Boin",ga:1,gb:2},
-    {t:18,a:"Owen Hogg",b:"Cody Peters",ga:0,gb:2},
-    {t:19,a:"Penny Flegel",b:"Scott Peters",ga:2,gb:1},
-    {t:20,a:"Jeffrey Scofield",b:"Seth Stuve",ga:2,gb:0},
-  ]},
+const ROUNDS={
+  1:{byes:["James Onions"],matches:[{t:1,a:"Chris Erickson",b:"Alex Kim",ga:1,gb:2},{t:2,a:"Andrew Van Tunen",b:"Puck Edwards",ga:2,gb:1},{t:3,a:"Kevin Wu",b:"Rob Hackney",ga:1,gb:2},{t:4,a:"Steven Duarte",b:"Rachael Hernandez",ga:2,gb:0},{t:5,a:"Bruce Liu",b:"Robert Luemers",ga:0,gb:2},{t:6,a:"Dustin Fennell",b:"Jack Standing",ga:2,gb:1},{t:7,a:"Seth Stuve",b:"Mazin Marwan",ga:0,gb:2},{t:8,a:"Lucas F.",b:"Marvin Gonçalves de Aquino",ga:1,gb:2},{t:9,a:"Colin Whitwell",b:"Doug Raymond",ga:2,gb:0},{t:10,a:"Reilly Wood",b:"Dakota Boin",ga:0,gb:2},{t:11,a:"Caitlyn Bethune",b:"Andrew Kidston",ga:0,gb:2},{t:12,a:"Kevin Lavery",b:"Kevin Mittertreiner",ga:2,gb:1},{t:13,a:"Matthew Thiessen",b:"Ed Yueh",ga:1,gb:2},{t:14,a:"Bill Valeriote",b:"Cody Peters",ga:0,gb:2},{t:15,a:"Alastair McLellan",b:"Penny Flegel",ga:2,gb:0},{t:16,a:"Dakota Blais",b:"Tyler Woolley",ga:2,gb:1},{t:17,a:"Romulo Ramos",b:"Chad Galpin",ga:1,gb:2},{t:18,a:"Spencer Shaw-Jaworek",b:"Jeffrey Scofield",ga:2,gb:0},{t:19,a:"Clint Taylor",b:"Scott Peters",ga:1,gb:2},{t:20,a:"Dustyn Greenwell-Baker",b:"Cameron Wolber",ga:2,gb:0},{t:21,a:"Markus Thibeau",b:"Aeolius Alevizakis",ga:2,gb:1},{t:22,a:"Owen Hogg",b:"Arlen Wiesenthal",ga:2,gb:1},{t:23,a:"William Niwinski",b:"Curran Delahanty",ga:2,gb:1}]},
+  2:{byes:["Curran Delahanty"],matches:[{t:1,a:"Chad Galpin",b:"Marvin Gonçalves de Aquino",ga:0,gb:2},{t:2,a:"Dustyn Greenwell-Baker",b:"Rob Hackney",ga:0,gb:2},{t:3,a:"Mazin Marwan",b:"Andrew Van Tunen",ga:1,gb:2},{t:4,a:"Colin Whitwell",b:"Dakota Boin",ga:2,gb:0},{t:5,a:"Scott Peters",b:"Andrew Kidston",ga:1,gb:2},{t:6,a:"William Niwinski",b:"Alastair McLellan",ga:0,gb:2},{t:7,a:"Owen Hogg",b:"Kevin Lavery",ga:0,gb:2},{t:8,a:"Dakota Blais",b:"Ed Yueh",ga:1,gb:2},{t:9,a:"Robert Luemers",b:"Alex Kim",ga:0,gb:2},{t:10,a:"Markus Thibeau",b:"Dustin Fennell",ga:1,gb:2},{t:11,a:"Cody Peters",b:"Spencer Shaw-Jaworek",ga:1,gb:2},{t:12,a:"James Onions",b:"Steven Duarte",ga:1,gb:2},{t:13,a:"Jack Standing",b:"Rachael Hernandez",ga:1,gb:2},{t:14,a:"Jeffrey Scofield",b:"Doug Raymond",ga:1,gb:2},{t:15,a:"Puck Edwards",b:"Arlen Wiesenthal",ga:2,gb:0},{t:16,a:"Matthew Thiessen",b:"Bruce Liu",ga:2,gb:1},{t:17,a:"Reilly Wood",b:"Chris Erickson",ga:2,gb:1},{t:18,a:"Caitlyn Bethune",b:"Lucas F.",ga:2,gb:0},{t:19,a:"Penny Flegel",b:"Seth Stuve",ga:2,gb:1},{t:20,a:"Tyler Woolley",b:"Kevin Mittertreiner",ga:1,gb:2},{t:21,a:"Aeolius Alevizakis",b:"Clint Taylor",ga:2,gb:0},{t:22,a:"Kevin Wu",b:"Cameron Wolber",ga:0,gb:2},{t:23,a:"Romulo Ramos",b:"Bill Valeriote",ga:1,gb:2}]},
+  3:{byes:["Arlen Wiesenthal"],matches:[{t:1,a:"Steven Duarte",b:"Colin Whitwell",ga:1,gb:2},{t:2,a:"Andrew Kidston",b:"Robert Luemers",ga:2,gb:0},{t:3,a:"Marvin Gonçalves de Aquino",b:"Alastair McLellan",ga:0,gb:2},{t:4,a:"Andrew Van Tunen",b:"Kevin Lavery",ga:2,gb:0},{t:5,a:"Ed Yueh",b:"Rob Hackney",ga:1,gb:2},{t:6,a:"Spencer Shaw-Jaworek",b:"Dustin Fennell",ga:0,gb:2},{t:7,a:"James Onions",b:"Mazin Marwan",ga:0,gb:2},{t:8,a:"Alex Kim",b:"Puck Edwards",ga:2,gb:1},{t:9,a:"Rachael Hernandez",b:"Kevin Mittertreiner",ga:0,gb:2},{t:10,a:"Matthew Thiessen",b:"Scott Peters",ga:2,gb:0},{t:11,a:"Chad Galpin",b:"Bill Valeriote",ga:2,gb:0},{t:12,a:"Penny Flegel",b:"Cameron Wolber",ga:0,gb:2},{t:13,a:"Aeolius Alevizakis",b:"Owen Hogg",ga:2,gb:1},{t:14,a:"Dakota Blais",b:"Caitlyn Bethune",ga:2,gb:1},{t:15,a:"Reilly Wood",b:"Doug Raymond",ga:2,gb:1},{t:16,a:"William Niwinski",b:"Dustyn Greenwell-Baker",ga:2,gb:0},{t:17,a:"Markus Thibeau",b:"Cody Peters",ga:2,gb:1},{t:18,a:"Curran Delahanty",b:"Dakota Boin",ga:2,gb:0},{t:19,a:"Romulo Ramos",b:"Clint Taylor",ga:2,gb:1},{t:20,a:"Chris Erickson",b:"Seth Stuve",ga:2,gb:1},{t:21,a:"Kevin Wu",b:"Lucas F.",ga:0,gb:2},{t:22,a:"Jack Standing",b:"Jeffrey Scofield",ga:2,gb:1}]},
+  4:{byes:[],matches:[{t:1,a:"Colin Whitwell",b:"Andrew Van Tunen",ga:2,gb:1},{t:2,a:"Alastair McLellan",b:"Dustin Fennell",ga:2,gb:0},{t:3,a:"Andrew Kidston",b:"Rob Hackney",ga:2,gb:1},{t:4,a:"Kevin Lavery",b:"Spencer Shaw-Jaworek",ga:1,gb:2},{t:5,a:"Cameron Wolber",b:"Aeolius Alevizakis",ga:0,gb:2},{t:6,a:"Alex Kim",b:"Mazin Marwan",ga:2,gb:1},{t:7,a:"Chad Galpin",b:"Steven Duarte",ga:2,gb:1},{t:8,a:"Reilly Wood",b:"Marvin Gonçalves de Aquino",ga:2,gb:1},{t:9,a:"Curran Delahanty",b:"Markus Thibeau",ga:0,gb:2},{t:10,a:"William Niwinski",b:"Matthew Thiessen",ga:2,gb:0},{t:11,a:"Dakota Blais",b:"Kevin Mittertreiner",ga:2,gb:1},{t:12,a:"Ed Yueh",b:"Robert Luemers",ga:2,gb:1},{t:13,a:"Doug Raymond",b:"Scott Peters",ga:2,gb:1},{t:14,a:"Penny Flegel",b:"Dustyn Greenwell-Baker",ga:1,gb:2},{t:15,a:"Dakota Boin",b:"Chris Erickson",ga:0,gb:2},{t:16,a:"Lucas F.",b:"Romulo Ramos",draw:true},{t:17,a:"Jack Standing",b:"Puck Edwards",ga:1,gb:2},{t:18,a:"James Onions",b:"Cody Peters",ga:2,gb:1},{t:19,a:"Owen Hogg",b:"Bill Valeriote",ga:1,gb:2},{t:20,a:"Arlen Wiesenthal",b:"Seth Stuve",ga:2,gb:1},{t:21,a:"Jeffrey Scofield",b:"Clint Taylor",ga:2,gb:0}]},
+  5:{byes:[],matches:[{t:1,a:"Colin Whitwell",b:"Alastair McLellan",draw:true},{t:2,a:"Dustin Fennell",b:"Andrew Kidston",ga:0,gb:2},{t:3,a:"Andrew Van Tunen",b:"William Niwinski",ga:0,gb:2},{t:4,a:"Markus Thibeau",b:"Ed Yueh",ga:2,gb:1},{t:5,a:"Rob Hackney",b:"Alex Kim",ga:2,gb:0},{t:6,a:"Chad Galpin",b:"Spencer Shaw-Jaworek",ga:2,gb:0},{t:7,a:"Aeolius Alevizakis",b:"Reilly Wood",ga:2,gb:1},{t:8,a:"Marvin Gonçalves de Aquino",b:"Dakota Blais",ga:0,gb:2},{t:9,a:"Robert Luemers",b:"Steven Duarte",ga:1,gb:2},{t:10,a:"Kevin Lavery",b:"Puck Edwards",ga:2,gb:1},{t:11,a:"Dustyn Greenwell-Baker",b:"Doug Raymond",ga:1,gb:2},{t:12,a:"Matthew Thiessen",b:"Mazin Marwan",ga:0,gb:2},{t:13,a:"Curran Delahanty",b:"Chris Erickson",ga:0,gb:2},{t:14,a:"Kevin Mittertreiner",b:"Bill Valeriote",ga:2,gb:0},{t:15,a:"James Onions",b:"Cameron Wolber",ga:2,gb:0},{t:16,a:"Romulo Ramos",b:"Arlen Wiesenthal",draw:true},{t:17,a:"Lucas F.",b:"Dakota Boin",ga:1,gb:2},{t:18,a:"Owen Hogg",b:"Cody Peters",ga:0,gb:2},{t:19,a:"Penny Flegel",b:"Scott Peters",ga:2,gb:1},{t:20,a:"Jeffrey Scofield",b:"Seth Stuve",ga:2,gb:0}]},
 };
-
-function renderStandings() {
-  document.getElementById('std-body').innerHTML = STANDINGS.map(s =>
-    `<tr class="${s.rank<=8?'t8':''}">
-      <td class="s-rank">${s.rank}</td>
-      <td>${s.player}</td>
-      <td class="s-pts">${s.pts}</td>
-      <td class="s-omw">${s.omw.toFixed(2)}</td>
-    </tr>`
-  ).join('');
-}
-
-function renderPairings(r) {
-  const d = ROUNDS[r];
-  let html = d.matches.map(m => {
-    let sc, winA=false, winB=false;
-    if (m.draw) {
-      sc = `<span class="sc-pill draw">D</span>`;
-    } else {
-      winA = m.ga > m.gb; winB = !winA;
-      sc = `<span class="sc-pill">${m.ga}–${m.gb}</span>`;
-    }
-    return `<div class="pair-row">
-      <span class="t-num">${m.t}</span>
-      <span class="pn${winA?' w':''}" title="${m.a}">${m.a}</span>
-      ${sc}
-      <span class="pn r${winB?' w':''}" title="${m.b}">${m.b}</span>
-    </div>`;
-  }).join('');
-  if (d.byes.length) html += `<div class="bye-note">Bye: ${d.byes.join(', ')}</div>`;
-  document.getElementById(`scroll-r${r}`).innerHTML = html;
-}
-
-function showRound(r) {
-  setPane(`r${r}`);
-  document.querySelectorAll('.rtab').forEach((b,i) => b.classList.toggle('active', i===r-1));
-}
-function showStandings() {
-  setPane('std');
-  document.querySelectorAll('.rtab').forEach((b,i) => b.classList.toggle('active', i===5));
-}
-function setPane(id) {
-  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
-  document.getElementById(`pane-${id}`).classList.add('active');
-}
-
-function buildBracket() {
-  function bp(name, sc, win) {
-    return `<div class="b-player ${win?'w':'l'}"><span>${name}</span><span class="b-sc">${sc}</span></div>`;
-  }
-  function bm(pA, sA, pB, sB) {
-    const wA = parseInt(sA) > parseInt(sB);
-    return `<div class="b-match">${bp(pA,sA,wA)}${bp(pB,sB,!wA)}</div>`;
-  }
-  document.getElementById('bracketEl').innerHTML = `
-    <div class="b-col">
-      <div class="b-lbl">Quarterfinals</div>
-      ${bm("Andrew Kidston","0","Chad Galpin","2")}
-      ${bm("Rob Hackney","0","Markus Thibeau","2")}
-      ${bm("Alastair McLellan","2","William Niwinski","0")}
-      ${bm("Colin Whitwell","2","Aeolius Alevizakis","0")}
-    </div>
+function renderStandings(){document.getElementById('std-body').innerHTML=STANDINGS.map(s=>`<tr class="${s.rank<=8?'t8':''}"><td class="s-rank">${s.rank}</td><td>${s.player}</td><td class="s-pts">${s.pts}</td><td class="s-omw">${s.omw.toFixed(2)}</td></tr>`).join('')}
+function renderPairings(r){const d=ROUNDS[r];let html=d.matches.map(m=>{let sc,winA=false,winB=false;if(m.draw){sc=`<span class="sc-pill draw">D</span>`}else{winA=m.ga>m.gb;winB=!winA;sc=`<span class="sc-pill">${m.ga}–${m.gb}</span>`}return`<div class="pair-row"><span class="t-num">${m.t}</span><span class="pn${winA?' w':''}" title="${m.a}">${m.a}</span>${sc}<span class="pn r${winB?' w':''}" title="${m.b}">${m.b}</span></div>`}).join('');if(d.byes.length)html+=`<div class="bye-note">Bye: ${d.byes.join(', ')}</div>`;document.getElementById(`scroll-r${r}`).innerHTML=html}
+function showRound(r){setPane(`r${r}`);document.querySelectorAll('.rtab').forEach((b,i)=>b.classList.toggle('active',i===r-1))}
+function showStandings(){setPane('std');document.querySelectorAll('.rtab').forEach((b,i)=>b.classList.toggle('active',i===5))}
+function setPane(id){document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));document.getElementById(`pane-${id}`).classList.add('active')}
+function buildBracket(){
+  function bp(n,s,w){return`<div class="b-player ${w?'w':'l'}"><span>${n}</span><span class="b-sc">${s}</span></div>`}
+  function bm(pA,sA,pB,sB){const w=parseInt(sA)>parseInt(sB);return`<div class="b-match">${bp(pA,sA,w)}${bp(pB,sB,!w)}</div>`}
+  document.getElementById('bracketEl').innerHTML=`
+    <div class="b-col"><div class="b-lbl">Quarterfinals</div>${bm("Andrew Kidston","0","Chad Galpin","2")}${bm("Rob Hackney","0","Markus Thibeau","2")}${bm("Alastair McLellan","2","William Niwinski","0")}${bm("Colin Whitwell","2","Aeolius Alevizakis","0")}</div>
     <div class="b-conn"></div>
-    <div class="b-col">
-      <div class="b-lbl">Semifinals</div>
-      ${bm("Markus Thibeau","2","Chad Galpin","1")}
-      ${bm("Colin Whitwell","2","Alastair McLellan","0")}
-    </div>
+    <div class="b-col"><div class="b-lbl">Semifinals</div>${bm("Markus Thibeau","2","Chad Galpin","1")}${bm("Colin Whitwell","2","Alastair McLellan","0")}</div>
     <div class="b-conn"></div>
-    <div class="b-col">
-      <div class="b-lbl">Finals</div>
-      ${bm("Markus Thibeau","2","Colin Whitwell","1")}
-    </div>
+    <div class="b-col"><div class="b-lbl">Finals</div>${bm("Markus Thibeau","2","Colin Whitwell","1")}</div>
     <div class="b-conn"></div>
-    <div class="b-col champ-box">
-      <div class="b-lbl">Champion</div>
-      <div class="champ-trophy">🏆</div>
-      <div class="champ-name">Markus<br>Thibeau</div>
-    </div>`;
+    <div class="b-col champ-box"><div class="b-lbl">Champion</div><div class="champ-trophy">🏆</div><div class="champ-name">Markus<br>Thibeau</div></div>`;
 }
-
 renderStandings();
-for (let r=1;r<=5;r++) renderPairings(r);
+for(let r=1;r<=5;r++)renderPairings(r);
 buildBracket();
 </script>
-
 <script src="/js/bcpmm-shell.js"></script>
-
 </body>
 </html>

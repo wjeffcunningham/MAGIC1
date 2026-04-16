@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BCPMM #2 · Raffle &amp; Donations</title>
+  <meta name="description" content="Raffle winners, lot details, and donations summary for BCPMM #2: Brewhall Champs."/>
+  <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
+  <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    if (localStorage.getItem('bcpmm-theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.addEventListener('DOMContentLoaded', function () {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.add('dark');
+      });
+    }
+  </script>
+  <style>
+    :root{--bg:#f3f6ff;--card:#ffffff;--item-bg:#fbfdff;--ink:#0f172a;--muted:#475569;--border:rgba(15,23,42,.12);--shadow:0 10px 30px rgba(15,23,42,.08);--radius:16px;--max:820px;--pad:18px;--accent:#1f6feb}
+    body.dark{--bg:#0d1117;--card:#161b22;--item-bg:#0d1117;--ink:#e6edf3;--muted:#8b949e;--border:rgba(240,246,252,.1);--shadow:0 10px 30px rgba(0,0,0,.35);--accent:#58a6ff}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:radial-gradient(1200px 600px at 50% -150px,rgba(31,111,235,.18),transparent 60%),linear-gradient(var(--bg),#fff 65%);min-height:100vh}
+    body.dark{background:radial-gradient(1200px 600px at 50% -150px,rgba(31,111,235,.1),transparent 60%),linear-gradient(var(--bg),#0d1117 65%)}
+    a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+    .shell{max-width:var(--max);margin:32px auto 56px;padding:0 var(--pad)}
+    h1{margin:0 0 6px;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.15;letter-spacing:-.02em}
+    .sub{color:var(--muted);margin:0 0 20px;line-height:1.45}
+    .section-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:24px}
+    .section-head{padding:14px 20px;border-bottom:1px solid var(--border)}
+    .section-head h2{margin:0;font-size:1.1rem;font-weight:700;letter-spacing:-.01em}
+    .section-head p{margin:4px 0 0;font-size:.85rem;color:var(--muted)}
+
+    /* winners table */
+    .winners-table{width:100%;border-collapse:collapse;font-size:.9rem}
+    .winners-table th{padding:9px 16px;font-size:.7rem;font-weight:650;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)}
+    .winners-table td{padding:10px 16px;border-bottom:1px solid rgba(15,23,42,.055);vertical-align:top}
+    body.dark .winners-table td{border-bottom-color:rgba(240,246,252,.04)}
+    .winners-table tr:last-child td{border-bottom:none}
+    .winner-name{font-weight:700}
+    .winner-prize{color:var(--muted);font-size:.85rem;margin-top:2px}
+
+    /* lot cards */
+    .lots-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0}
+    @media(max-width:560px){.lots-grid{grid-template-columns:1fr}}
+    .lot-item{padding:14px 18px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+    .lot-item:nth-child(even){border-right:none}
+    @media(max-width:560px){.lot-item{border-right:none}}
+    .lot-item:nth-last-child(-n+2){border-bottom:none}
+    @media(max-width:560px){.lot-item:last-child{border-bottom:none}}
+    .lot-header{display:flex;align-items:baseline;gap:8px}
+    .lot-num{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);flex-shrink:0}
+    .lot-name{font-weight:700;font-size:.95rem;line-height:1.2}
+    .lot-value{font-size:.78rem;color:var(--muted);flex-shrink:0;margin-left:auto}
+    .lot-desc{font-size:.83rem;color:var(--muted);line-height:1.45}
+    .lot-winner{font-size:.8rem;font-weight:650;color:var(--accent);margin-top:2px}
+    .lot-round{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+
+    /* round divider labels */
+    .round-label{padding:10px 18px 6px;font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--item-bg);grid-column:1/-1}
+
+    /* token section */
+    .token-row{display:flex;align-items:center;gap:14px;padding:14px 18px;flex-wrap:wrap}
+    .token-row img{width:90px;border-radius:6px;box-shadow:0 4px 12px rgba(15,23,42,.15);transition:transform .18s}
+    .token-row img:hover{transform:translateY(-2px) scale(1.04)}
+    .token-note{font-size:.85rem;color:var(--muted);line-height:1.5}
+    .token-note a{font-weight:650}
+
+    /* donations */
+    .donations-body{padding:18px 20px}
+    .donations-body p{line-height:1.7;margin:0 0 .8em;font-size:.95rem}
+    .donations-body p:last-child{margin-bottom:0}
+    .stat-row{display:flex;gap:24px;flex-wrap:wrap;margin:16px 0}
+    .stat{background:var(--item-bg);border:1px solid var(--border);border-radius:10px;padding:12px 18px;min-width:140px}
+    .stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:650}
+    .stat-value{font-size:1.5rem;font-weight:800;color:var(--accent);margin-top:2px;letter-spacing:-.02em}
+
+    /* splash photo */
+    .splash-photo{width:100%;display:block;max-height:320px;object-fit:cover;object-position:center top}
+
+    .pg-footer{margin-top:8px;text-align:center;color:var(--muted);font-size:.88rem}
+    .pg-footer a{color:var(--accent)}
+    .nav{margin-top:28px;display:flex;justify-content:space-between;font-weight:600;font-size:.92rem}
+  </style>
+</head>
+<body>
+<div id="global-menu-root"></div>
+<div class="shell">
+
+  <header style="margin-bottom:24px">
+    <h1>BCPMM #2: Raffle &amp; Donations</h1>
+    <p class="sub">April 11, 2026 · Strange Fellows Brewing, Vancouver</p>
+  </header>
+
+  <!-- ══ WINNERS SUMMARY ══ -->
+  <div class="section-card">
+    <div class="section-head">
+      <h2>Raffle Winners</h2>
+      <p>Congratulations to all our winners!</p>
+    </div>
+    <img class="splash-photo" src="coverage-splash2.jpg" alt="Raffle draws" loading="lazy"/>
+    <table class="winners-table">
+      <thead><tr><th>Winner</th><th>Prize</th></tr></thead>
+      <tbody>
+        <tr><td><div class="winner-name">Marvin Gonçalves de Aquino</div></td><td><div class="winner-prize">Worlds 2004 Playmat (Lot #13)</div></td></tr>
+        <tr><td><div class="winner-name">Seth Stuve</div></td><td><div class="winner-prize">4× WCD Grim Monolith — Kai Budde (Lot #12)</div></td></tr>
+        <tr><td><div class="winner-name">Chad Galpin</div></td><td><div class="winner-prize">Turtle Team-Up Set (Lot #2)</div></td></tr>
+        <tr><td><div class="winner-name">Curran Delahanty</div></td><td><div class="winner-prize">Urza's Saga Calendar &amp; Timbuk2 Backpack (Lots #7 &amp; #6)</div></td></tr>
+        <tr><td><div class="winner-name">Bruce Liu</div></td><td><div class="winner-prize">Tuft &amp; Paw Cat Litter (Lot #4)</div></td></tr>
+        <tr><td><div class="winner-name">Mazin Marwan</div></td><td><div class="winner-prize">Goblin Welder &amp; Blue Mana Poker Chip (Lot #8)</div></td></tr>
+        <tr><td><div class="winner-name">Alex Kim</div></td><td><div class="winner-prize">Custom Art-Peeled Basics (Lot #5)</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ LOT DETAILS ══ -->
+  <div class="section-card">
+    <div class="section-head">
+      <h2>Raffle Lots</h2>
+      <p>Tickets: $2 for 1 · $5 for 3 · $20 for 15 · Max 2,700 tickets across all draws</p>
+    </div>
+
+    <div class="lots-grid">
+      <div class="round-label">Round 2 — Opens 10:45am, closes end of Round 2</div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 1</span>
+          <span class="lot-name">1996 MTG Calendar</span>
+          <span class="lot-value">~$60</span>
+        </div>
+        <div class="lot-desc">Ice Age, Fallen Empires, Alliances art — artists share thoughts on the pieces. A leap-year calendar usable again in 2052.</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 2</span>
+          <span class="lot-name">Turtle Team-Up Set</span>
+          <span class="lot-value">~$70</span>
+        </div>
+        <div class="lot-desc">Alternate game mode for 4 players. Includes packs and three mythic-common Utrom Monitors.</div>
+        <div class="lot-winner">→ Won by Chad Galpin</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 3</span>
+          <span class="lot-name">Mercadian Masques Novel Set</span>
+          <span class="lot-value">~$45</span>
+        </div>
+        <div class="lot-desc">Follow the Weatherlight crew through Mercadia. Originally distributed in Fat Packs.</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 4</span>
+          <span class="lot-name">Tuft &amp; Paw Cat Litter</span>
+          <span class="lot-value">~$99</span>
+        </div>
+        <div class="lot-desc">Low-tracking, dust-free litter from a local Vancouver company. One bag lasts ~1 month per cat.</div>
+        <div class="lot-winner">→ Won by Bruce Liu</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 5</span>
+          <span class="lot-name">Art-Peeled Basic Lot (×5)</span>
+          <span class="lot-value">~$30</span>
+        </div>
+        <div class="lot-desc">Each land entirely unique, hand-crafted by Tournament Organizer Elliot.</div>
+        <div class="lot-winner">→ Won by Alex Kim</div>
+      </div>
+
+      <div class="lot-item" style="visibility:hidden"></div><!-- spacer -->
+
+      <div class="round-label">Round 4 — Opens end of Round 2, closes end of Round 4</div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 6</span>
+          <span class="lot-name">Timbuk2 Pro Tour Backpack</span>
+          <span class="lot-value">~$200</span>
+        </div>
+        <div class="lot-desc">Brand new — water resistant, ergonomic. Carry your cards like a Pro Tour grinder.</div>
+        <div class="lot-winner">→ Won by Curran Delahanty</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 7</span>
+          <span class="lot-name">1999 Urza's Saga Calendar</span>
+          <span class="lot-value">~$60</span>
+        </div>
+        <div class="lot-desc">Argothian Enchantress, Karn, Silver Golem and more. Usable again in 2027!</div>
+        <div class="lot-winner">→ Won by Curran Delahanty</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 8</span>
+          <span class="lot-name">Goblin Welder &amp; Blue Mana Poker Chip</span>
+          <span class="lot-value">~$100</span>
+        </div>
+        <div class="lot-desc">For the Painter's Servant combo lover. Use the chip to indicate color choice or floating mana.</div>
+        <div class="lot-winner">→ Won by Mazin Marwan</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 9</span>
+          <span class="lot-name">Planeshift Deckbox &amp; Prerelease Promo</span>
+          <span class="lot-value">~$75</span>
+        </div>
+        <div class="lot-desc">Questing Phelddagrif prerelease promo — the only card printed in Greek. A gorgeous old-border foil.</div>
+      </div>
+
+      <div class="round-label">Round 5 — Grand Prize Lots · Opens 10:45am, closes end of Round 5</div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 10</span>
+          <span class="lot-name">Sealed Odyssey Tournament Pack</span>
+          <span class="lot-value">~$130</span>
+        </div>
+        <div class="lot-desc">A time machine to late 2001. Three packs worth of contents plus 30 gorgeous Odyssey basic lands.</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 11</span>
+          <span class="lot-name">Humility</span>
+          <span class="lot-value">~$110</span>
+        </div>
+        <div class="lot-desc">Reserved List staple. Humble your opponent's creatures and make Mishra's Factory king of the hill.</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 12</span>
+          <span class="lot-name">4× WCD Grim Monolith — Kai Budde</span>
+          <span class="lot-value">~$150</span>
+        </div>
+        <div class="lot-desc">Forever immortalized in his Wildfire Red deck. Gorgeous gold border. Donated by House of Cards.</div>
+        <div class="lot-winner">→ Won by Seth Stuve</div>
+      </div>
+
+      <div class="lot-item">
+        <div class="lot-header">
+          <span class="lot-num">Lot 13</span>
+          <span class="lot-name">Worlds 2004 Playmat — Grand Prize</span>
+          <span class="lot-value">~$500</span>
+        </div>
+        <div class="lot-desc">Local hero Aeo Paquette took Ravager Affinity to the Worlds finals in San Francisco, 2004. Thin microfiber front, no rubber backing — featuring Rathi Dragon and Meloku, the Clouded Mirror. A genuine collector's item.</div>
+        <div class="lot-winner">→ Won by Marvin Gonçalves de Aquino</div>
+      </div>
+
+    </div><!-- /lots-grid -->
+
+    <!-- Token note -->
+    <div class="token-row">
+      <a href="https://www.magiclibrarities.net/479-5952-rarities-elephant-token-zoom-card.html#return" target="_blank" rel="noopener noreferrer">
+        <img src="https://api.scryfall.com/cards/ody/231?format=image&version=art_crop" alt="Elephant Token" loading="lazy"/>
+      </a>
+      <a href="https://www.magiclibrarities.net/479-5952-rarities-elephant-token-zoom-card.html#return" target="_blank" rel="noopener noreferrer">
+        <img src="https://api.scryfall.com/cards/ody/231?format=image&version=art_crop" alt="Elephant Token" loading="lazy"/>
+      </a>
+      <a href="https://www.magiclibrarities.net/479-5953-rarities-squirrel-token-zoom-card.html#return" target="_blank" rel="noopener noreferrer">
+        <img src="https://api.scryfall.com/cards/ody/258?format=image&version=art_crop" alt="Squirrel Token" loading="lazy"/>
+      </a>
+      <a href="https://www.magiclibrarities.net/479-5953-rarities-squirrel-token-zoom-card.html#return" target="_blank" rel="noopener noreferrer">
+        <img src="https://api.scryfall.com/cards/ody/258?format=image&version=art_crop" alt="Squirrel Token" loading="lazy"/>
+      </a>
+      <div class="token-note">
+        Canadian Elephant and Squirrel tokens were also included in the prize pool — rare Y Productions tokens from Magic's early days. <a href="https://www.magiclibrarities.net/479-rarities-y-productions-token-cards-canada-english-cards-index.html" target="_blank" rel="noopener noreferrer">View on magiclibrarities.net →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DONATIONS ══ -->
+  <div class="section-card">
+    <div class="section-head">
+      <h2>Donations Summary</h2>
+      <p>Proceeds from raffle ticket sales went to BC Cancer Foundation</p>
+    </div>
+    <div class="donations-body">
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-label">Raffle Ticket Sales</div>
+          <div class="stat-value">$960</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Total Donations</div>
+          <div class="stat-value">$1,877.60</div>
+        </div>
+      </div>
+      <p>Thank you to every player who bought a ticket, and to our sponsors whose generosity made the prize pool possible. The BCPMM community continues to show up for each other and for causes bigger than the game.</p>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <a href="index.html">← Tournament Coverage</a>
+    <a href="../../">magic1.ca</a>
+  </nav>
+
+</div>
+<script src="/js/bcpmm-shell.js"></script>
+</body>
+</html>

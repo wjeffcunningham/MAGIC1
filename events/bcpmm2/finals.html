@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BCPMM #2 · Finals · Thibeau vs Whitwell</title>
+  <meta name="description" content="BCPMM #2 Finals — Markus Thibeau (Moneyball Black) vs Colin Whitwell (TerraGeddon)."/>
+  <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
+  <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    if (localStorage.getItem('bcpmm-theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.addEventListener('DOMContentLoaded', function () {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.add('dark');
+      });
+    }
+  </script>
+  <style>
+    :root{--bg:#f3f6ff;--card:#ffffff;--ink:#0f172a;--muted:#475569;--border:rgba(15,23,42,.12);--shadow:0 10px 30px rgba(15,23,42,.08);--radius:16px;--max:820px;--pad:18px;--accent:#1f6feb}
+    body.dark{--bg:#0d1117;--card:#161b22;--ink:#e6edf3;--muted:#8b949e;--border:rgba(240,246,252,.1);--shadow:0 10px 30px rgba(0,0,0,.35);--accent:#58a6ff}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:radial-gradient(1200px 600px at 50% -150px,rgba(31,111,235,.18),transparent 60%),linear-gradient(var(--bg),#fff 65%)}
+    body.dark{background:radial-gradient(1200px 600px at 50% -150px,rgba(31,111,235,.1),transparent 60%),linear-gradient(var(--bg),#0d1117 65%)}
+    a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+    .shell{max-width:var(--max);margin:32px auto 56px;padding:0 var(--pad)}
+    h1{margin:0 0 6px;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.15;letter-spacing:-.02em}
+    .sub{color:var(--muted);margin:0 0 16px;line-height:1.45}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 24px}
+    article p{line-height:1.7;margin:0 0 1em;font-size:1.02rem}
+    article h3{margin:1.8em 0 .4em;font-size:1.08rem;letter-spacing:-.01em}
+    article p:last-child{margin-bottom:0}
+    hr{border:none;border-top:1px solid var(--border);margin:24px 0}
+    .match-photo{display:block;max-width:60%;width:100%;border-radius:12px;margin:20px auto;box-shadow:0 8px 24px rgba(15,23,42,.13)}
+    body.dark .match-photo{box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    @media(max-width:500px){.match-photo{max-width:90%}}
+    .card-float{width:100px;border-radius:6px;box-shadow:0 6px 18px rgba(15,23,42,.2);display:block;flex-shrink:0;transition:transform .18s,box-shadow .18s}
+    .card-float:hover{transform:translateY(-2px) scale(1.04)}
+    body.dark .card-float{box-shadow:0 6px 18px rgba(0,0,0,.5)}
+    .card-float.right{float:right;margin:4px 0 12px 18px;clear:right}
+    .card-float.left{float:left;margin:4px 18px 12px 0;clear:left}
+    .clearfix::after{content:'';display:table;clear:both}
+    @media(max-width:500px){.card-float{width:72px}}
+    .sideboard{margin:16px 0;padding:12px 16px;border-radius:10px;border:1px solid var(--border);background:var(--card);font-size:.9rem;line-height:1.7}
+    .sideboard strong{display:block;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+    .result-box{margin:24px 0 8px;padding:14px 18px;border-radius:12px;background:rgba(31,111,235,.06);border:1px solid rgba(31,111,235,.18);font-weight:700;font-size:1rem;text-align:center;letter-spacing:.01em}
+    body.dark .result-box{background:rgba(88,166,255,.07);border-color:rgba(88,166,255,.2)}
+    .nav{margin-top:28px;display:flex;justify-content:space-between;font-weight:600;font-size:.92rem}
+  </style>
+</head>
+<body>
+<div id="global-menu-root"></div>
+<div class="shell">
+  <header>
+    <h1>BCPMM #2: Finals</h1>
+    <p class="sub">Markus Thibeau (Moneyball Black) vs Colin Whitwell (TerraGeddon) · April 11, 2026</p>
+  </header>
+  <article class="card">
+
+    <img class="match-photo" src="F_1_1.JPG" alt="Finals — Thibeau vs Whitwell" loading="lazy"/>
+
+    <p>Both finalists had impressed through the day with their play.</p>
+
+    <p>Thibeau had started the tournament off with a win against Pro Tour veteran Aeo Paquette — whose 2004 Worlds Finalist playmat was actually raffled for charity as part of the event — and then after a Round 2 loss, had rallied through to the Top 8, where he fought and clawed for every percentage point.</p>
+
+    <p>Whitwell had been at the top tables all day, comfortably gliding into the Top 8 at 4–0–1. Match after match the same play pattern emerged — some light attrition, some Port interference, then one unanswered Elephant, and then another, sometimes with an Armageddon, and then the game was over. His red splash for sideboard Pyroclasms and Pyroblasts allowed the deck to cover a lot of bases.</p>
+
+    <img class="match-photo" src="F_1_2.JPG" alt="Finals — the scene" loading="lazy"/>
+
+    <h3>Game 1 —</h3>
+
+    <img class="match-photo" src="F_2.JPG" alt="Game 1 — early board" loading="lazy"/>
+
+    <p>Whitwell mulligans. Thibeau keeps.</p>
+    <p>Whitwell leads fetchland into Mongoose. Thibeau replies with Cursed Scroll. Land, attack, go.</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/jud/62/cabal-therapy" target="_blank" rel="noopener noreferrer">
+        <img class="card-float right" src="https://api.scryfall.com/cards/jud/62?format=image&version=normal" alt="Cabal Therapy" loading="lazy"/>
+      </a>
+      <p>Land, Ritual, Therapy on Terravore: whiff, but sees two Call of the Herds. Then Knight of Stromgald — sac it, flashback the Therapy.</p>
+    </div>
+
+    <p>Land, attack, Mox Diamond, Flashback Call. Then on the next turn, Flashback the other Call.</p>
+    <p>Thibeau has two Scrolls and a Factory, but 13 life turns to 10, turns to 4…</p>
+
+    <div class="sideboard">
+      <strong>Whitwell sides</strong>
+      +1 Naturalize · −1 Weathered Wayfarer
+    </div>
+    <div class="sideboard">
+      <strong>Thibeau sides</strong>
+      −4 Duress · −2 Cursed Scroll<br>
+      +3 Dystopia · +1 Knight of Stromgald · +1 Powder Keg · +1 Gloom
+    </div>
+
+    <h3>Game 2 —</h3>
+
+    <p>Thibeau mulligans to 6. Leads Swamp.</p>
+    <p>Whitwell leads land, Mox Diamond.</p>
+    <p>Thibeau plays Swamp.</p>
+    <p>Whitwell plays Call of the Herd; Thibeau Edicts.</p>
+    <p>Thibeau plays Hypnotic Spectre.</p>
+    <p>Whitwell plays Land, Swords Hypnotic Spectre, Flashback Call of the Herd.</p>
+    <p>Thibeau draws, Wastelands Whitwell's Port, and Smothers the Elephant. Back to parity.</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/all/47/dystopia" target="_blank" rel="noopener noreferrer">
+        <img class="card-float right" src="https://api.scryfall.com/cards/all/47?format=image&version=normal" alt="Dystopia" loading="lazy"/>
+      </a>
+      <p>Whitwell plays Sylvan Library. Thibeau responds with Dystopia — munching it during Upkeep.</p>
+    </div>
+
+    <p>Whitwell holds back on playing a fresh Call as Thibeau maintains the Dystopia for 2 now.</p>
+    <p>Thibeau drops a Knight of Stromgald.</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/tor/74/nantuko-shade" target="_blank" rel="noopener noreferrer">
+        <img class="card-float left" src="https://api.scryfall.com/cards/tor/74?format=image&version=normal" alt="Nantuko Shade" loading="lazy"/>
+      </a>
+      <p>The Dystopia is really holding up Whitwell, who — besides a Call of the Herd — is holding a Terravore and an Armageddon.</p>
+      <p>By the time Thibeau finally lets the Dystopia go — rather than pay 4 life — he drops a Nantuko Shade.</p>
+      <p>A Snuff Out on the ensuing Terravore means a fully-pumped Shade attack, and suddenly it's Thibeau's momentum that's gotten out of hand.</p>
+    </div>
+
+    <div class="sideboard">
+      <strong>Whitwell sides</strong>
+      −2 Weathered Wayfarer · −1 Wasteland<br>
+      +3 Pyroclasm
+    </div>
+
+    <h3>Game 3 —</h3>
+
+    <p>Whitwell mulligans… mulligans again. Thibeau keeps.</p>
+    <p>Whitwell leads Land, Mox, Sylvan Library — down to 1 card. Could his engine dodge Ritual Dystopia one time?</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/lgn/73/graveborn-muse" target="_blank" rel="noopener noreferrer">
+        <img class="card-float right" src="https://api.scryfall.com/cards/lgn/73?format=image&version=normal" alt="Graveborn Muse" loading="lazy"/>
+      </a>
+      <p>Thibeau plays Swamp, Ritual — Hypnotic Spectre. Whitwell does some rearranging, draws, Pyroclasm to clear the threat.</p>
+      <p>Thibeau plays second Swamp, second Ritual — Graveborn Muse. The other Black Necro.</p>
+    </div>
+
+    <img class="match-photo" src="F_3.JPG" alt="Game 3 — Graveborn Muse resolves" loading="lazy"/>
+
+    <p>But Whitwell has a Swords to Plowshares. He untaps, plays Call of the Herd, and suddenly he's ahead on board with a Fire // Ice still in hand. Had he turned the corner already, as he had so many times before?</p>
+    <p>Thibeau plays a Knight of Stromgald.</p>
+
+    <div class="clearfix">
+      <a href="https://scryfall.com/card/ice/138/knight-of-stromgald" target="_blank" rel="noopener noreferrer">
+        <img class="card-float left" src="https://api.scryfall.com/cards/ice/138?format=image&version=normal" alt="Knight of Stromgald" loading="lazy"/>
+      </a>
+      <p>Whitwell flashes back Call. Attacks with the other. Thibeau attempts to block and pump with Mishra's Factory — Whitwell Fires it in response.</p>
+      <p>Thibeau plays a Hypnotic Spectre.</p>
+      <p>Whitwell plays a Terravore (4/4). Cracks with both Elephants for 6. Surely the momentum was becoming insurmountable?</p>
+    </div>
+
+    <p>He Ports a Swamp on Upkeep.</p>
+    <p>Thibeau plays a Snuff Out. Attacks with Knight, pumps it — puts Whitwell on 1 life.</p>
+    <p><em>1 life…? Where had all the life gone…?</em></p>
+    <p><em>That Necro. That darn Necro.</em></p>
+    <p>Thibeau Wastelands the Tranquil Thicket — and Whitwell's position finally collapses.</p>
+
+    <div class="result-box">THIBEAU WINS 2–1</div>
+
+  </article>
+  <nav class="nav">
+    <a href="index.html">← Tournament Coverage</a>
+    <a href="../../">magic1.ca</a>
+  </nav>
+</div>
+<script src="/js/bcpmm-shell.js"></script>
+</body>
+</html>
