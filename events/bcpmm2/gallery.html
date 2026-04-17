@@ -7,8 +7,6 @@
   <meta name="description" content="Photo and video gallery for BCPMM #2: Brewhall Champs — April 11, 2026."/>
   <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
   <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/auth.js"></script>
   <script>
     if (localStorage.getItem('bcpmm-theme') === 'dark') {
       document.documentElement.classList.add('dark');
@@ -42,43 +40,27 @@
     .page-header p{color:var(--muted);margin:0;font-size:.92rem}
     .back-link{display:inline-block;margin-top:9px;font-size:.85rem;font-weight:650}
 
-    /* admin bar */
-    .admin-bar{display:none;align-items:center;gap:8px;margin-bottom:18px;padding:10px 16px;background:rgba(31,111,235,.07);border:1px solid rgba(31,111,235,.22);border-radius:10px;font-size:.84rem;color:var(--accent);font-weight:650}
-    .admin-bar.visible{display:flex}
-
     /* grid */
     .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
     @media(max-width:720px){.gallery-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:440px){.gallery-grid{grid-template-columns:1fr}}
 
     /* item */
-    .g-item{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:border-color .18s,box-shadow .18s,transform .18s}
+    .g-item{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;cursor:pointer;transition:border-color .18s,box-shadow .18s,transform .18s}
     .g-item:hover{border-color:rgba(31,111,235,.28);box-shadow:0 14px 36px rgba(15,23,42,.13);transform:translateY(-2px)}
     body.dark .g-item:hover{border-color:rgba(88,166,255,.3)}
 
-    .g-thumb{position:relative;width:100%;aspect-ratio:4/3;background:var(--item-bg);overflow:hidden;cursor:pointer;flex-shrink:0}
-    .g-thumb img,.g-thumb video{display:block;width:100%;height:100%;object-fit:cover;object-position:center top;transition:transform .25s}
-    .g-item:hover .g-thumb img,.g-item:hover .g-thumb video{transform:scale(1.03)}
+    .g-thumb{position:relative;width:100%;aspect-ratio:4/3;background:var(--item-bg);overflow:hidden;flex-shrink:0}
+    .g-thumb img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top;transition:transform .25s}
+    .g-item:hover .g-thumb img{transform:scale(1.03)}
 
-    .g-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);transition:background .18s}
-    .g-item:hover .g-play{background:rgba(0,0,0,.16)}
-    .g-play svg{width:52px;height:52px;fill:rgba(255,255,255,.9);filter:drop-shadow(0 2px 10px rgba(0,0,0,.5))}
-
-    .g-caption-wrap{padding:8px 11px 10px;flex:1}
-    .g-caption{font-size:.8rem;color:var(--muted);line-height:1.35;min-height:1em}
-
-    /* admin textarea */
-    .g-caption-input{width:100%;font-size:.8rem;color:var(--ink);background:var(--item-bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;line-height:1.35;resize:none;font-family:inherit;outline:none;min-height:38px;transition:border-color .18s,box-shadow .18s}
-    .g-caption-input:focus{border-color:rgba(31,111,235,.4);box-shadow:0 0 0 2px rgba(31,111,235,.1)}
-    .g-save-status{font-size:.67rem;margin-top:3px;min-height:1em;color:transparent;transition:color .15s}
-    .g-save-status.saving{color:var(--accent)} .g-save-status.saved{color:#22a060} .g-save-status.error{color:#c84b3c}
+    .g-caption{padding:8px 11px 10px;font-size:.8rem;color:var(--muted);line-height:1.35;min-height:1.5em}
 
     /* lightbox */
     .lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 60px}
     .lb.open{display:flex}
     .lb-media{display:flex;align-items:center;justify-content:center;max-width:min(92vw,1000px);max-height:76vh}
     .lb-media img{display:block;max-width:100%;max-height:76vh;border-radius:10px;box-shadow:0 24px 64px rgba(0,0,0,.7)}
-    .lb-media video{display:block;max-width:100%;max-height:76vh;border-radius:10px;box-shadow:0 24px 64px rgba(0,0,0,.7)}
     .lb-caption{color:rgba(255,255,255,.8);font-size:.92rem;text-align:center;max-width:680px;line-height:1.5;min-height:1.3em}
     .lb-btn{position:fixed;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.1);border:none;color:#fff;font-size:1.8rem;width:48px;height:48px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;z-index:2001}
     .lb-btn:hover{background:rgba(255,255,255,.22)}
@@ -102,10 +84,6 @@
     <a class="back-link" href="index.html">← Back to Coverage</a>
   </div>
 
-  <div class="admin-bar" id="adminBar">
-    🔧 Admin — click any caption field to edit. Saves automatically.
-  </div>
-
   <div class="gallery-grid" id="galleryGrid"></div>
 
   <div class="pg-footer">
@@ -125,235 +103,69 @@
 </div>
 
 <script>
-const EVENT_ID = 'bcpmm-2026-04-11';
-
-/* ═══════════════════════════════════════════════════
-   ITEMS — captions are empty by default.
-   To add a caption, fill in the caption string for
-   that item. Captions are also editable on the web
-   when logged in as admin (auto-saved to Supabase).
-═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   ITEMS — add captions below as needed.
+   Files are in the same folder as this HTML (gallery/).
+   Numbered 01.JPG through 34.JPG.
+═══════════════════════════════════════════════════════ */
 const ITEMS = [
-  /* ── Photos ── */
-  { file: 'gallery/IMG_7146.JPG', caption: '' },
-  { file: 'gallery/IMG_7147.JPG', caption: '' },
-  { file: 'gallery/IMG_7148.JPG', caption: '' },
-  { file: 'gallery/IMG_7166.JPG', caption: '' },
-  { file: 'gallery/IMG_7167.JPG', caption: '' },
-  { file: 'gallery/IMG_7170.JPG', caption: '' },
-  { file: 'gallery/IMG_7171.JPG', caption: '' },
-  { file: 'gallery/IMG_7175.JPG', caption: '' },
-  { file: 'gallery/IMG_7176.JPG', caption: '' },
-  { file: 'gallery/IMG_7177.JPG', caption: '' },
-  { file: 'gallery/IMG_7178.JPG', caption: '' },
-  { file: 'gallery/IMG_7183.JPG', caption: '' },
-  { file: 'gallery/IMG_7184.JPG', caption: '' },
-  { file: 'gallery/IMG_7185.JPG', caption: '' },
-  { file: 'gallery/IMG_7186.JPG', caption: '' },
-  { file: 'gallery/IMG_7187.JPG', caption: '' },
-  { file: 'gallery/IMG_7188.JPG', caption: '' },
-  { file: 'gallery/IMG_7189.JPG', caption: '' },
-  { file: 'gallery/IMG_7195.JPG', caption: '' },
-  { file: 'gallery/IMG_7198.JPG', caption: '' },
-  { file: 'gallery/IMG_7201.JPG', caption: '' },
-  { file: 'gallery/IMG_7204.JPG', caption: '' },
-  { file: 'gallery/IMG_7205.JPG', caption: '' },
-  { file: 'gallery/IMG_7207.JPG', caption: '' },
-  { file: 'gallery/IMG_7208.JPG', caption: '' },
-  { file: 'gallery/IMG_7210.JPG', caption: '' },
-  { file: 'gallery/IMG_7213.JPG', caption: '' },
-  { file: 'gallery/IMG_7214.JPG', caption: '' },
-  { file: 'gallery/IMG_7216.JPG', caption: '' },
-  { file: 'gallery/IMG_7217.JPG', caption: '' },
-  { file: 'gallery/IMG_7219.JPG', caption: '' },
-  { file: 'gallery/IMG_7220.JPG', caption: '' },
-  { file: 'gallery/IMG_7221.JPG', caption: '' },
-  { file: 'gallery/IMG_7222.JPG', caption: '' },
-  { file: 'gallery/IMG_7225.JPG', caption: '' },
-  { file: 'gallery/IMG_7226.JPG', caption: '' },
-  { file: 'gallery/IMG_7227.JPG', caption: '' },
-  { file: 'gallery/IMG_7228.JPG', caption: '' },
-  { file: 'gallery/IMG_7238.JPG', caption: '' },
-  { file: 'gallery/IMG_7239.JPG', caption: '' },
-  { file: 'gallery/IMG_7242.JPG', caption: '' },
-  { file: 'gallery/IMG_7243.JPG', caption: '' },
-  { file: 'gallery/IMG_7245.JPG', caption: '' },
-  { file: 'gallery/IMG_7248.JPG', caption: '' },
-  { file: 'gallery/IMG_7250.JPG', caption: '' },
-  { file: 'gallery/IMG_7251.JPG', caption: '' },
-  { file: 'gallery/IMG_7252.JPG', caption: '' },
-  { file: 'gallery/IMG_7253.JPG', caption: '' },
-  { file: 'gallery/IMG_7254.JPG', caption: '' },
-  { file: 'gallery/IMG_7255.JPG', caption: '' },
-  { file: 'gallery/IMG_7256.JPG', caption: '' },
-  { file: 'gallery/IMG_7257.JPG', caption: '' },
-  { file: 'gallery/IMG_7258.JPG', caption: '' },
-  { file: 'gallery/IMG_7260.JPG', caption: '' },
-  { file: 'gallery/IMG_7262.JPG', caption: '' },
-  { file: 'gallery/IMG_7263.JPG', caption: '' },
-  { file: 'gallery/IMG_7264.JPG', caption: '' },
-  { file: 'gallery/IMG_7265.JPG', caption: '' },
-  { file: 'gallery/IMG_7266.JPG', caption: '' },
-  { file: 'gallery/IMG_7267.JPG', caption: '' },
-  { file: 'gallery/IMG_7268.JPG', caption: '' },
-  { file: 'gallery/IMG_7269.JPG', caption: '' },
-  { file: 'gallery/IMG_7270.JPG', caption: '' },
-  { file: 'gallery/IMG_7271.JPG', caption: '' },
-  { file: 'gallery/IMG_7272.JPG', caption: '' },
-  { file: 'gallery/IMG_7273.JPG', caption: '' },
-  { file: 'gallery/IMG_7275.JPG', caption: '' },
-  { file: 'gallery/IMG_7276.JPG', caption: '' },
-  { file: 'gallery/IMG_7278.JPG', caption: '' },
-  { file: 'gallery/IMG_7279.JPG', caption: '' },
-  { file: 'gallery/IMG_7280.JPG', caption: '' },
-  { file: 'gallery/IMG_7281.JPG', caption: '' },
-  { file: 'gallery/IMG_7284.JPG', caption: '' },
-  { file: 'gallery/IMG_7285.JPG', caption: '' },
-  { file: 'gallery/IMG_7286.JPG', caption: '' },
-  { file: 'gallery/IMG_7292.JPG', caption: '' },
-  { file: 'gallery/IMG_7302.JPG', caption: '' },
-  { file: 'gallery/IMG_7303.JPG', caption: '' },
-  { file: 'gallery/IMG_7304.JPG', caption: '' },
-  { file: 'gallery/IMG_7305.JPG', caption: '' },
-  { file: 'gallery/IMG_7306.JPG', caption: '' },
-  { file: 'gallery/IMG_7307.JPG', caption: '' },
-  { file: 'gallery/IMG_7308.JPG', caption: '' },
-  { file: 'gallery/IMG_7309.JPG', caption: '' },
-  { file: 'gallery/IMG_7310.JPG', caption: '' },
-  { file: 'gallery/IMG_7311.JPG', caption: '' },
-  { file: 'gallery/IMG_7312.JPG', caption: '' },
-  { file: 'gallery/IMG_7313.JPG', caption: '' },
-  { file: 'gallery/IMG_7314.JPG', caption: '' },
-  { file: 'gallery/IMG_7315.JPG', caption: '' },
-  { file: 'gallery/IMG_7316.JPG', caption: '' },
-  { file: 'gallery/IMG_7317.JPG', caption: '' },
-  { file: 'gallery/IMG_7318.JPG', caption: '' },
-  { file: 'gallery/IMG_7319.JPG', caption: '' },
-  { file: 'gallery/IMG_7320.JPG', caption: '' },
-  { file: 'gallery/IMG_7321.JPG', caption: '' },
-  { file: 'gallery/IMG_7322.JPG', caption: '' },
-  { file: 'gallery/IMG_7323.JPG', caption: '' },
-  { file: 'gallery/IMG_7324.JPG', caption: '' },
-  { file: 'gallery/IMG_7327.JPG', caption: '' },
-  { file: 'gallery/IMG_7331.JPG', caption: '' },
-
-  /* ── Videos (MOVIES subfolder, compressed to mp4) ── */
-  { file: 'gallery/MOVIES/IMG_7149.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7150.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7151.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7174.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7179.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7180.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7181.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7182.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7206.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7209.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7230.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7231.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7232.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7233.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7235.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7236.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7237.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7287.mp4', caption: '', type: 'video' },
-  { file: 'gallery/MOVIES/IMG_7288.mp4', caption: '', type: 'video' },
+  { file: 'gallery/01.JPG', caption: '' },
+  { file: 'gallery/02.JPG', caption: '' },
+  { file: 'gallery/03.JPG', caption: '' },
+  { file: 'gallery/04.JPG', caption: '' },
+  { file: 'gallery/05.JPG', caption: '' },
+  { file: 'gallery/06.JPG', caption: '' },
+  { file: 'gallery/07.JPG', caption: '' },
+  { file: 'gallery/08.JPG', caption: '' },
+  { file: 'gallery/09.JPG', caption: '' },
+  { file: 'gallery/10.JPG', caption: '' },
+  { file: 'gallery/11.JPG', caption: '' },
+  { file: 'gallery/12.JPG', caption: '' },
+  { file: 'gallery/13.JPG', caption: '' },
+  { file: 'gallery/14.JPG', caption: '' },
+  { file: 'gallery/15.JPG', caption: '' },
+  { file: 'gallery/16.JPG', caption: '' },
+  { file: 'gallery/17.JPG', caption: '' },
+  { file: 'gallery/18.JPG', caption: '' },
+  { file: 'gallery/19.JPG', caption: '' },
+  { file: 'gallery/20.JPG', caption: '' },
+  { file: 'gallery/21.JPG', caption: '' },
+  { file: 'gallery/22.JPG', caption: '' },
+  { file: 'gallery/23.JPG', caption: '' },
+  { file: 'gallery/24.JPG', caption: '' },
+  { file: 'gallery/25.JPG', caption: '' },
+  { file: 'gallery/26.JPG', caption: '' },
+  { file: 'gallery/27.JPG', caption: '' },
+  { file: 'gallery/28.JPG', caption: '' },
+  { file: 'gallery/29.JPG', caption: '' },
+  { file: 'gallery/30.JPG', caption: '' },
+  { file: 'gallery/31.JPG', caption: '' },
+  { file: 'gallery/32.JPG', caption: '' },
+  { file: 'gallery/33.JPG', caption: '' },
+  { file: 'gallery/34.JPG', caption: '' },
 ];
 
-/* ═══════════════════════════════════════════════════
-   RUNTIME
-═══════════════════════════════════════════════════ */
-let isAdmin = false;
-let captions = {};
-let currentIdx = 0;
+/* ── build grid ── */
+const grid = document.getElementById('galleryGrid');
+ITEMS.forEach((item, i) => {
+  const el = document.createElement('div');
+  el.className = 'g-item';
+  el.innerHTML = `
+    <div class="g-thumb">
+      <img src="${item.file}" alt="${item.caption || ''}" loading="lazy"/>
+    </div>
+    ${item.caption ? `<div class="g-caption">${item.caption}</div>` : ''}
+  `;
+  el.addEventListener('click', () => openLb(i));
+  grid.appendChild(el);
+});
 
-function isVid(item) {
-  return item.type === 'video' || /\.(mp4|mov|webm)$/i.test(item.file);
-}
-
-async function loadCaptions() {
-  const sb = window.auth?._client;
-  if (!sb || !ITEMS.length) return;
-  const { data } = await sb
-    .from('gallery_captions')
-    .select('id, caption')
-    .eq('event_id', EVENT_ID)
-    .in('id', ITEMS.map(i => i.file));
-  if (data) data.forEach(r => { captions[r.id] = r.caption; });
-}
-
-async function saveCaption(file, caption, statusEl) {
-  const sb = window.auth?._client;
-  if (!sb) return;
-  statusEl.className = 'g-save-status saving';
-  statusEl.textContent = 'Saving…';
-  const { error } = await sb
-    .from('gallery_captions')
-    .upsert({ id: file, event_id: EVENT_ID, caption }, { onConflict: 'id' });
-  if (error) {
-    statusEl.className = 'g-save-status error';
-    statusEl.textContent = 'Error — not saved';
-  } else {
-    captions[file] = caption;
-    statusEl.className = 'g-save-status saved';
-    statusEl.textContent = 'Saved ✓';
-    setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'g-save-status'; }, 2200);
-  }
-}
-
-function buildGrid() {
-  const grid = document.getElementById('galleryGrid');
-  grid.innerHTML = '';
-  ITEMS.forEach((item, i) => {
-    const cap = captions[item.file] ?? item.caption ?? '';
-    const video = isVid(item);
-    const el = document.createElement('div');
-    el.className = 'g-item';
-
-    const thumb = document.createElement('div');
-    thumb.className = 'g-thumb';
-    thumb.addEventListener('click', () => openLb(i));
-    if (video) {
-      thumb.innerHTML = `<video src="${item.file}" preload="metadata" style="width:100%;height:100%;object-fit:cover;pointer-events:none;"></video>
-        <div class="g-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>`;
-    } else {
-      thumb.innerHTML = `<img src="${item.file}" alt="${cap}" loading="lazy"/>`;
-    }
-    el.appendChild(thumb);
-
-    const wrap = document.createElement('div');
-    wrap.className = 'g-caption-wrap';
-    if (isAdmin) {
-      const ta = document.createElement('textarea');
-      ta.className = 'g-caption-input';
-      ta.rows = 2;
-      ta.value = cap;
-      ta.placeholder = 'Add a caption…';
-      const status = document.createElement('div');
-      status.className = 'g-save-status';
-      let timer;
-      ta.addEventListener('input', () => {
-        item._live = ta.value;
-        clearTimeout(timer);
-        timer = setTimeout(() => saveCaption(item.file, ta.value.trim(), status), 800);
-      });
-      wrap.appendChild(ta);
-      wrap.appendChild(status);
-    } else {
-      const d = document.createElement('div');
-      d.className = 'g-caption';
-      d.textContent = cap;
-      wrap.appendChild(d);
-    }
-    el.appendChild(wrap);
-    grid.appendChild(el);
-  });
-}
-
-/* lightbox */
+/* ── lightbox ── */
 const lb      = document.getElementById('lb');
 const lbMedia = document.getElementById('lbMedia');
 const lbCapEl = document.getElementById('lbCaption');
 const lbCount = document.getElementById('lbCounter');
+let currentIdx = 0;
 
 function openLb(i) {
   currentIdx = i;
@@ -370,14 +182,9 @@ function closeLb() {
 
 function renderLb() {
   const item = ITEMS[currentIdx];
-  const cap = item._live ?? captions[item.file] ?? item.caption ?? '';
   lbCount.textContent = `${currentIdx + 1} / ${ITEMS.length}`;
-  lbCapEl.textContent = cap;
-  if (isVid(item)) {
-    lbMedia.innerHTML = `<video controls autoplay playsinline><source src="${item.file}"></video>`;
-  } else {
-    lbMedia.innerHTML = `<img src="${item.file}" alt="${cap}"/>`;
-  }
+  lbCapEl.textContent = item.caption || '';
+  lbMedia.innerHTML = `<img src="${item.file}" alt="${item.caption || ''}"/>`;
 }
 
 function step(d) {
@@ -396,27 +203,6 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') step(-1);
   if (e.key === 'ArrowRight') step(1);
 });
-
-async function init() {
-  await window.auth?.ready?.();
-  const sb = window.auth?._client;
-  if (sb) {
-    const { data: { user } } = await sb.auth.getUser();
-    if (user) {
-      const { data: role } = await sb
-        .from('user_roles').select('role')
-        .eq('user_id', user.id).eq('role', 'admin').maybeSingle();
-      if (role) {
-        isAdmin = true;
-        document.getElementById('adminBar').classList.add('visible');
-      }
-    }
-  }
-  await loadCaptions();
-  buildGrid();
-}
-
-document.addEventListener('DOMContentLoaded', init);
 </script>
 <script src="/js/bcpmm-shell.js"></script>
 </body>
