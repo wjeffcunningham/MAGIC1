@@ -84,6 +84,20 @@
     .play-btn:hover{border-color:rgba(31,111,235,.35);color:var(--accent)}
     .play-btn.playing{border-color:rgba(31,111,235,.4);color:var(--accent);background:rgba(31,111,235,.05)}
 
+    /* key hint */
+    .key-hint{text-align:center;margin-top:10px;font-size:.72rem;color:var(--muted);letter-spacing:.03em;opacity:.7}
+    .key-hint kbd{display:inline-block;padding:1px 6px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:inherit;background:var(--item-bg)}
+
+    /* music button */
+    .music-wrap{display:flex;justify-content:center;margin-bottom:18px}
+    .music-btn{display:flex;align-items:center;gap:12px;padding:14px 32px;border-radius:0;border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:all .2s;font-size:1.05rem;font-weight:700;color:var(--muted);letter-spacing:.02em}
+    .music-btn:hover{border-color:rgba(31,111,235,.4);color:var(--accent);box-shadow:0 8px 28px rgba(31,111,235,.12)}
+    .music-btn.playing{border-color:rgba(31,111,235,.5);color:var(--accent);background:rgba(31,111,235,.05)}
+    .music-btn .music-icon{font-size:2rem;line-height:1}
+    .music-btn .music-label{display:flex;flex-direction:column;gap:1px;text-align:left}
+    .music-btn .music-title{font-size:1rem;font-weight:700;color:inherit}
+    .music-btn .music-sub{font-size:.72rem;font-weight:400;color:var(--muted);letter-spacing:.01em}
+
     .pg-footer{margin-top:32px;text-align:center;color:var(--muted);font-size:.88rem}
     .pg-footer a{color:var(--accent)}
   </style>
@@ -103,7 +117,19 @@
     <div class="fpill" data-filter="sepia">Sepia</div>
   </div>
 
+  <div class="music-wrap">
+    <button class="music-btn" id="musicBtn">
+      <span class="music-icon">🎵</span>
+      <span class="music-label">
+        <span class="music-title">Play Soundtrack</span>
+        <span class="music-sub">gallery/theme.mp3</span>
+      </span>
+    </button>
+  </div>
+
   <div class="slideshow filter-natural" id="slideshow"></div>
+
+  <div class="key-hint"><kbd>←</kbd> &nbsp; prev &nbsp;·&nbsp; next &nbsp;<kbd>→</kbd> &nbsp;·&nbsp; click image to advance</div>
 
   <div class="slide-footer">
     <span class="slide-counter" id="counter">1 / 23</span>
@@ -116,6 +142,8 @@
   </div>
 
 </div>
+
+<audio id="bgAudio" loop src="gallery/theme.mp3"></audio>
 
 <script>
 /* ═══════════════════════════════════════
@@ -209,7 +237,30 @@ function stopAuto() {
 }
 playBtn.addEventListener('click', () => autoTimer ? stopAuto() : startAuto());
 
-/* filters */
+/* click slideshow to advance */
+ss.addEventListener('click', e => {
+  if (e.target.closest('.arrow')) return;
+  step(1);
+});
+
+/* music */
+const audio    = document.getElementById('bgAudio');
+const musicBtn = document.getElementById('musicBtn');
+let musicOn = false;
+musicBtn.addEventListener('click', () => {
+  musicOn = !musicOn;
+  if (musicOn) {
+    audio.play().catch(() => {});
+    musicBtn.querySelector('.music-icon').textContent = '🔊';
+    musicBtn.querySelector('.music-title').textContent = 'Now Playing';
+    musicBtn.classList.add('playing');
+  } else {
+    audio.pause();
+    musicBtn.querySelector('.music-icon').textContent = '🎵';
+    musicBtn.querySelector('.music-title').textContent = 'Play Soundtrack';
+    musicBtn.classList.remove('playing');
+  }
+});
 document.querySelectorAll('.fpill').forEach(pill => {
   pill.addEventListener('click', () => {
     document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
