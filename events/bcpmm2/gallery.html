@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>BCPMM #2: Brewhall Champs · Gallery · magic1.ca</title>
-  <meta name="description" content="Photo and video gallery for BCPMM #2: Brewhall Champs — April 11, 2026."/>
+  <meta name="description" content="Photo gallery for BCPMM #2: Brewhall Champs — April 11, 2026."/>
   <link rel="icon" type="image/svg+xml" href="/assets/BCPMM.svg"/>
   <link rel="stylesheet" href="/css/bcpmm-shell.css"/>
   <script>
@@ -21,7 +21,7 @@
       --bg:#f3f6ff; --card:#ffffff; --item-bg:#fbfdff;
       --ink:#0f172a; --muted:#475569;
       --border:rgba(15,23,42,.12); --shadow:0 10px 30px rgba(15,23,42,.08);
-      --radius:16px; --max:1100px; --accent:#1f6feb;
+      --radius:16px; --max:960px; --accent:#1f6feb;
     }
     body.dark {
       --bg:#0d1117; --card:#161b22; --item-bg:#0d1117;
@@ -35,42 +35,56 @@
     a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
     .shell{max-width:var(--max);margin:32px auto 64px;padding:0 18px}
 
-    .page-header{text-align:center;margin-bottom:24px}
-    .page-header h1{font-size:clamp(1.5rem,3.5vw,2rem);font-weight:800;margin:0 0 5px;letter-spacing:-.02em}
-    .page-header p{color:var(--muted);margin:0;font-size:.92rem}
-    .back-link{display:inline-block;margin-top:9px;font-size:.85rem;font-weight:650}
+    .page-header{text-align:center;margin-bottom:22px}
+    .page-header h1{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:800;margin:0 0 4px;letter-spacing:-.02em}
+    .page-header p{color:var(--muted);margin:0;font-size:.88rem}
+    .back-link{display:inline-block;margin-top:8px;font-size:.84rem;font-weight:650;color:var(--accent)}
 
-    /* grid */
-    .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-    @media(max-width:720px){.gallery-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:440px){.gallery-grid{grid-template-columns:1fr}}
+    /* ── filter pills ── */
+    .filters{display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+    .fpill{padding:7px 18px;border:1px solid var(--border);border-radius:0;background:var(--card);font-size:.82rem;font-weight:650;color:var(--muted);cursor:pointer;transition:all .18s;user-select:none;letter-spacing:.03em}
+    .fpill:hover{border-color:rgba(31,111,235,.35);color:var(--ink)}
+    .fpill.active{background:var(--ink);color:var(--card);border-color:var(--ink)}
+    body.dark .fpill.active{background:var(--ink);color:var(--bg)}
 
-    /* item */
-    .g-item{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;cursor:pointer;transition:border-color .18s,box-shadow .18s,transform .18s}
-    .g-item:hover{border-color:rgba(31,111,235,.28);box-shadow:0 14px 36px rgba(15,23,42,.13);transform:translateY(-2px)}
-    body.dark .g-item:hover{border-color:rgba(88,166,255,.3)}
+    /* ── slideshow wrapper ── */
+    .slideshow{position:relative;background:#000;border-radius:var(--radius);overflow:hidden;box-shadow:0 20px 60px rgba(15,23,42,.22);aspect-ratio:3/2}
+    body.dark .slideshow{box-shadow:0 20px 60px rgba(0,0,0,.6)}
 
-    .g-thumb{position:relative;width:100%;aspect-ratio:4/3;background:var(--item-bg);overflow:hidden;flex-shrink:0}
-    .g-thumb img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top;transition:transform .25s}
-    .g-item:hover .g-thumb img{transform:scale(1.03)}
+    .slide{position:absolute;inset:0;opacity:0;transition:opacity .55s ease}
+    .slide.active{opacity:1}
 
-    .g-caption{padding:8px 11px 10px;font-size:.8rem;color:var(--muted);line-height:1.35;min-height:1.5em}
+    .slide img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:filter .4s ease}
 
-    /* lightbox */
-    .lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 60px}
-    .lb.open{display:flex}
-    .lb-media{display:flex;align-items:center;justify-content:center;max-width:min(92vw,1000px);max-height:76vh}
-    .lb-media img{display:block;max-width:100%;max-height:76vh;border-radius:10px;box-shadow:0 24px 64px rgba(0,0,0,.7)}
-    .lb-caption{color:rgba(255,255,255,.8);font-size:.92rem;text-align:center;max-width:680px;line-height:1.5;min-height:1.3em}
-    .lb-btn{position:fixed;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.1);border:none;color:#fff;font-size:1.8rem;width:48px;height:48px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;z-index:2001}
-    .lb-btn:hover{background:rgba(255,255,255,.22)}
-    #lbPrev{left:12px} #lbNext{right:12px}
-    #lbClose{position:fixed;top:14px;right:18px;background:none;border:none;color:rgba(255,255,255,.65);font-size:2.2rem;cursor:pointer;z-index:2002;line-height:1;transition:color .15s}
-    #lbClose:hover{color:#fff}
-    #lbCounter{position:fixed;top:18px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.4);font-size:.75rem;z-index:2001;letter-spacing:.07em}
-    @media(max-width:500px){.lb{padding:16px 48px}.lb-btn{width:38px;height:38px;font-size:1.4rem}}
+    /* ── filter effects ── */
+    .filter-natural img{filter:none}
+    .filter-sepia   img{filter:sepia(.85) contrast(1.05) brightness(.98)}
 
-    .pg-footer{margin-top:28px;text-align:center;color:var(--muted);font-size:.88rem}
+    /* caption overlay */
+    .slide-caption{position:absolute;bottom:0;left:0;right:0;padding:28px 22px 16px;background:linear-gradient(transparent,rgba(0,0,0,.62));color:rgba(255,255,255,.88);font-size:.88rem;line-height:1.4;pointer-events:none;opacity:0;transition:opacity .3s}
+    .slide.active .slide-caption{opacity:1}
+
+    /* arrows */
+    .arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.32);border:none;color:#fff;font-size:1.8rem;width:48px;height:48px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;z-index:10}
+    .arrow:hover{background:rgba(0,0,0,.6)}
+    .arrow.prev{left:14px} .arrow.next{right:14px}
+    @media(max-width:500px){.arrow{width:36px;height:36px;font-size:1.4rem}}
+
+    /* counter + dots */
+    .slide-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:0 2px}
+    .slide-counter{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+
+    .dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:420px}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--border);border:1.5px solid rgba(15,23,42,.18);cursor:pointer;transition:background .18s,transform .18s;flex-shrink:0}
+    body.dark .dot{border-color:rgba(240,246,252,.15)}
+    .dot.active{background:var(--accent);transform:scale(1.25)}
+
+    /* auto-play toggle */
+    .play-btn{padding:5px 12px;border:1px solid var(--border);background:var(--card);border-radius:0;font-size:.78rem;font-weight:650;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+    .play-btn:hover{border-color:rgba(31,111,235,.35);color:var(--accent)}
+    .play-btn.playing{border-color:rgba(31,111,235,.4);color:var(--accent);background:rgba(31,111,235,.05)}
+
+    .pg-footer{margin-top:32px;text-align:center;color:var(--muted);font-size:.88rem}
     .pg-footer a{color:var(--accent)}
   </style>
 </head>
@@ -80,11 +94,22 @@
 
   <div class="page-header">
     <h1>BCPMM #2: Brewhall Champs — Gallery</h1>
-    <p>Photos &amp; video · April 11, 2026 · Strange Fellows Brewing, Vancouver</p>
+    <p>April 11, 2026 · Strange Fellows Brewing, Vancouver</p>
     <a class="back-link" href="index.html">← Back to Coverage</a>
   </div>
 
-  <div class="gallery-grid" id="galleryGrid"></div>
+  <div class="filters">
+    <div class="fpill active" data-filter="natural">Natural</div>
+    <div class="fpill" data-filter="sepia">Sepia</div>
+  </div>
+
+  <div class="slideshow filter-natural" id="slideshow"></div>
+
+  <div class="slide-footer">
+    <span class="slide-counter" id="counter">1 / 23</span>
+    <div class="dots" id="dots"></div>
+    <button class="play-btn" id="playBtn">▶ Auto</button>
+  </div>
 
   <div class="pg-footer">
     © B.C. Premodern Masters · <a href="index.html">Coverage</a> · <a href="../../">magic1.ca</a>
@@ -92,22 +117,10 @@
 
 </div>
 
-<!-- lightbox -->
-<div class="lb" id="lb">
-  <button id="lbClose">✕</button>
-  <span id="lbCounter"></span>
-  <button class="lb-btn" id="lbPrev">‹</button>
-  <div class="lb-media" id="lbMedia"></div>
-  <button class="lb-btn" id="lbNext">›</button>
-  <div class="lb-caption" id="lbCaption"></div>
-</div>
-
 <script>
-/* ═══════════════════════════════════════════════════════
-   ITEMS — add captions below as needed.
-   Files are in the same folder as this HTML (gallery/).
-   Numbered 01.JPG through 34.JPG.
-═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   ITEMS — fill in captions as needed
+═══════════════════════════════════════ */
 const ITEMS = [
   { file: 'gallery/01.JPG', caption: '' },
   { file: 'gallery/02.JPG', caption: '' },
@@ -132,76 +145,77 @@ const ITEMS = [
   { file: 'gallery/21.JPG', caption: '' },
   { file: 'gallery/22.JPG', caption: '' },
   { file: 'gallery/23.JPG', caption: '' },
-  { file: 'gallery/24.JPG', caption: '' },
-  { file: 'gallery/25.JPG', caption: '' },
-  { file: 'gallery/26.JPG', caption: '' },
-  { file: 'gallery/27.JPG', caption: '' },
-  { file: 'gallery/28.JPG', caption: '' },
-  { file: 'gallery/29.JPG', caption: '' },
-  { file: 'gallery/30.JPG', caption: '' },
-  { file: 'gallery/31.JPG', caption: '' },
-  { file: 'gallery/32.JPG', caption: '' },
-  { file: 'gallery/33.JPG', caption: '' },
-  { file: 'gallery/34.JPG', caption: '' },
 ];
 
-/* ── build grid ── */
-const grid = document.getElementById('galleryGrid');
+const ss    = document.getElementById('slideshow');
+const dotsEl= document.getElementById('dots');
+const ctrEl = document.getElementById('counter');
+const playBtn= document.getElementById('playBtn');
+let cur = 0;
+let autoTimer = null;
+
+/* build slides */
 ITEMS.forEach((item, i) => {
-  const el = document.createElement('div');
-  el.className = 'g-item';
-  el.innerHTML = `
-    <div class="g-thumb">
-      <img src="${item.file}" alt="${item.caption || ''}" loading="lazy"/>
-    </div>
-    ${item.caption ? `<div class="g-caption">${item.caption}</div>` : ''}
-  `;
-  el.addEventListener('click', () => openLb(i));
-  grid.appendChild(el);
+  const slide = document.createElement('div');
+  slide.className = 'slide' + (i === 0 ? ' active' : '');
+  slide.innerHTML = `<img src="${item.file}" alt="${item.caption || ''}" loading="${i < 3 ? 'eager' : 'lazy'}"/>
+    ${item.caption ? `<div class="slide-caption">${item.caption}</div>` : ''}`;
+  ss.appendChild(slide);
+
+  const dot = document.createElement('div');
+  dot.className = 'dot' + (i === 0 ? ' active' : '');
+  dot.addEventListener('click', () => goTo(i));
+  dotsEl.appendChild(dot);
 });
 
-/* ── lightbox ── */
-const lb      = document.getElementById('lb');
-const lbMedia = document.getElementById('lbMedia');
-const lbCapEl = document.getElementById('lbCaption');
-const lbCount = document.getElementById('lbCounter');
-let currentIdx = 0;
+/* arrows */
+const prev = document.createElement('button');
+prev.className = 'arrow prev'; prev.textContent = '‹';
+prev.addEventListener('click', () => step(-1));
+ss.appendChild(prev);
 
-function openLb(i) {
-  currentIdx = i;
-  renderLb();
-  lb.classList.add('open');
-  document.body.style.overflow = 'hidden';
+const next = document.createElement('button');
+next.className = 'arrow next'; next.textContent = '›';
+next.addEventListener('click', () => step(1));
+ss.appendChild(next);
+
+function goTo(i) {
+  document.querySelectorAll('.slide')[cur].classList.remove('active');
+  document.querySelectorAll('.dot')[cur].classList.remove('active');
+  cur = (i + ITEMS.length) % ITEMS.length;
+  document.querySelectorAll('.slide')[cur].classList.add('active');
+  document.querySelectorAll('.dot')[cur].classList.add('active');
+  ctrEl.textContent = `${cur + 1} / ${ITEMS.length}`;
 }
 
-function closeLb() {
-  lb.classList.remove('open');
-  lbMedia.innerHTML = '';
-  document.body.style.overflow = '';
-}
+function step(d) { goTo(cur + d); }
 
-function renderLb() {
-  const item = ITEMS[currentIdx];
-  lbCount.textContent = `${currentIdx + 1} / ${ITEMS.length}`;
-  lbCapEl.textContent = item.caption || '';
-  lbMedia.innerHTML = `<img src="${item.file}" alt="${item.caption || ''}"/>`;
-}
-
-function step(d) {
-  currentIdx = (currentIdx + d + ITEMS.length) % ITEMS.length;
-  lbMedia.innerHTML = '';
-  renderLb();
-}
-
-document.getElementById('lbClose').addEventListener('click', closeLb);
-document.getElementById('lbPrev').addEventListener('click', () => step(-1));
-document.getElementById('lbNext').addEventListener('click', () => step(1));
-lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
+/* keyboard */
 document.addEventListener('keydown', e => {
-  if (!lb.classList.contains('open')) return;
-  if (e.key === 'Escape') closeLb();
-  if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'ArrowLeft')  step(-1);
   if (e.key === 'ArrowRight') step(1);
+});
+
+/* auto-play */
+function startAuto() {
+  autoTimer = setInterval(() => step(1), 3500);
+  playBtn.textContent = '⏸ Auto';
+  playBtn.classList.add('playing');
+}
+function stopAuto() {
+  clearInterval(autoTimer); autoTimer = null;
+  playBtn.textContent = '▶ Auto';
+  playBtn.classList.remove('playing');
+}
+playBtn.addEventListener('click', () => autoTimer ? stopAuto() : startAuto());
+
+/* filters */
+document.querySelectorAll('.fpill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    ss.className = `slideshow filter-${pill.dataset.filter}`;
+  });
 });
 </script>
 <script src="/js/bcpmm-shell.js"></script>
