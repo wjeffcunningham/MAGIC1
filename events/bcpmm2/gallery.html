@@ -74,10 +74,9 @@
     .slide-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:0 2px}
     .slide-counter{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
 
-    .dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:420px}
-    .dot{width:7px;height:7px;border-radius:50%;background:var(--border);border:1.5px solid rgba(15,23,42,.18);cursor:pointer;transition:background .18s,transform .18s;flex-shrink:0}
-    body.dark .dot{border-color:rgba(240,246,252,.15)}
-    .dot.active{background:var(--accent);transform:scale(1.25)}
+    /* progress bar */
+    .prog-wrap{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin:0 12px}
+    .prog-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .35s ease}
 
     /* auto-play toggle */
     .play-btn{padding:5px 12px;border:1px solid var(--border);background:var(--card);border-radius:0;font-size:.78rem;font-weight:650;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -133,7 +132,7 @@
 
   <div class="slide-footer">
     <span class="slide-counter" id="counter">1 / 23</span>
-    <div class="dots" id="dots"></div>
+    <div class="prog-wrap"><div class="prog-bar" id="progBar"></div></div>
     <button class="play-btn" id="playBtn">▶ Auto</button>
   </div>
 
@@ -146,9 +145,6 @@
 <audio id="bgAudio" loop src="gallery/theme.mp3"></audio>
 
 <script>
-/* ═══════════════════════════════════════
-   ITEMS — fill in captions as needed
-═══════════════════════════════════════ */
 const ITEMS = [
   { file: 'gallery/01.JPG', caption: '' },
   { file: 'gallery/02.JPG', caption: '' },
@@ -175,53 +171,78 @@ const ITEMS = [
   { file: 'gallery/23.JPG', caption: '' },
 ];
 
-const ss    = document.getElementById('slideshow');
-const dotsEl= document.getElementById('dots');
-const ctrEl = document.getElementById('counter');
-const playBtn= document.getElementById('playBtn');
+const WINDOW = 2; // slides to preload ahead and behind
+const ss      = document.getElementById('slideshow');
+const ctrEl   = document.getElementById('counter');
+const progBar = document.getElementById('progBar');
+const playBtn = document.getElementById('playBtn');
 let cur = 0;
 let autoTimer = null;
 
-/* build slides */
-ITEMS.forEach((item, i) => {
+/* build slides — all imgs start with no src */
+const slides = ITEMS.map((item, i) => {
   const slide = document.createElement('div');
   slide.className = 'slide' + (i === 0 ? ' active' : '');
-  slide.innerHTML = `<img src="${item.file}" alt="${item.caption || ''}" loading="${i < 3 ? 'eager' : 'lazy'}"/>
-    ${item.caption ? `<div class="slide-caption">${item.caption}</div>` : ''}`;
+  const img = document.createElement('img');
+  img.alt = item.caption || '';
+  // first slide loads immediately
+  if (i === 0) img.src = item.file;
+  slide.appendChild(img);
+  if (item.caption) {
+    const cap = document.createElement('div');
+    cap.className = 'slide-caption';
+    cap.textContent = item.caption;
+    slide.appendChild(cap);
+  }
   ss.appendChild(slide);
-
-  const dot = document.createElement('div');
-  dot.className = 'dot' + (i === 0 ? ' active' : '');
-  dot.addEventListener('click', () => goTo(i));
-  dotsEl.appendChild(dot);
+  return { slide, img, item };
 });
 
-/* arrows */
-const prev = document.createElement('button');
-prev.className = 'arrow prev'; prev.textContent = '‹';
-prev.addEventListener('click', () => step(-1));
-ss.appendChild(prev);
+/* load images within window of current index */
+function loadWindow(idx) {
+  for (let i = Math.max(0, idx - WINDOW); i <= Math.min(ITEMS.length - 1, idx + WINDOW); i++) {
+    if (!slides[i].img.src) slides[i].img.src = slides[i].item.file;
+  }
+}
 
-const next = document.createElement('button');
-next.className = 'arrow next'; next.textContent = '›';
-next.addEventListener('click', () => step(1));
-ss.appendChild(next);
+loadWindow(0);
+
+/* arrows */
+['prev','next'].forEach(dir => {
+  const btn = document.createElement('button');
+  btn.className = `arrow ${dir}`;
+  btn.textContent = dir === 'prev' ? '‹' : '›';
+  btn.addEventListener('click', () => step(dir === 'prev' ? -1 : 1));
+  ss.appendChild(btn);
+});
+
+function updateUI() {
+  ctrEl.textContent = `${cur + 1} / ${ITEMS.length}`;
+  progBar.style.width = `${((cur + 1) / ITEMS.length) * 100}%`;
+}
 
 function goTo(i) {
-  document.querySelectorAll('.slide')[cur].classList.remove('active');
-  document.querySelectorAll('.dot')[cur].classList.remove('active');
+  slides[cur].slide.classList.remove('active');
   cur = (i + ITEMS.length) % ITEMS.length;
-  document.querySelectorAll('.slide')[cur].classList.add('active');
-  document.querySelectorAll('.dot')[cur].classList.add('active');
-  ctrEl.textContent = `${cur + 1} / ${ITEMS.length}`;
+  slides[cur].slide.classList.add('active');
+  loadWindow(cur);
+  updateUI();
 }
 
 function step(d) { goTo(cur + d); }
+
+updateUI();
 
 /* keyboard */
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft')  step(-1);
   if (e.key === 'ArrowRight') step(1);
+});
+
+/* click to advance */
+ss.addEventListener('click', e => {
+  if (e.target.closest('.arrow')) return;
+  step(1);
 });
 
 /* auto-play */
@@ -236,12 +257,6 @@ function stopAuto() {
   playBtn.classList.remove('playing');
 }
 playBtn.addEventListener('click', () => autoTimer ? stopAuto() : startAuto());
-
-/* click slideshow to advance */
-ss.addEventListener('click', e => {
-  if (e.target.closest('.arrow')) return;
-  step(1);
-});
 
 /* music */
 const audio    = document.getElementById('bgAudio');
@@ -261,6 +276,8 @@ musicBtn.addEventListener('click', () => {
     musicBtn.classList.remove('playing');
   }
 });
+
+/* filters */
 document.querySelectorAll('.fpill').forEach(pill => {
   pill.addEventListener('click', () => {
     document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
