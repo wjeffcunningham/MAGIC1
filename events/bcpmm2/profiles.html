@@ -156,7 +156,6 @@
     body.dark .mini-card:hover { border-color: rgba(88,166,255,.3); }
     body.dark .mini-card.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(88,166,255,.2); }
 
-    /* photo */
     .mini-photo {
       display: block;
       width: 100%;
@@ -166,7 +165,6 @@
       background: var(--item-bg);
     }
 
-    /* name bar */
     .mini-bar {
       padding: 7px 9px 8px;
       display: flex;
@@ -273,7 +271,7 @@
       background: rgba(184,134,11,.07);
     }
 
-    /* detail body: 4-col answer grid */
+    /* detail body */
     .detail-body {
       padding: 16px 18px 18px;
       display: grid;
@@ -352,6 +350,84 @@
       box-shadow: 0 3px 10px rgba(31,111,235,.1);
     }
 
+    /* ── DECKLIST SECTION ── */
+    .decklist-section {
+      grid-column: 1 / -1;
+      margin-top: 4px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+
+    .decklist-section-title {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .decklist-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
+    }
+
+    @media(max-width: 500px) {
+      .decklist-cols { grid-template-columns: 1fr; }
+    }
+
+    .dl-group { display: flex; flex-direction: column; gap: 0; }
+
+    .dl-group-header {
+      font-size: .64rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 5px;
+    }
+
+    .dl-entry {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: .8rem;
+      line-height: 1.6;
+    }
+
+    .dl-qty {
+      font-weight: 700;
+      min-width: 14px;
+      color: var(--accent);
+      flex-shrink: 0;
+      font-size: .75rem;
+    }
+
+    .dl-name {
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dl-sb-label {
+      font-size: .64rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      margin-top: 8px;
+      margin-bottom: 5px;
+    }
+
+    .dl-entry.sb .dl-qty { color: var(--muted); }
+    .dl-entry.sb .dl-name { color: var(--muted); }
+
     /* footer */
     .pg-footer {
       margin-top: 8px;
@@ -383,7 +459,7 @@
         <div class="mini-seed">1</div>
         <div>
           <div class="mini-name">Andrew Kidston</div>
-          <div class="mini-deck">Nought</div>
+          <div class="mini-deck">Stiflenought</div>
         </div>
       </div>
     </div>
@@ -449,7 +525,7 @@
         <div class="mini-seed">7</div>
         <div>
           <div class="mini-name">Aeolius Alevizakis</div>
-          <div class="mini-deck">Blue-White</div>
+          <div class="mini-deck">UW Landstill</div>
         </div>
       </div>
     </div>
@@ -484,9 +560,8 @@ const PLAYERS = [
     meta: "Magic Stronghold · Age 19",
     finish: "QF Loss · Top 8",
     champion: false,
-    deck: "Nought",
-    dl_mtgdecks: "https://mtgdecks.net",
-    dl_mtgtop8:  "https://www.mtgtop8.com/event?e=83376&d=833461&f=PREM",
+    deck: "Stiflenought",
+    dl_mtgtop8: "https://www.mtgtop8.com/event?e=83376&d=833461&f=PREM",
     facts: [
       {l:"First Set",    a:"Kaladesh — 13 years playing"},
       {l:"Other Formats",a:"Modern / Standard"},
@@ -496,7 +571,24 @@ const PLAYERS = [
       {l:"Ban?",         a:"Duress"},
       {l:"Underrated",   a:"Argothian Enchantress"},
       {l:"Deck MVP",     a:"Gush"},
-    ]
+    ],
+    decklist: {
+      main: [
+        { grp: "Lands", cards: [{q:17,n:"Island"}] },
+        { grp: "Creatures", cards: [{q:4,n:"Phyrexian Dreadnought"}] },
+        { grp: "Instants & Sorceries", cards: [
+          {q:4,n:"Counterspell"},{q:2,n:"Daze"},{q:2,n:"Flash of Insight"},
+          {q:4,n:"Foil"},{q:4,n:"Gush"},{q:2,n:"Impulse"},{q:1,n:"Misdirection"},
+          {q:4,n:"Opt"},{q:1,n:"Peek"},{q:4,n:"Portent"},{q:4,n:"Stifle"},
+          {q:1,n:"Thwart"},{q:4,n:"Vision Charm"},
+        ]},
+        { grp: "Other Spells", cards: [{q:1,n:"Powder Keg"},{q:1,n:"Tsabo's Web"}] },
+      ],
+      side: [
+        {q:3,n:"Annul"},{q:2,n:"Brain Freeze"},{q:1,n:"Chain of Vapor"},
+        {q:1,n:"Dominate"},{q:3,n:"Essence Flare"},{q:4,n:"Hydroblast"},{q:1,n:"Powder Keg"},
+      ]
+    }
   },
   {
     seed: 2,
@@ -504,9 +596,8 @@ const PLAYERS = [
     meta: "Magic Stronghold · Age 34",
     finish: "Finalist · 2nd Place",
     champion: false,
-    deck: "Terrageddon",
-    dl_mtgdecks: "https://mtgdecks.net/Premodern/terrageddon-decklist-by-colin-whitwell-2889390",
-    dl_mtgtop8:  "https://www.mtgtop8.com/event?e=83376&d=833458&f=PREM",
+    deck: "GW Terrageddon",
+    dl_mtgtop8: "https://www.mtgtop8.com/event?e=83376&d=833458&f=PREM",
     facts: [
       {l:"First Set",    a:"Midnight Hunt (MID)"},
       {l:"Other Formats",a:"Legacy / Cube"},
@@ -516,7 +607,30 @@ const PLAYERS = [
       {l:"Ban?",         a:"Oath of Druids??"},
       {l:"Underrated",   a:"Nimble Mongoose"},
       {l:"Deck MVP",     a:"Armageddon"},
-    ]
+    ],
+    decklist: {
+      main: [
+        { grp: "Lands", cards: [
+          {q:3,n:"Forest"},{q:4,n:"Gemstone Mine"},{q:2,n:"Plains"},
+          {q:4,n:"Rishadan Port"},{q:2,n:"Rith's Grove"},{q:2,n:"Secluded Steppe"},
+          {q:2,n:"Tranquil Thicket"},{q:4,n:"Wasteland"},{q:4,n:"Windswept Heath"},
+        ]},
+        { grp: "Creatures", cards: [
+          {q:3,n:"Nimble Mongoose"},{q:4,n:"Terravore"},{q:3,n:"Weathered Wayfarer"},
+        ]},
+        { grp: "Instants & Sorceries", cards: [
+          {q:3,n:"Armageddon"},{q:2,n:"Call of the Herd"},{q:1,n:"Cataclysm"},
+          {q:3,n:"Fire / Ice"},{q:2,n:"Naturalize"},{q:4,n:"Swords to Plowshares"},
+        ]},
+        { grp: "Other Spells", cards: [
+          {q:4,n:"Mox Diamond"},{q:4,n:"Sylvan Library"},
+        ]},
+      ],
+      side: [
+        {q:1,n:"Naturalize"},{q:4,n:"Pyroblast"},{q:4,n:"Pyroclasm"},
+        {q:2,n:"Ray of Revelation"},{q:2,n:"Tormod's Crypt"},{q:1,n:"Worship"},{q:1,n:"Zuran Orb"},
+      ]
+    }
   },
   {
     seed: 3,
@@ -525,8 +639,7 @@ const PLAYERS = [
     finish: "Semifinalist · Top 4",
     champion: false,
     deck: "Goblins",
-    dl_mtgdecks: "https://mtgdecks.net/Premodern/goblins-decklist-by-alastair-mclellan-2889391",
-    dl_mtgtop8:  "https://www.mtgtop8.com/event?e=83376&d=833459&f=PREM",
+    dl_mtgtop8: "https://www.mtgtop8.com/event?e=83376&d=833459&f=PREM",
     facts: [
       {l:"First Set",    a:"Ixalan"},
       {l:"Other Formats",a:"Legacy, Pioneer 😕"},
@@ -536,7 +649,26 @@ const PLAYERS = [
       {l:"Ban?",         a:"Fetchlands? (jk)"},
       {l:"Underrated",   a:"Brushhopper"},
       {l:"Deck MVP",     a:"Goblin Ringleader!"},
-    ]
+    ],
+    decklist: {
+      main: [
+        { grp: "Lands", cards: [
+          {q:1,n:"Forest"},{q:4,n:"Karplusan Forest"},{q:8,n:"Mountain"},
+          {q:4,n:"Rishadan Port"},{q:2,n:"Wasteland"},{q:4,n:"Wooded Foothills"},
+        ]},
+        { grp: "Creatures", cards: [
+          {q:3,n:"Gempalm Incinerator"},{q:1,n:"Goblin King"},{q:4,n:"Goblin Lackey"},
+          {q:4,n:"Goblin Matron"},{q:4,n:"Goblin Piledriver"},{q:4,n:"Goblin Ringleader"},
+          {q:1,n:"Goblin Sharpshooter"},{q:1,n:"Goblin Tinkerer"},{q:4,n:"Goblin Warchief"},
+          {q:4,n:"Mogg Fanatic"},{q:3,n:"Siege-Gang Commander"},{q:2,n:"Skirk Prospector"},
+        ]},
+        { grp: "Other Spells", cards: [{q:2,n:"Naturalize"}] },
+      ],
+      side: [
+        {q:2,n:"Caller of the Claw"},{q:1,n:"Goblin Tinkerer"},{q:2,n:"Naturalize"},
+        {q:3,n:"Pyroblast"},{q:2,n:"Pyrokinesis"},{q:3,n:"Tormod's Crypt"},{q:2,n:"Tranquil Domain"},
+      ]
+    }
   },
   {
     seed: 4,
@@ -545,8 +677,7 @@ const PLAYERS = [
     finish: "QF Loss · Top 8",
     champion: false,
     deck: "Iggy Pop (Storm)",
-    dl_mtgdecks: "https://mtgdecks.net/Premodern/iggy-pop-decklist-by-rob-hackney-2889392",
-    dl_mtgtop8:  "https://www.mtgtop8.com/event?e=83376&d=833462&f=PREM",
+    dl_mtgtop8: "https://www.mtgtop8.com/event?e=83376&d=833462&f=PREM",
     facts: [
       {l:"First Set",    a:"Ice Age"},
       {l:"Other Formats",a:"Old School"},
@@ -556,7 +687,29 @@ const PLAYERS = [
       {l:"Ban?",         a:"None — Gush I guess?"},
       {l:"Underrated",   a:"Vampire Hounds"},
       {l:"Deck MVP",     a:"Necro (Cogia)"},
-    ]
+    ],
+    decklist: {
+      main: [
+        { grp: "Lands", cards: [
+          {q:2,n:"Cephalid Coliseum"},{q:3,n:"City of Brass"},{q:4,n:"Gemstone Mine"},
+          {q:3,n:"Island"},{q:3,n:"Polluted Delta"},{q:1,n:"Swamp"},
+        ]},
+        { grp: "Instants & Sorceries", cards: [
+          {q:4,n:"Brain Freeze"},{q:4,n:"Cabal Ritual"},{q:1,n:"Chain of Vapor"},
+          {q:1,n:"Cunning Wish"},{q:4,n:"Dark Ritual"},{q:1,n:"Fire / Ice"},
+          {q:4,n:"Ill-Gotten Gains"},{q:4,n:"Intuition"},{q:1,n:"Merchant Scroll"},
+          {q:3,n:"Necrologia"},{q:4,n:"Opt"},{q:1,n:"Recoup"},{q:4,n:"Sleight of Hand"},
+        ]},
+        { grp: "Other Spells", cards: [
+          {q:4,n:"Lion's Eye Diamond"},{q:4,n:"Lotus Petal"},
+        ]},
+      ],
+      side: [
+        {q:1,n:"Chain of Vapor"},{q:1,n:"Crumble"},{q:1,n:"Hunting Pack"},
+        {q:3,n:"Orim's Chant"},{q:1,n:"Ray of Revelation"},{q:2,n:"Swords to Plowshares"},
+        {q:2,n:"Tormod's Crypt"},{q:1,n:"Vision Charm"},{q:1,n:"Words of Wisdom"},{q:2,n:"Xantid Swarm"},
+      ]
+    }
   },
   {
     seed: 5,
@@ -565,8 +718,7 @@ const PLAYERS = [
     finish: "Champion · 1st Place",
     champion: true,
     deck: "Moneyball Black",
-    dl_mtgdecks: "https://mtgdecks.net/Premodern/mono-black-decklist-by-markus-thibeau-2889393",
-    dl_mtgtop8:  "https://www.mtgtop8.com/event?e=83376&d=833457&f=PREM",
+    dl_mtgtop8: "https://www.mtgtop8.com/event?e=83376&d=833457&f=PREM",
     facts: [
       {l:"First Set",    a:"Odyssey — 25 years playing"},
       {l:"Other Formats",a:"Cube"},
@@ -576,7 +728,30 @@ const PLAYERS = [
       {l:"Ban?",         a:"Dreadnought / Goblin Lackey / Gush"},
       {l:"Underrated",   a:"Mishra's Factory"},
       {l:"Deck MVP",     a:"Engineer Plague / Dark Ritual"},
-    ]
+    ],
+    decklist: {
+      main: [
+        { grp: "Lands", cards: [
+          {q:4,n:"Mishra's Factory"},{q:17,n:"Swamp"},{q:2,n:"Wasteland"},
+        ]},
+        { grp: "Creatures", cards: [
+          {q:3,n:"Graveborn Muse"},{q:4,n:"Hypnotic Specter"},{q:3,n:"Knight of Stromgald"},
+          {q:3,n:"Nantuko Shade"},{q:4,n:"Withered Wretch"},
+        ]},
+        { grp: "Instants & Sorceries", cards: [
+          {q:4,n:"Cabal Therapy"},{q:4,n:"Dark Ritual"},{q:3,n:"Diabolic Edict"},
+          {q:4,n:"Duress"},{q:3,n:"Smother"},
+        ]},
+        { grp: "Other Spells", cards: [
+          {q:2,n:"Cursed Scroll"},
+        ]},
+      ],
+      side: [
+        {q:1,n:"Cursed Scroll"},{q:3,n:"Dystopia"},{q:4,n:"Engineered Plague"},
+        {q:2,n:"Gloom"},{q:1,n:"Knight of Stromgald"},{q:1,n:"Powder Keg"},
+        {q:1,n:"Snuff Out"},{q:2,n:"Spinning Darkness"},
+      ]
+    }
   },
   {
     seed: 6,
@@ -585,8 +760,7 @@ const PLAYERS = [
     finish: "QF Loss · Top 8",
     champion: false,
     deck: "WB Eternal Dragon",
-    dl_mtgdecks: "https://mtgdecks.net/Premodern/bw-control-decklist-by-willam-niwinski-2889394",
-    dl_mtgtop8:  "https://www.mtgtop8.com/event?e=83376&d=833464&f=PREM",
+    dl_mtgtop8: "https://www.mtgtop8.com/event?e=83376&d=833464&f=PREM",
     facts: [
       {l:"First Set",    a:"Return to Ravnica — ~15 years playing"},
       {l:"Other Formats",a:"Pauper, Draft"},
@@ -596,7 +770,30 @@ const PLAYERS = [
       {l:"Ban?",         a:"Goblin Piledriver"},
       {l:"Underrated",   a:"Eternal Dragon"},
       {l:"Deck MVP",     a:"Eternal Dragon"},
-    ]
+    ],
+    decklist: {
+      main: [
+        { grp: "Lands", cards: [
+          {q:1,n:"Barren Moor"},{q:4,n:"Caves of Koilos"},{q:2,n:"Dust Bowl"},
+          {q:7,n:"Plains"},{q:1,n:"Secluded Steppe"},{q:7,n:"Swamp"},{q:2,n:"Wasteland"},
+        ]},
+        { grp: "Creatures", cards: [
+          {q:3,n:"Eternal Dragon"},{q:4,n:"Exalted Angel"},
+        ]},
+        { grp: "Instants & Sorceries", cards: [
+          {q:4,n:"Decree of Justice"},{q:1,n:"Disenchant"},{q:4,n:"Duress"},
+          {q:3,n:"Gerrard's Verdict"},{q:3,n:"Skeletal Scrying"},{q:3,n:"Smother"},
+          {q:4,n:"Swords to Plowshares"},{q:4,n:"Vindicate"},{q:2,n:"Wrath of God"},
+        ]},
+        { grp: "Other Spells", cards: [{q:1,n:"Seal of Cleansing"}] },
+      ],
+      side: [
+        {q:1,n:"Aura of Silence"},{q:2,n:"Circle of Protection: Red"},{q:1,n:"Cursed Totem"},
+        {q:1,n:"Dystopia"},{q:2,n:"Engineered Plague"},{q:2,n:"Enlightened Tutor"},
+        {q:1,n:"Planar Void"},{q:1,n:"Sacred Ground"},{q:1,n:"Seal of Cleansing"},
+        {q:1,n:"Sphere of Law"},{q:1,n:"Tormod's Crypt"},{q:1,n:"Wrath of God"},
+      ]
+    }
   },
   {
     seed: 7,
@@ -604,9 +801,8 @@ const PLAYERS = [
     meta: "Team FfeJ · Age 40",
     finish: "QF Loss · Top 8",
     champion: false,
-    deck: "Blue-White",
-    dl_mtgdecks: "https://mtgdecks.net/Premodern/landstill-decklist-by-aeolius-alevizakis-2889395",
-    dl_mtgtop8:  "https://www.mtgtop8.com/event?e=83376&d=833463&f=PREM",
+    deck: "UW Landstill",
+    dl_mtgtop8: "https://www.mtgtop8.com/event?e=83376&d=833463&f=PREM",
     facts: [
       {l:"First Set",    a:"~30 years playing"},
       {l:"Other Formats",a:"Cube"},
@@ -616,7 +812,27 @@ const PLAYERS = [
       {l:"Ban?",         a:"—"},
       {l:"Underrated",   a:"—"},
       {l:"Deck MVP",     a:"Mishra's Factory"},
-    ]
+    ],
+    decklist: {
+      main: [
+        { grp: "Lands", cards: [
+          {q:4,n:"Adarkar Wastes"},{q:2,n:"Dust Bowl"},{q:2,n:"Faerie Conclave"},
+          {q:4,n:"Flooded Strand"},{q:5,n:"Island"},{q:4,n:"Mishra's Factory"},
+          {q:2,n:"Plains"},{q:4,n:"Skycloud Expanse"},
+        ]},
+        { grp: "Instants & Sorceries", cards: [
+          {q:1,n:"Absorb"},{q:4,n:"Accumulated Knowledge"},{q:3,n:"Counterspell"},
+          {q:3,n:"Decree of Justice"},{q:4,n:"Fact or Fiction"},{q:1,n:"Forbid"},
+          {q:1,n:"Force Spike"},{q:3,n:"Mana Leak"},{q:2,n:"Memory Lapse"},
+          {q:2,n:"Rewind"},{q:4,n:"Swords to Plowshares"},{q:3,n:"Wrath of God"},
+        ]},
+        { grp: "Other Spells", cards: [{q:2,n:"Standstill"}] },
+      ],
+      side: [
+        {q:4,n:"Annul"},{q:4,n:"Blue Elemental Blast"},{q:1,n:"Hydroblast"},
+        {q:3,n:"Teferi's Response"},{q:2,n:"Tormod's Crypt"},{q:1,n:"Wrath of God"},
+      ]
+    }
   },
   {
     seed: 8,
@@ -625,8 +841,7 @@ const PLAYERS = [
     finish: "Semifinalist · Top 4",
     champion: false,
     deck: "Mono-B Reanimator",
-    dl_mtgdecks: "https://mtgdecks.net/Premodern/reanimator-decklist-by-chad-galpin-2889396",
-    dl_mtgtop8:  "https://www.mtgtop8.com/event?e=83376&d=833460&f=PREM",
+    dl_mtgtop8: "https://www.mtgtop8.com/event?e=83376&d=833460&f=PREM",
     facts: [
       {l:"First Set",    a:"Tried 2012, started for real 2021/22 (All Will Be One)"},
       {l:"Other Formats",a:"Pauper, Commander, Modern, Legacy"},
@@ -636,14 +851,32 @@ const PLAYERS = [
       {l:"Ban?",         a:"Something from Dreadnought. Or Tormod's Crypt ;)"},
       {l:"Underrated",   a:"Reanimate"},
       {l:"Deck MVP",     a:"Unmask"},
-    ]
+    ],
+    decklist: {
+      main: [
+        { grp: "Lands", cards: [{q:14,n:"Swamp"}] },
+        { grp: "Creatures", cards: [
+          {q:4,n:"Akroma, Angel of Wrath"},{q:2,n:"Multani, Maro-Sorcerer"},
+          {q:1,n:"Phantom Nishoba"},{q:4,n:"Putrid Imp"},{q:1,n:"Symbiotic Wurm"},
+          {q:4,n:"Verdant Force"},
+        ]},
+        { grp: "Instants & Sorceries", cards: [
+          {q:3,n:"Buried Alive"},{q:4,n:"Cabal Therapy"},{q:4,n:"Dark Ritual"},
+          {q:4,n:"Exhume"},{q:3,n:"Funeral Charm"},{q:4,n:"Life / Death"},
+          {q:4,n:"Reanimate"},{q:4,n:"Unmask"},
+        ]},
+      ],
+      side: [
+        {q:1,n:"Ascendant Evincar"},{q:1,n:"Butcher Orgg"},{q:2,n:"Multani, Maro-Sorcerer"},
+        {q:2,n:"Null Rod"},{q:3,n:"Phantom Nishoba"},{q:2,n:"Sickening Dreams"},{q:4,n:"Snuff Out"},
+      ]
+    }
   },
 ];
 
 let openIdx = null;
 
 function toggle(i) {
-  // clicking same card closes it
   if (openIdx === i) {
     openIdx = null;
     renderPanel();
@@ -653,10 +886,50 @@ function toggle(i) {
   openIdx = i;
   renderPanel();
   document.querySelectorAll('.mini-card').forEach((c,j) => c.classList.toggle('active', j===i));
-  // scroll panel into view smoothly
   setTimeout(() => {
     document.getElementById('detailPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
   }, 50);
+}
+
+function buildDecklistHTML(decklist) {
+  // Split main groups into two columns: left = first half, right = second half
+  const groups = decklist.main;
+
+  function renderGroup(g) {
+    const cards = g.cards.map(c =>
+      `<div class="dl-entry"><span class="dl-qty">${c.q}</span><span class="dl-name">${c.n}</span></div>`
+    ).join('');
+    return `<div class="dl-group"><div class="dl-group-header">${g.grp}</div>${cards}</div>`;
+  }
+
+  // Split groups roughly in half for two columns
+  const mid = Math.ceil(groups.length / 2);
+  const leftGroups = groups.slice(0, mid);
+  const rightGroups = groups.slice(mid);
+
+  const leftHTML = leftGroups.map(renderGroup).join('');
+  const rightHTML = rightGroups.map(renderGroup).join('');
+
+  const sbCards = decklist.side.map(c =>
+    `<div class="dl-entry sb"><span class="dl-qty">${c.q}</span><span class="dl-name">${c.n}</span></div>`
+  ).join('');
+
+  const sbCount = decklist.side.reduce((a,c)=>a+c.q,0);
+  const mainCount = decklist.main.reduce((a,g)=>a+g.cards.reduce((b,c)=>b+c.q,0),0);
+
+  return `
+    <div class="decklist-section">
+      <div class="decklist-section-title">Decklist · ${mainCount} cards main · ${sbCount} sideboard</div>
+      <div class="decklist-cols">
+        <div>${leftHTML}</div>
+        <div>
+          ${rightHTML}
+          <div class="dl-sb-label">Sideboard</div>
+          ${sbCards}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderPanel() {
@@ -668,12 +941,6 @@ function renderPanel() {
   }
   const p = PLAYERS[openIdx];
 
-  const dlRow = (p.dl_mtgdecks !== 'DECKLIST_URL_HERE' || p.dl_mtgtop8 !== 'DECKLIST_URL_HERE')
-    ? `<a class="decklist-btn" href="${p.dl_mtgdecks}" target="_blank" rel="noopener noreferrer">🃏 mtgdecks.net</a>
-       <a class="decklist-btn" href="${p.dl_mtgtop8}"  target="_blank" rel="noopener noreferrer">🃏 mtgtop8.com</a>`
-    : `<a class="decklist-btn" href="${p.dl_mtgdecks}" target="_blank" rel="noopener noreferrer">🃏 mtgdecks.net</a>
-       <a class="decklist-btn" href="${p.dl_mtgtop8}"  target="_blank" rel="noopener noreferrer">🃏 mtgtop8.com</a>`;
-
   const factCells = p.facts.map(f =>
     `<div class="q-cell"><span class="q-label">${f.l}</span><span class="q-answer">${f.a}</span></div>`
   ).join('');
@@ -681,6 +948,8 @@ function renderPanel() {
   const qCells = p.q.map(q =>
     `<div class="q-cell"><span class="q-label">${q.l}</span><span class="q-answer">${q.a}</span></div>`
   ).join('');
+
+  const decklistHTML = buildDecklistHTML(p.decklist);
 
   panel.className = 'detail-panel visible' + (p.champion ? ' champion' : '');
   panel.innerHTML = `
@@ -695,10 +964,11 @@ function renderPanel() {
     <div class="detail-body">
       <div class="deck-row">
         <span class="deck-tag">${p.deck}</span>
-        ${dlRow}
+        <a class="decklist-btn" href="${p.dl_mtgtop8}" target="_blank" rel="noopener noreferrer">🃏 mtgtop8.com</a>
       </div>
       ${factCells}
       ${qCells}
+      ${decklistHTML}
     </div>
   `;
 }
