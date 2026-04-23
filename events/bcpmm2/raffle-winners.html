@@ -83,6 +83,59 @@
     .pg-footer{margin-top:8px;text-align:center;color:var(--muted);font-size:.88rem}
     .pg-footer a{color:var(--accent)}
     .nav{margin-top:28px;display:flex;justify-content:space-between;font-weight:600;font-size:.92rem}
+
+    /* ── Prize Video Gallery ── */
+    .video-strip {
+      padding: 16px 18px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .video-strip-title {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    @media(max-width: 640px) {
+      .video-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media(max-width: 380px) {
+      .video-grid { grid-template-columns: 1fr; }
+    }
+
+    .video-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .video-cell video {
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--item-bg);
+      display: block;
+    }
+
+    .video-label {
+      font-size: .7rem;
+      font-weight: 650;
+      color: var(--muted);
+      text-align: center;
+      letter-spacing: .04em;
+    }
   </style>
 </head>
 <body>
@@ -110,17 +163,15 @@
         <tr><td><div class="winner-name">Curran Delahanty</div></td><td><div class="winner-prize">Urza's Saga Calendar &amp; Timbuk2 Backpack (Lots #7 &amp; #6)</div></td></tr>
         <tr><td><div class="winner-name">Bruce Liu</div></td><td><div class="winner-prize">Tuft &amp; Paw Cat Litter (Lot #4)</div></td></tr>
         <tr><td><div class="winner-name">Mazin Marwan</div></td><td><div class="winner-prize">Goblin Welder &amp; Blue Mana Poker Chip (Lot #8)</div></td></tr>
-<tr>
-  <td>
-    <div class="winner-name">Alex Kim</div>
-  </td>
-  <td>
-    <div class="winner-prize">
-      Custom Art-Peeled Basics (Lot #5)
-      <img src="PRIZE1.JPG" style="width: 25%; height: auto;">
-    </div>
-  </td>
-</tr>
+        <tr>
+          <td><div class="winner-name">Alex Kim</div></td>
+          <td>
+            <div class="winner-prize">
+              Custom Art-Peeled Basics (Lot #5)
+              <img src="PRIZE1.JPG" style="width: 25%; height: auto;">
+            </div>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -268,6 +319,29 @@
 
     </div><!-- /lots-grid -->
 
+    <!-- ── Prize Videos ── -->
+    <div class="video-strip">
+      <div class="video-strip-title">Prize Videos</div>
+      <div class="video-grid">
+        <div class="video-cell">
+          <video src="gallery/IMG_7236.MOV" controls playsinline preload="none"></video>
+          <div class="video-label">Video 1</div>
+        </div>
+        <div class="video-cell">
+          <video src="gallery/IMG_7237.MOV" controls playsinline preload="none"></video>
+          <div class="video-label">Video 2</div>
+        </div>
+        <div class="video-cell">
+          <video src="gallery/IMG_7287.MOV" controls playsinline preload="none"></video>
+          <div class="video-label">Video 3</div>
+        </div>
+        <div class="video-cell">
+          <video src="gallery/IMG_7288.MOV" controls playsinline preload="none"></video>
+          <div class="video-label">Video 4</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Token note -->
     <div class="token-row">
       <a href="https://www.magiclibrarities.net/479-5952-rarities-elephant-token-zoom-card.html#return" target="_blank" rel="noopener noreferrer">
@@ -277,10 +351,10 @@
         <img src="https://api.scryfall.com/cards/ody/231?format=image&version=art_crop" alt="Elephant Token" loading="lazy"/>
       </a>
       <a href="https://www.magiclibrarities.net/479-5953-rarities-squirrel-token-zoom-card.html#return" target="_blank" rel="noopener noreferrer">
-        <img src="https://api.scryfall.com/cards/ody/258?format=image&version=art_crop" alt="Squirrel Token" loading="lazy"/>
+        <img src="https://api.scryfall.com/cards/ody/233?format=image&version=art_crop" alt="Squirrel Token" loading="lazy"/>
       </a>
       <a href="https://www.magiclibrarities.net/479-5953-rarities-squirrel-token-zoom-card.html#return" target="_blank" rel="noopener noreferrer">
-        <img src="https://api.scryfall.com/cards/ody/258?format=image&version=art_crop" alt="Squirrel Token" loading="lazy"/>
+        <img src="https://api.scryfall.com/cards/ody/233?format=image&version=art_crop" alt="Squirrel Token" loading="lazy"/>
       </a>
       <div class="token-note">
         Canadian Elephant and Squirrel tokens were also included in the prize pool — rare Y Productions tokens from Magic's early days. <a href="https://www.magiclibrarities.net/479-rarities-y-productions-token-cards-canada-english-cards-index.html" target="_blank" rel="noopener noreferrer">View on magiclibrarities.net →</a>
